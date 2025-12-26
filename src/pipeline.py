@@ -14,13 +14,23 @@ Commands:
     compute_features  Calculate indicators and features
     run_estimation    Fit SEM models
     run_robustness    Run robustness checks
+    run_survival      Run time-varying survival analysis
+    run_survival_threshold_sensitivity
+                      Run survival analysis across all completion thresholds (20%-100%)
     make_figures      Generate publication figures
     run_all           Run complete pipeline
+
+    review_status     Display current review cycle status
+    review_new        Initialize new review cycle
+    review_archive    Archive current review cycle
+    review_verify     Run verification checklist
+    review_report     Generate summary report of all reviews
 
 Examples:
     python src/pipeline.py ingest_data
     python src/pipeline.py run_estimation --model exp_optimal_v1 --subset state
     python src/pipeline.py make_figures --style publication
+    python src/pipeline.py review_new --focus par_general
 """
 
 import argparse
@@ -61,6 +71,47 @@ def cmd_run_robustness(args):
     """Run robustness checks."""
     from stages import s04_robustness
     s04_robustness.main(models=args.models)
+
+
+def cmd_run_survival(args):
+    """Run time-varying survival analysis."""
+    from stages import s03b_survival_estimation
+    s03b_survival_estimation.main()
+
+
+def cmd_run_survival_threshold_sensitivity(args):
+    """Run survival analysis across all completion thresholds."""
+    from stages import s03b_survival_estimation
+    results_df = s03b_survival_estimation.run_threshold_sensitivity_analysis()
+
+    # Print summary
+    print("\n" + "="*80)
+    print("THRESHOLD SENSITIVITY SUMMARY")
+    print("="*80)
+    print(results_df.to_string(index=False))
+
+    # Print recommendations
+    print("\n" + "="*80)
+    print("RECOMMENDATIONS")
+    print("="*80)
+
+    # Find thresholds with EPV >= 10
+    adequate_power = results_df[results_df['EPV_Ratio'] >= 10.0]
+    if len(adequate_power) > 0:
+        print(f"\nThresholds with adequate power (EPV ≥ 10):")
+        for _, row in adequate_power.iterrows():
+            print(f"  {row['Threshold_pct']}%: {row['N_Events']} events, EPV={row['EPV_Ratio']:.1f}")
+    else:
+        print("\nNo thresholds achieve EPV ≥ 10 (guideline for stable estimates)")
+
+    # Find significant effects
+    significant = results_df[results_df['Disb_p_Adjusted'] < 0.05]
+    if len(significant) > 0:
+        print(f"\nThresholds with significant disbursement effect (p < 0.05):")
+        for _, row in significant.iterrows():
+            print(f"  {row['Threshold_pct']}%: HR={row['Disb_HR_Adjusted']:.3f}, p={row['Disb_p_Adjusted']:.3f}")
+    else:
+        print("\nNo thresholds show significant disbursement effects at p < 0.05")
 
 
 def cmd_run_alternatives(args):
@@ -126,6 +177,36 @@ def cmd_run_all(args):
     print("\n" + "=" * 60)
     print("✓ Pipeline complete!")
     print("=" * 60)
+
+
+def cmd_review_status(args):
+    """Display current review cycle status."""
+    import review_management
+    review_management.status()
+
+
+def cmd_review_new(args):
+    """Initialize a new review cycle."""
+    import review_management
+    review_management.new_cycle(focus=args.focus)
+
+
+def cmd_review_archive(args):
+    """Archive current review cycle."""
+    import review_management
+    review_management.archive()
+
+
+def cmd_review_verify(args):
+    """Run verification checklist."""
+    import review_management
+    review_management.verify()
+
+
+def cmd_review_report(args):
+    """Generate summary report of all review cycles."""
+    import review_management
+    review_management.report()
 
 
 def cmd_list_models(args):
@@ -218,6 +299,20 @@ def main():
     )
     p_robust.set_defaults(func=cmd_run_robustness)
 
+    # run_survival
+    p_survival = subparsers.add_parser(
+        "run_survival",
+        help="Run time-varying survival analysis"
+    )
+    p_survival.set_defaults(func=cmd_run_survival)
+
+    # run_survival_threshold_sensitivity
+    p_survival_threshold = subparsers.add_parser(
+        "run_survival_threshold_sensitivity",
+        help="Run survival analysis across all completion thresholds (20%-100%)"
+    )
+    p_survival_threshold.set_defaults(func=cmd_run_survival_threshold_sensitivity)
+
     # run_alternatives
     p_alternatives = subparsers.add_parser(
         "run_alternatives",
@@ -288,6 +383,47 @@ def main():
         help="Skip robustness checks"
     )
     p_all.set_defaults(func=cmd_run_all)
+
+    # review_status
+    p_review_status = subparsers.add_parser(
+        "review_status",
+        help="Display current review cycle status"
+    )
+    p_review_status.set_defaults(func=cmd_review_status)
+
+    # review_new
+    p_review_new = subparsers.add_parser(
+        "review_new",
+        help="Initialize a new review cycle"
+    )
+    p_review_new.add_argument(
+        "--focus", "-f",
+        default="par_general",
+        choices=["par_general", "methods", "policy", "clarity"],
+        help="Review focus area (default: par_general)"
+    )
+    p_review_new.set_defaults(func=cmd_review_new)
+
+    # review_archive
+    p_review_archive = subparsers.add_parser(
+        "review_archive",
+        help="Archive current review cycle"
+    )
+    p_review_archive.set_defaults(func=cmd_review_archive)
+
+    # review_verify
+    p_review_verify = subparsers.add_parser(
+        "review_verify",
+        help="Run verification checklist"
+    )
+    p_review_verify.set_defaults(func=cmd_review_verify)
+
+    # review_report
+    p_review_report = subparsers.add_parser(
+        "review_report",
+        help="Generate summary report of all review cycles"
+    )
+    p_review_report.set_defaults(func=cmd_review_report)
 
     # list_models
     p_models = subparsers.add_parser(

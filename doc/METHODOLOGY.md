@@ -53,16 +53,69 @@ Where $\epsilon$ follows a specified distribution (Weibull, lognormal, or log-lo
 
 Model selection is based on AIC (lower is better) and concordance index (higher is better).
 
-### Key Results
+### Time-Varying Survival Analysis (Primary Specification)
+
+To address reverse causality concerns with static capacity measures, the primary analysis uses **time-varying covariates** with lagged capacity ratios.
+
+#### The Reverse Causality Problem
+
+Static capacity ratios computed as the mean across all quarters suffer from post-outcome bias:
+- Ratios include data from quarters *after* program completion
+- Creates reverse causality: completion timing affects predictor values
+- Biases effect estimates upward
+
+#### Time-Varying Solution
+
+The time-varying approach restructures the data into interval format:
+
+```
+Before (static):
+NYC-Sandy | T=48 | E=1 | Ratio_disb=0.85 (mean all quarters)
+
+After (time-varying):
+NYC-Sandy | start=0  | stop=3  | E=0 | Ratio_disb_lag1=NaN
+NYC-Sandy | start=3  | stop=6  | E=0 | Ratio_disb_lag1=0.42
+NYC-Sandy | start=6  | stop=9  | E=0 | Ratio_disb_lag1=0.58
+...
+NYC-Sandy | start=45 | stop=48 | E=1 | Ratio_disb_lag1=0.89
+```
+
+**Key features**:
+- One row per (grantee-disaster, quarter) interval
+- `E=1` only on final row if completion occurred
+- **1-quarter lag** on capacity ratios (at time t, ratio uses data through t-3 months)
+- Static covariates (government type, grant size, experience) repeated on every row
+
+#### Cox Model with Time-Varying Covariates
+
+$$h(t|X(t)) = h_0(t) \exp(\beta_1 X_1(t) + \beta_2 X_2(t) + \gamma' Z)$$
+
+Where:
+- $X_1(t), X_2(t)$ = lagged capacity ratios (time-varying)
+- $Z$ = static covariates (government type, grant size, experience, disaster year, population)
+- $h_0(t)$ = baseline hazard (unspecified)
+
+#### Bootstrap Clustered Standard Errors
+
+To account for repeated grantee observations:
+- Resample clusters (grantees) with replacement
+- Refit Cox model on each bootstrap sample (1000 iterations)
+- Compute standard errors from bootstrap distribution
+
+#### Key Results
+
+**Alternative Survival Models Comparison**:
 
 | Model | Disbursement HR/TR | p-value | Expenditure HR/TR | p-value |
 |-------|-------------------|---------|-------------------|---------|
-| Cox PH | 4.367 | 0.006 | 0.958 | 0.626 |
-| AFT Weibull | 0.201 | <0.001 | 0.988 | 0.917 |
-| AFT Lognormal | 0.157 | <0.001 | 1.008 | 0.954 |
-| AFT Log-logistic | 0.178 | <0.001 | 1.019 | 0.881 |
+| Cox PH (Static) | 4.367 | 0.006 | 0.958 | 0.626 |
+| Cox PH (Time-Varying, No Covariates) | TBD | TBD | TBD | TBD |
+| Cox PH (Time-Varying, Full Covariates) | TBD | TBD | TBD | TBD |
+| AFT Lognormal (Time-Varying) | TBD | TBD | TBD | TBD |
 
-**Central finding**: Disbursement capacity significantly predicts completion timing (HR = 4.37, p = 0.006). A one-unit increase in disbursement ratio reduces expected completion time by 80-84%. Expenditure capacity shows no significant effect.
+**Note**: Time-varying results to be updated after running `python src/pipeline.py run_survival`
+
+**Expected findings**: Time-varying HRs will be smaller than static estimates (less upward bias) but effect should persist with full covariates.
 
 ### Model Evaluation
 
@@ -71,6 +124,46 @@ Model selection is based on AIC (lower is better) and concordance index (higher 
 | Concordance Index | C = 0.5 random; C > 0.7 acceptable; C > 0.8 good |
 | AIC | Lower is better (for comparing AFT distributions) |
 | Schoenfeld residuals | Test proportional hazards assumption |
+
+### Enhanced Survival Diagnostics
+
+The time-varying survival pipeline includes comprehensive diagnostic checks:
+
+#### Residual Diagnostics
+
+1. **Martingale Residuals**: Check linearity of capacity ratio effects
+   - Plot residuals vs. capacity predictors
+   - Should scatter around zero with no pattern
+   - Identifies non-linear relationships
+
+2. **Cox-Snell Residuals**: Overall model fit assessment
+   - Should follow unit exponential distribution if model fits well
+   - Plot KM curve of Cox-Snell residuals vs. theoretical exponential
+   - Deviation indicates poor fit
+
+3. **Schoenfeld Residuals**: Test proportional hazards assumption
+   - Test for time-varying effects
+   - Should be uncorrelated with time
+   - Significant correlation indicates PH violation
+
+#### Influence Diagnostics
+
+- **Score Residuals**: Identify influential grantee-disasters
+- Flag observations with |score residual| > 3
+- Assess whether results driven by outliers
+
+#### Predicted Survival Curves
+
+- Stratify by capacity quartiles
+- Visualize survival probability over time
+- Show 95% confidence intervals
+- Interpret: Higher capacity → steeper decline (faster completion)
+
+**Output files**:
+- `figures/survival_martingale_residuals.png`
+- `figures/survival_cox_snell_residuals.png`
+- `figures/survival_predicted_curves_*.png`
+- `figures/survival_influence_diagnostics.png`
 
 ---
 

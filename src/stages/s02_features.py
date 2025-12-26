@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Optional
 import pandas as pd
 import numpy as np
+import warnings
 
 from config import DATA_WORK_DIR, COMPLETION_THRESHOLD, QPR_DOLLAR_FIELDS_ARE_FLOW
 from stages._io_utils import safe_to_parquet, safe_read_parquet
@@ -279,6 +280,174 @@ def compute_additional_timeliness_metrics(
     return pd.DataFrame(results)
 
 
+def create_survival_covariates(panel: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create covariates for time-varying survival analysis.
+
+    Transforms raw features into analysis-ready predictors with appropriate
+    scaling and handling of missings. These covariates are used in the
+    time-varying Cox and AFT models to control for confounding.
+
+    Parameters
+    ----------
+    panel : pd.DataFrame
+        Panel with raw features including:
+        - Grantee (for deriving government type)
+        - Max_Obligated or Total_Obligated (grant size)
+        - Prior_Grant_Count, Prior_Grant_Dollars (experience)
+        - Disaster Type (for parsing year)
+        - Population (jurisdiction size)
+
+    Returns
+    -------
+    pd.DataFrame
+        Panel with survival covariate columns added:
+        - Government_Type (categorical: 'State' or 'Local')
+        - Government_Type_State (dummy: 1 if State, 0 if Local)
+        - Log_Obligated (log-transformed grant size)
+        - Prior_Grant_Count (raw count, missing treated as 0)
+        - Prior_Grant_Dollars_log (log-transformed prior dollars)
+        - Disaster_Year (parsed year from disaster name)
+        - Population_log (log-transformed population)
+
+    Notes
+    -----
+    - Government type is derived from STATE_GOVERNMENTS/LOCAL_GOVERNMENTS lists in config
+    - Missing prior experience is treated as 0 (no prior grants)
+    - Disaster_Year is parsed from Disaster Type string (e.g., "Sandy 2012" → 2012)
+    - Population missing values should be handled externally (drop or impute)
+    - All dollar amounts are log(1 + x) transformed to handle zeros
+
+    Examples
+    --------
+    >>> panel_with_covariates = create_survival_covariates(panel)
+    >>> # Check covariate distributions
+    >>> panel_with_covariates[['Government_Type', 'Log_Obligated', 'Disaster_Year']].describe()
+    """
+    from config import STATE_GOVERNMENTS, LOCAL_GOVERNMENTS
+    import re
+
+    panel = panel.copy()
+
+    # 1. Government Type
+    def classify_government(grantee):
+        if grantee in STATE_GOVERNMENTS:
+            return 'State'
+        elif grantee in LOCAL_GOVERNMENTS:
+            return 'Local'
+        else:
+            # Default to Local if not explicitly in STATE_GOVERNMENTS
+            return 'Local'
+
+    panel['Government_Type'] = panel['Grantee'].apply(classify_government)
+    panel['Government_Type_State'] = (panel['Government_Type'] == 'State').astype(int)
+
+    print(f"Government type distribution:")
+    print(f"  State: {panel['Government_Type_State'].sum()} grantees")
+    print(f"  Local: {(~panel['Government_Type_State'].astype(bool)).sum()} grantees")
+
+    # 2. Log Obligated (grant size)
+    obligated_col = None
+    if 'Max_Obligated' in panel.columns:
+        obligated_col = 'Max_Obligated'
+    elif 'Total_Obligated' in panel.columns:
+        obligated_col = 'Total_Obligated'
+
+    if obligated_col:
+        panel['Log_Obligated'] = np.log1p(panel[obligated_col].fillna(0))
+        print(f"  Log_Obligated: mean={panel['Log_Obligated'].mean():.2f}, "
+              f"min={panel['Log_Obligated'].min():.2f}, max={panel['Log_Obligated'].max():.2f}")
+    else:
+        warnings.warn("No obligated column found (Max_Obligated or Total_Obligated). Log_Obligated not created.")
+
+    # 3. Prior Experience
+    if 'Prior_Grant_Count' in panel.columns:
+        panel['Prior_Grant_Count'] = panel['Prior_Grant_Count'].fillna(0).astype(int)
+        print(f"  Prior_Grant_Count: mean={panel['Prior_Grant_Count'].mean():.1f}, "
+              f"max={panel['Prior_Grant_Count'].max():.0f}")
+    else:
+        panel['Prior_Grant_Count'] = 0
+        warnings.warn("Prior_Grant_Count not found. Defaulting to 0.")
+
+    if 'Prior_Grant_Dollars' in panel.columns:
+        panel['Prior_Grant_Dollars_log'] = np.log1p(panel['Prior_Grant_Dollars'].fillna(0))
+        print(f"  Prior_Grant_Dollars_log: mean={panel['Prior_Grant_Dollars_log'].mean():.2f}")
+    else:
+        panel['Prior_Grant_Dollars_log'] = 0
+        warnings.warn("Prior_Grant_Dollars not found. Defaulting to 0.")
+
+    # 4. Disaster Year
+    def parse_disaster_year(disaster_type):
+        """
+        Extract year from disaster name.
+
+        Examples:
+        - "Hurricane Sandy 2012" → 2012
+        - "Hurricane Harvey (2017)" → 2017
+        - "2020 Wildfires" → 2020
+        - "Katrina" → NaN (requires manual mapping)
+        """
+        if pd.isna(disaster_type):
+            return np.nan
+
+        # Try to find 4-digit year
+        match = re.search(r'(\d{4})', str(disaster_type))
+        if match:
+            year = int(match.group(1))
+            # Sanity check: year should be between 2000 and 2025
+            if 2000 <= year <= 2025:
+                return year
+
+        return np.nan
+
+    panel['Disaster_Year'] = panel['Disaster Type'].apply(parse_disaster_year)
+
+    # Manual mapping for disasters without parsable years
+    disaster_year_manual = {
+        'Katrina': 2005,
+        'Rita': 2005,
+        'Wilma': 2005,
+        'Ike': 2008,
+        'Sandy': 2012,
+        'Matthew': 2016,
+        'Harvey': 2017,
+        'Irma': 2017,
+        'Maria': 2017,
+        'Florence': 2018,
+        'Michael': 2018,
+    }
+
+    # Apply manual mapping for missing years
+    for disaster_name, year in disaster_year_manual.items():
+        mask = panel['Disaster_Year'].isna() & panel['Disaster Type'].str.contains(disaster_name, case=False, na=False)
+        panel.loc[mask, 'Disaster_Year'] = year
+
+    missing_years = panel['Disaster_Year'].isna().sum()
+    if missing_years > 0:
+        warnings.warn(f"Could not parse Disaster_Year for {missing_years} observations. "
+                      f"These may need manual mapping.")
+    else:
+        print(f"  Disaster_Year: range {panel['Disaster_Year'].min():.0f}-{panel['Disaster_Year'].max():.0f}")
+
+    # 5. Population (log-transformed)
+    if 'Population' in panel.columns:
+        panel['Population_log'] = np.log1p(panel['Population'].fillna(0))
+        n_missing = panel['Population'].isna().sum()
+        pct_missing = 100 * n_missing / len(panel)
+        print(f"  Population_log: mean={panel['Population_log'].mean():.2f}, "
+              f"missing={n_missing} ({pct_missing:.1f}%)")
+
+        if pct_missing > 5:
+            warnings.warn(f"Population missing for {pct_missing:.1f}% of observations. "
+                          f"Consider imputation or exclusion.")
+    else:
+        warnings.warn("Population not found. Population_log not created.")
+
+    print(f"Created {sum([col in panel.columns for col in ['Government_Type_State', 'Log_Obligated', 'Prior_Grant_Count', 'Prior_Grant_Dollars_log', 'Disaster_Year', 'Population_log']])} survival covariates")
+
+    return panel
+
+
 def merge_features_to_panel(
     panel: pd.DataFrame,
     timeliness: pd.DataFrame,
@@ -378,6 +547,10 @@ def main():
     # Merge features to panel
     print("\nMerging features to panel...")
     panel_features = merge_features_to_panel(panel, timeliness, experience)
+
+    # Create survival covariates
+    print("\nCreating survival covariates...")
+    panel_features = create_survival_covariates(panel_features)
 
     if 'Experience_Index' in panel_features.columns:
         mean = panel_features['Experience_Index'].mean()

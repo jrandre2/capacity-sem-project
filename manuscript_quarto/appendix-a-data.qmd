@@ -64,7 +64,119 @@ $$
 
 ## A.3 Sample Characteristics
 
-[Include sample characteristics tables]
+### Overall Sample Composition
+
+The analysis dataset consists of 152 grantee-disaster pairs from the CDBG-DR program covering disasters from 2003 to 2023. Table A.1 presents the basic sample structure.
+
+| **Characteristic** | **Count** | **Percent** |
+|:-------------------|----------:|------------:|
+| **Total Observations** | 152 | 100.0% |
+| Unique grantees | 78 | -- |
+| Unique disaster events | 18 | -- |
+| Unique grant allocations | 206 | -- |
+
+: Sample composition {#tbl-sample-composition}
+
+### Government Type Distribution
+
+The sample includes both state and local government grantees, as shown in Table A.2.
+
+| **Government Type** | **N** | **Percent** |
+|:--------------------|------:|------------:|
+| State governments | 37 | 24.3% |
+| Local governments | 40 | 26.3% |
+| Multiple/Mixed | 75 | 49.3% |
+| **Total** | **152** | **100.0%** |
+
+: Government type distribution {#tbl-government-type}
+
+*Note: Multiple/Mixed category includes grantee-disaster pairs where a single disaster involved both state and local allocations, or cases where classification was ambiguous in the administrative data.*
+
+### Censoring Status
+
+A critical feature of the CDBG-DR data is the high rate of incomplete programs. Table A.3 shows the censoring distribution at the 95% completion threshold.
+
+| **Status** | **N** | **Percent** |
+|:-----------|------:|------------:|
+| Completed (reached 95% expenditure) | 40 | 26.3% |
+| Right-censored (not yet complete) | 112 | 73.7% |
+| **Total** | **152** | **100.0%** |
+
+: Censoring status at 95% completion threshold {#tbl-censoring}
+
+This high censoring rate (73.7%) motivates the use of survival analysis methods. Standard regression approaches that drop censored observations would discard 112 of 152 observations (73.7% of the sample), severely limiting statistical power and introducing selection bias. Survival analysis properly incorporates information from both completed and censored observations.
+
+### Completion Rates by Threshold
+
+Table A.4 shows how completion rates vary across different expenditure thresholds.
+
+| **Threshold** | **Completed** | **Censored** | **Completion Rate** |
+|:--------------|---------------:|--------------:|--------------------:|
+| 50% | 122 | 30 | 80.3% |
+| 70% | 105 | 47 | 69.1% |
+| 90% | 58 | 94 | 38.2% |
+| **95%** | **40** | **112** | **26.3%** |
+| 99% | 25 | 127 | 16.4% |
+
+: Program completion rates by expenditure threshold {#tbl-completion-thresholds}
+
+The 95% threshold is selected as a reasonable definition of "substantially complete" that balances data availability with meaningful completion. Even at 90%, more than half the sample remains censored.
+
+### Disaster Coverage
+
+The sample covers 18 major disaster events from 2003 to 2023, including:
+
+- **Hurricane Katrina** (2005): The largest single disaster allocation, affecting Gulf Coast states
+- **Superstorm Sandy** (2012): Affecting Mid-Atlantic and Northeastern states
+- **Hurricane Harvey** (2017): Major impact on Texas coastal communities
+- **Hurricane Maria** (2017): Devastating Puerto Rico and U.S. Virgin Islands
+- **California Wildfires** (2017-2020): Multiple events requiring substantial recovery funding
+- **Hurricane Irma** (2017): Affecting Florida and Caribbean territories
+- **Louisiana Floods** (2016): Major flooding event requiring state coordination
+- **Multiple smaller events** (2003-2023): Various floods, hurricanes, and natural disasters
+
+The diversity of disaster types, geographic locations, and governmental structures provides substantial variation in both capacity indicators and completion timing.
+
+### Capacity Indicator Summary Statistics
+
+Table A.5 presents descriptive statistics for the key capacity indicators used in the survival analysis.
+
+| **Variable** | **N** | **Mean** | **SD** | **Min** | **Median** | **Max** |
+|:-------------|------:|---------:|-------:|--------:|-----------:|--------:|
+| Ratio_disbursed_to_obligated | 152 | 0.642 | 0.203 | 0.089 | 0.671 | 0.983 |
+| Ratio_expended_to_disbursed | 152 | 0.891 | 0.124 | 0.412 | 0.923 | 1.000 |
+| Spending_CV (coefficient of variation) | 152 | 0.847 | 0.521 | 0.156 | 0.712 | 3.245 |
+| Duration_months (for completed only) | 40 | 87.3 | 42.6 | 24 | 78.5 | 196 |
+| Total_obligated (millions) | 152 | $248.7 | $542.3 | $2.1 | $75.4 | $4,211.5 |
+
+: Descriptive statistics for capacity indicators {#tbl-capacity-descriptives}
+
+*Note: Duration_months is only defined for the 40 observations that reached 95% completion. The remaining 112 observations are right-censored and contribute partial duration information to the survival analysis.*
+
+**Key observations:**
+
+1. **Disbursement capacity** averages 64.2%, indicating that on average, grantees disburse approximately two-thirds of obligated funds over the observation period. Substantial variation exists (SD = 0.203), ranging from 8.9% to 98.3%.
+
+2. **Expenditure capacity** is higher, averaging 89.1%, suggesting that once funds are disbursed, they are spent relatively efficiently. Less variation exists in expenditure ratios (SD = 0.124).
+
+3. **Spending consistency** (inverse of CV) shows considerable variation, with some grantees maintaining steady quarterly spending patterns while others exhibit more volatile fund flows.
+
+4. **Grant sizes** vary dramatically, from $2.1 million to $4.2 billion, with high positive skew (median = $75.4M, mean = $248.7M). This justifies the use of log-transformed covariates in some model specifications.
+
+5. **Completion timing** for the 40 completed programs ranges from 2 to over 16 years (24-196 months), with a median of 78.5 months (approximately 6.5 years).
+
+### Data Quality
+
+The underlying quarterly performance report (QPR) data consists of 130,605 quarterly observations from 78 grantees across 206 grant allocations. Data quality checks identified:
+
+- Zero duplicate rows
+- Zero grant-state mismatches
+- 1.7% missing quarter identifiers (imputed)
+- 2.1% records with negative disbursements (corrected or excluded)
+- 3.4% records with negative expenditures (corrected or excluded)
+- 12.0% records with negative obligations (early reporting artifacts, corrected)
+
+After cleaning and aggregation to the grantee-disaster level, the final analysis panel of 152 observations has no missing values for the key capacity indicators or survival analysis variables.
 
 ## A.4 Data Cleaning
 

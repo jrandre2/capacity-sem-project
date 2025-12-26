@@ -22,6 +22,13 @@ python src/pipeline.py run_all
 
 # Manuscript
 cd manuscript_quarto && ./render_all.sh
+
+# Synthetic Peer Review (NEW)
+python src/pipeline.py review_status        # Check current review status
+python src/pipeline.py review_new --focus par_general  # Start new review cycle
+python src/pipeline.py review_verify        # Run verification and PAR compliance checks
+python src/pipeline.py review_archive       # Archive completed review
+python src/pipeline.py review_report        # Summary of all review cycles
 ```
 
 ## Current Methodology: Survival Analysis
@@ -203,6 +210,43 @@ See [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) for complete variable defin
 
 ---
 
+## Synthetic Peer Review System
+
+A systematic approach to stress-testing the manuscript before PAR submission using LLM-generated synthetic reviews.
+
+### Overview
+
+- **Purpose**: Identify methodological gaps, strengthen robustness, and anticipate reviewer concerns
+- **Focus Areas**: par_general (comprehensive), methods (methodology), policy (practitioner relevance), clarity (writing)
+- **Documentation**: See [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) for full methodology
+
+### Workflow
+
+1. **Generate Review**: `python src/pipeline.py review_new --focus par_general`
+2. **Obtain LLM Review**: Send manuscript + embedded prompt to Claude/GPT-4
+3. **Triage Comments**: Classify as VALID/ADDRESSED/SCOPE/INVALID in `manuscript_quarto/REVISION_TRACKER.md`
+4. **Implement Changes**: Address valid concerns, update manuscript, re-render
+5. **Verify**: `python src/pipeline.py review_verify` (includes PAR compliance checks)
+6. **Archive**: `python src/pipeline.py review_archive` when complete
+
+### PAR Compliance Checks
+
+The `review_verify` command automatically checks:
+
+- Word count ≤ 8,000 (currently ~7,851)
+- No "this study" self-references (currently 0)
+- Evidence for Practice section present
+- Abstract ≤ 150 words
+
+### Review History
+
+All completed reviews are archived in `doc/reviews/archive/` with the format:
+`review_NN_YYYY-MM-DD_FOCUS.md`
+
+Track all review cycles: `python src/pipeline.py review_report`
+
+---
+
 ## Documentation
 
 | File | Content |
@@ -213,6 +257,9 @@ See [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) for complete variable defin
 | `doc/DATA_DICTIONARY.md` | Variable definitions |
 | `doc/MANUSCRIPT_GUIDE.md` | PAR formatting and writing rules |
 | `doc/ANALYSIS_COMPARISON_REPORT.md` | Kaifa vs. survival analysis comparison |
+| `doc/SYNTHETIC_REVIEW_PROCESS.md` | **NEW**: Synthetic peer review methodology |
+| `doc/MANUSCRIPT_REVISION_CHECKLIST.md` | **NEW**: High-level revision tracking |
+| `doc/reviews/README.md` | **NEW**: Review cycle index |
 
 ---
 

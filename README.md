@@ -88,6 +88,11 @@ capacity-sem-project/
 | `make_figures` | Generate figures |
 | `run_all` | Run complete pipeline |
 | `list_models` | List available SEM specifications |
+| `review_status` | Display current review cycle status |
+| `review_new` | Initialize new review cycle (--focus par_general\|methods\|policy\|clarity) |
+| `review_verify` | Run verification and PAR compliance checks |
+| `review_archive` | Archive completed review cycle |
+| `review_report` | Generate summary of all review cycles |
 
 ## Manuscript Rendering
 
@@ -97,6 +102,30 @@ cd manuscript_quarto
 ```
 
 `render_all.sh` clears `_output/` before rendering to avoid stale files.
+
+## Manuscript Review
+
+The project includes a systematic peer review system for pre-submission validation:
+
+- **LLM-generated synthetic reviews** with PAR-specific prompts
+- **Structured triage workflow** (VALID/ADDRESSED/SCOPE/INVALID)
+- **Automated PAR compliance checks** (word count, style)
+- **Review cycle archival and tracking**
+
+See [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) for details.
+
+### Quick Start
+
+```bash
+# Start a new comprehensive PAR review
+python src/pipeline.py review_new --focus par_general
+
+# Check review status
+python src/pipeline.py review_status
+
+# Verify compliance and progress
+python src/pipeline.py review_verify
+```
 
 ## Data Quality Notes
 

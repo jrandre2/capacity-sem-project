@@ -96,6 +96,54 @@ Both quality report files use the same schema:
 
 ---
 
+## Time-Varying Panel Variables (`panel_time_varying.parquet`)
+
+The time-varying survival panel restructures data into interval format for Cox proportional hazards models with time-varying covariates.
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Grantee` | String | Grantee identifier |
+| `Disaster Type` | String | DRGR disaster type identifier |
+| `start` | Float | Interval start time (months) |
+| `stop` | Float | Interval end time (months) |
+| `E` | Integer | Event indicator (1=completion in this interval, 0=censored/ongoing) |
+| `Ratio_disbursed_to_obligated_lag1` | Float | Lagged (1 quarter) disbursement ratio |
+| `Ratio_expended_to_disbursed_lag1` | Float | Lagged (1 quarter) expenditure ratio |
+| `Ratio_disbursed_to_obligated_lag0` | Float | Contemporaneous disbursement ratio (lag=0, for sensitivity) |
+| `Ratio_expended_to_disbursed_lag0` | Float | Contemporaneous expenditure ratio (lag=0, for sensitivity) |
+| `Ratio_disbursed_to_obligated_lag2` | Float | 2-quarter lagged disbursement ratio (for sensitivity) |
+| `Ratio_expended_to_disbursed_lag2` | Float | 2-quarter lagged expenditure ratio (for sensitivity) |
+
+**Panel structure**:
+- One row per (grantee-disaster, quarter) interval
+- E=1 only on final row if program completed
+- Lagged ratios avoid reverse causality
+- Static covariates repeated on every row
+
+---
+
+## Survival Covariates
+
+Additional covariates engineered for time-varying survival models:
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Government_Type_State` | Integer | Dummy variable (1=State government, 0=Local government) |
+| `Log_Obligated` | Float | Log-transformed grant size: log(1 + Max_Obligated) |
+| `Prior_Grant_Count` | Integer | Number of prior CDBG-DR grants (missing treated as 0) |
+| `Prior_Grant_Dollars_log` | Float | Log-transformed prior grant dollars: log(1 + cumulative prior obligated) |
+| `Disaster_Year` | Integer | Year of disaster event (parsed from Disaster Type) |
+| `Population_log` | Float | Log-transformed jurisdiction population: log(1 + Population) |
+
+**Covariate sources**:
+- Government_Type_State: Derived from grantee name matching STATE_GOVERNMENTS list
+- Log_Obligated: Computed from Max_Obligated in panel
+- Prior experience: Computed from experience dataset
+- Disaster_Year: Parsed from Disaster Type string with manual fallback for exceptions
+- Population_log: From external population data
+
+---
+
 ## Aggregated Panel Variables
 
 | Variable | Type | Description |
@@ -286,3 +334,60 @@ Local governments include cities, counties, and special districts.
 | `RMSEA` | Float | Root Mean Square Error of Approximation |
 | `AIC` | Float | Akaike Information Criterion |
 | `BIC` | Float | Bayesian Information Criterion |
+
+---
+
+## Survival Analysis Output Variables
+
+### Cox Model Results (`survival_time_varying_cox_results.csv`)
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Variable` | String | Predictor variable name |
+| `Coefficient` | Float | Log hazard ratio (β) |
+| `SE` | Float | Standard error |
+| `z` | Float | z-statistic |
+| `p_value` | Float | p-value for hypothesis test |
+| `model` | String | Model specification identifier |
+
+### Hazard Ratios (`survival_hazard_ratios.csv`)
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Variable` | String | Predictor variable name |
+| `HR` | Float | Hazard ratio (exp(β)) |
+| `HR_Lower` | Float | Lower 95% CI for HR |
+| `HR_Upper` | Float | Upper 95% CI for HR |
+| `p_value` | Float | p-value for hypothesis test |
+| `model` | String | Model specification identifier |
+
+**Interpretation**:
+- HR > 1: Higher values increase completion hazard (faster completion)
+- HR < 1: Higher values decrease completion hazard (slower completion)
+- HR = 1: No effect
+
+### Bootstrap Standard Errors (`survival_bootstrap_se.csv`)
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Variable` | String | Predictor variable name |
+| `Coefficient` | Float | Point estimate (β) |
+| `Bootstrap_SE` | Float | Bootstrap clustered standard error |
+| `Bootstrap_Lower` | Float | Lower 95% CI from bootstrap distribution |
+| `Bootstrap_Upper` | Float | Upper 95% CI from bootstrap distribution |
+| `n_bootstrap` | Integer | Number of bootstrap iterations |
+| `model` | String | Model specification identifier |
+
+### Robustness Checks (`survival_robustness_checks.csv`)
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `model` | String | Model specification (capacity_only, full_covariates, stratified_gov_type, lag0, lag2) |
+| `variable` | String | Predictor variable name |
+| `HR` | Float | Hazard ratio |
+| `HR_Lower` | Float | Lower 95% CI for HR |
+| `HR_Upper` | Float | Upper 95% CI for HR |
+| `p_value` | Float | p-value |
+| `concordance` | Float | Concordance index (C-statistic) |
+| `n_obs` | Integer | Number of observations (intervals) |
+| `n_events` | Integer | Number of events (completions) |

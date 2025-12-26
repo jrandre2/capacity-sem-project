@@ -56,9 +56,9 @@ YEAR_MAPPINGS = {
 COMPLETION_THRESHOLD = 0.95  # 95% completion threshold for timeliness metrics
 
 # Multi-threshold duration analysis: compute duration at each threshold
-# from 30% to 100% in 5% increments (15 thresholds total)
+# from 20% to 100% in 5% increments (17 thresholds total)
 DURATION_THRESHOLDS = [
-    0.30, 0.35, 0.40, 0.45, 0.50,
+    0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
     0.55, 0.60, 0.65, 0.70, 0.75,
     0.80, 0.85, 0.90, 0.95, 1.00
 ]
@@ -189,3 +189,26 @@ AFT_DISTRIBUTIONS = ['weibull', 'lognormal', 'loglogistic']
 
 # Cox regularization penalty (for small samples)
 COX_PENALIZER = 0.1
+
+# ==============================================================================
+# Time-Varying Survival Analysis Configuration
+# ==============================================================================
+
+# Number of quarters to lag capacity ratios (avoid contemporaneous correlation)
+TV_LAG_QUARTERS = 1
+
+# Bootstrap iterations for clustered standard errors
+BOOTSTRAP_ITERATIONS = 1000
+
+# Cluster variable for bootstrap resampling
+BOOTSTRAP_CLUSTER_COL = 'Grantee'
+
+# Static covariates for survival models
+SURVIVAL_COVARIATE_COLS = [
+    'Government_Type_State',
+    'Log_Obligated',
+    'Prior_Grant_Count',
+    'Prior_Grant_Dollars_log',
+    'Disaster_Year',
+    'Population_log',
+]

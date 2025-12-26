@@ -18,6 +18,49 @@ import numpy as np
 from config import DATA_WORK_DIR, RATIO_DEFINITION, QPR_DOLLAR_FIELDS_ARE_FLOW
 from stages._io_utils import safe_to_parquet, safe_read_parquet
 from capacity_sem.data.loader import build_qpr_quarterly
+from capacity_sem.models.time_varying_survival import reshape_quarterly_to_time_varying, add_static_covariates
+
+
+def build_time_varying_panel(
+    qpr_quarterly: pd.DataFrame,
+    panel: pd.DataFrame,
+    lag_quarters: int = 1
+) -> pd.DataFrame:
+    """
+    Build time-varying survival panel with lagged capacity ratios.
+
+    This is the proper format for time-varying Cox models, avoiding
+    the reverse causality problem of mean_cumulative ratios.
+
+    Parameters
+    ----------
+    qpr_quarterly : pd.DataFrame
+        Quarterly data with cumulative totals
+    panel : pd.DataFrame
+        Grantee-disaster panel with static features
+    lag_quarters : int
+        Quarters to lag capacity ratios (default 1)
+
+    Returns
+    -------
+    pd.DataFrame
+        Time-varying panel ready for survival analysis
+    """
+
+    # Transform to time-varying format
+    tv_panel = reshape_quarterly_to_time_varying(
+        qpr_quarterly=qpr_quarterly,
+        panel_features=panel,
+        lag_quarters=lag_quarters
+    )
+
+    # Add static covariates
+    tv_panel = add_static_covariates(
+        tv_data=tv_panel,
+        panel_features=panel
+    )
+
+    return tv_panel
 
 
 def load_quarterly_data() -> pd.DataFrame:
@@ -465,6 +508,9 @@ def main():
     safe_to_parquet(panel, output_path)
     print(f"\n  Saved panel → {output_path}")
     print(f"  Columns: {list(panel.columns)}")
+
+    # Note: Time-varying survival panel is generated in s03b_survival_estimation
+    # after features (including Duration_of_completion) are computed in s02_features
 
     print("\n✓ Panel construction complete")
 

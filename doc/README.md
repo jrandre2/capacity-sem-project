@@ -22,6 +22,9 @@
 | [METHODOLOGY.md](METHODOLOGY.md) | Survival analysis and SEM methodology | Understanding the models |
 | [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | Variable definitions | Variable lookups |
 | [MANUSCRIPT_GUIDE.md](MANUSCRIPT_GUIDE.md) | PAR formatting and writing rules | Writing the manuscript |
+| [SYNTHETIC_REVIEW_PROCESS.md](SYNTHETIC_REVIEW_PROCESS.md) | Synthetic review methodology | Pre-submission review |
+| [MANUSCRIPT_REVISION_CHECKLIST.md](MANUSCRIPT_REVISION_CHECKLIST.md) | Revision tracking | Review status |
+| [reviews/README.md](reviews/README.md) | Review cycle index | Review history |
 | [CHANGELOG.md](CHANGELOG.md) | Change history | Tracking changes |
 
 ---
@@ -53,6 +56,16 @@ python src/pipeline.py make_figures
 
 ```bash
 python src/pipeline.py run_all
+```
+
+### Review Management
+
+```bash
+python src/pipeline.py review_status        # Check current review status
+python src/pipeline.py review_new --focus par_general
+python src/pipeline.py review_verify        # PAR compliance checks
+python src/pipeline.py review_archive
+python src/pipeline.py review_report
 ```
 
 ---
@@ -118,6 +131,43 @@ CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Re-render only
 Output: `manuscript_quarto/_output/` (HTML, PDF, DOCX)
 
 See [MANUSCRIPT_GUIDE.md](MANUSCRIPT_GUIDE.md) for PAR formatting and writing rules.
+
+---
+
+## Synthetic Review System
+
+The project includes a systematic peer review system for pre-submission manuscript validation using LLM-generated synthetic reviews.
+
+### Overview
+
+- **Purpose**: Identify methodological gaps, strengthen robustness, anticipate reviewer concerns
+- **Focus Areas**: par_general (comprehensive), methods (methodology), policy (practitioner relevance), clarity (writing)
+- **Documentation**: See [SYNTHETIC_REVIEW_PROCESS.md](SYNTHETIC_REVIEW_PROCESS.md)
+
+### Quick Workflow
+
+1. **Generate Review**: `python src/pipeline.py review_new --focus par_general`
+2. **Obtain LLM Review**: Send manuscript + embedded prompt to Claude/GPT-4
+3. **Triage Comments**: Classify as VALID/ADDRESSED/SCOPE/INVALID in `manuscript_quarto/REVISION_TRACKER.md`
+4. **Implement Changes**: Address valid concerns, update manuscript
+5. **Verify**: `python src/pipeline.py review_verify` (includes PAR compliance checks)
+6. **Archive**: `python src/pipeline.py review_archive`
+
+### PAR Compliance Checks
+
+The `review_verify` command automatically checks:
+
+- Word count ≤ 8,000 (currently ~7,851)
+- No "this study" self-references (currently 0)
+- Evidence for Practice section present
+- Abstract ≤ 150 words
+
+### Review History
+
+All completed reviews are archived in `reviews/archive/` with format:
+`review_NN_YYYY-MM-DD_FOCUS.md`
+
+Track all cycles: `python src/pipeline.py review_report`
 
 ---
 
