@@ -1,0 +1,176 @@
+---
+title: "Government Capacity and Disaster Recovery"
+---
+
+# Abstract {.unnumbered}
+
+This study examines the relationship between government capacity and disaster recovery outcomes using Structural Equation Modeling (SEM). We analyze Quarterly Performance Report (QPR) data from the Community Development Block Grant-Disaster Recovery (CDBG-DR) program to assess how administrative capacity affects the timeliness and effectiveness of post-disaster fund expenditure. Our latent variable model captures government capacity through financial management ratios while measuring recovery outcomes through duration, completion rates, and spending consistency. Results indicate [summarize key findings]. These findings have implications for disaster preparedness policy and the allocation of federal recovery resources.
+
+**Keywords:** government capacity, disaster recovery, structural equation modeling, CDBG-DR, public administration
+
+# Introduction
+
+Disasters impose substantial costs on communities, and effective recovery depends critically on the administrative capacity of implementing governments. The Community Development Block Grant-Disaster Recovery (CDBG-DR) program, administered by the U.S. Department of Housing and Urban Development (HUD), is a major vehicle for federal disaster recovery assistance. However, significant variation exists in how quickly and effectively grantees expend allocated funds.
+
+This study addresses a fundamental question: Does government administrative capacity affect disaster recovery outcomes? We operationalize capacity through observable financial management indicators and assess its relationship to recovery timeliness and effectiveness using Structural Equation Modeling.
+
+## Research Questions
+
+1. How does government capacity, measured through fund management metrics, relate to recovery outcomes?
+2. Do the relationships between capacity and outcomes differ between state and local governments?
+3. How do external factors (population, disaster severity, prior experience) moderate these relationships?
+
+## Contribution
+
+This research contributes to the disaster recovery literature by:
+
+- Developing a latent variable framework for measuring government capacity
+- Utilizing comprehensive QPR data across multiple disaster events and grantees
+- Applying SEM to simultaneously estimate measurement and structural relationships
+- Comparing capacity effects across government types
+
+# Literature Review
+
+## Government Capacity
+
+The concept of government capacity has received extensive attention in public administration scholarship. Capacity encompasses the resources, skills, and organizational structures that enable effective policy implementation [@capacity_ref_1]. In the disaster context, capacity includes preparedness, resource mobilization, and administrative efficiency.
+
+## Disaster Recovery Performance
+
+Recovery performance has been conceptualized along multiple dimensions including speed, equity, and completeness [@recovery_ref_1]. Prior research has documented substantial variation in recovery timelines and outcomes across communities.
+
+## CDBG-DR Program
+
+The CDBG-DR program provides flexible block grants to states, cities, and counties recovering from presidentially-declared disasters. Grantees submit Quarterly Performance Reports documenting fund obligation and expenditure, providing a rich data source for analyzing recovery dynamics.
+
+# Data
+
+## Data Sources
+
+Our analysis draws on:
+
+1. **Quarterly Performance Reports (QPR)**: Fund obligation, disbursement, and expenditure data by grantee, disaster, and activity type
+2. **Population data**: Grantee jurisdiction populations from Census Bureau
+3. **Disaster severity**: Composite index based on damage assessments
+4. **Grantee experience**: Prior CDBG-DR grants administered
+
+## Sample Construction
+
+The analysis sample includes [describe sample]. We exclude [describe exclusions] to ensure adequate observation periods for computing outcome measures.
+
+## Variable Definitions
+
+### Capacity Indicators
+
+- **Disbursement ratio**: Funds disbursed to recipients relative to obligated funds
+- **Expenditure ratio**: Funds expended by recipients relative to disbursed funds
+
+### Outcome Indicators
+
+- **Duration**: Months to reach 95% expenditure of final obligated amount
+- **Spending CV**: Coefficient of variation of quarterly expenditures
+
+### Covariates
+
+- **Population**: Jurisdiction population (log-transformed and scaled)
+- **Severity**: Disaster severity composite index (scaled)
+- **Experience**: Prior grant management experience index (scaled)
+
+# Methodology
+
+## Structural Equation Modeling
+
+We employ Structural Equation Modeling to simultaneously estimate:
+
+1. **Measurement models** linking observed indicators to latent constructs
+2. **Structural paths** relating latent capacity to latent outcomes
+
+The general SEM can be written:
+
+$$
+\eta = B\eta + \Gamma\xi + \zeta
+$$
+
+where $\eta$ represents endogenous latent variables, $\xi$ represents exogenous variables, $B$ captures relationships among endogenous variables, $\Gamma$ captures effects of exogenous on endogenous variables, and $\zeta$ represents structural disturbances.
+
+## Model Specification
+
+Our primary model specifies:
+
+**Measurement Model (Capacity)**:
+$$
+\text{gov\_cap} =\!\!\sim \text{Ratio\_disbursed} + \text{Ratio\_expended}
+$$
+
+**Measurement Model (Outcome)**:
+$$
+\text{recovery\_outcome} =\!\!\sim \text{Duration\_log} + \text{Spending\_CV}
+$$
+
+**Structural Model**:
+$$
+\text{recovery\_outcome} \sim \text{gov\_cap}
+$$
+
+## Estimation
+
+Models are estimated using maximum likelihood via the `semopy` Python package. We assess model fit using standard indices (CFI, TLI, RMSEA, SRMR) against conventional thresholds.
+
+## Robustness Checks
+
+We conduct robustness analyses including:
+
+- Alternative model specifications
+- Subset analyses by government type
+- Sample sensitivity tests
+- Covariate inclusion/exclusion
+
+# Results
+
+## Descriptive Statistics
+
+[Include descriptive statistics table]
+
+## Model Fit
+
+[Include model fit table]
+
+## Parameter Estimates
+
+[Include parameter estimates table]
+
+## Subset Analyses
+
+[Discuss state vs. local differences]
+
+## Robustness Checks
+
+[Discuss robustness results]
+
+# Discussion
+
+## Key Findings
+
+[Summarize main findings]
+
+## Theoretical Implications
+
+[Discuss implications for capacity theory]
+
+## Policy Implications
+
+[Discuss implications for CDBG-DR administration and disaster preparedness]
+
+## Limitations
+
+[Discuss limitations]
+
+## Future Research
+
+[Suggest future directions]
+
+# Conclusion
+
+[Concluding summary]
+
+# References {.unnumbered}

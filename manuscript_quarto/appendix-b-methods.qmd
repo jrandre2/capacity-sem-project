@@ -1,0 +1,86 @@
+# Appendix B: Methodological Details {.unnumbered}
+
+## B.1 Structural Equation Modeling Framework
+
+Structural Equation Modeling combines confirmatory factor analysis (CFA) with path analysis. The key advantage is simultaneous estimation of:
+
+1. Measurement relationships (indicators → latents)
+2. Structural relationships (latents → latents)
+
+### Notation
+
+- $\eta$: Endogenous latent variables
+- $\xi$: Exogenous latent variables
+- $y$: Observed indicators for endogenous latents
+- $x$: Observed indicators for exogenous latents
+- $\Lambda_y$, $\Lambda_x$: Factor loading matrices
+- $B$: Structural coefficients among endogenous latents
+- $\Gamma$: Structural coefficients from exogenous to endogenous
+- $\Psi$: Covariance matrix of structural errors
+- $\Theta_\varepsilon$, $\Theta_\delta$: Measurement error covariances
+
+### Model Equations
+
+**Measurement Model**:
+$$
+y = \Lambda_y \eta + \varepsilon
+$$
+$$
+x = \Lambda_x \xi + \delta
+$$
+
+**Structural Model**:
+$$
+\eta = B\eta + \Gamma\xi + \zeta
+$$
+
+## B.2 Model Identification
+
+For model identification, we require:
+
+1. At least 2 indicators per latent variable (preferably 3+)
+2. Scale setting for each latent (fix first loading to 1 or fix variance to 1)
+3. Positive degrees of freedom: $df = \frac{p(p+1)}{2} - q > 0$
+
+where $p$ is the number of observed variables and $q$ is the number of free parameters.
+
+## B.3 Estimation Method
+
+Maximum likelihood estimation minimizes the fitting function:
+
+$$
+F_{ML} = \ln|\Sigma(\theta)| + \text{tr}(S\Sigma(\theta)^{-1}) - \ln|S| - p
+$$
+
+where $\Sigma(\theta)$ is the model-implied covariance matrix, $S$ is the sample covariance matrix, and $p$ is the number of observed variables.
+
+## B.4 Model Fit Assessment
+
+We evaluate model fit using multiple indices:
+
+| Index | Good Fit | Acceptable Fit |
+|-------|----------|----------------|
+| CFI | ≥ 0.95 | ≥ 0.90 |
+| TLI | ≥ 0.95 | ≥ 0.90 |
+| RMSEA | ≤ 0.05 | ≤ 0.08 |
+| SRMR | ≤ 0.05 | ≤ 0.08 |
+
+## B.5 Alternative Specifications
+
+We test multiple model specifications:
+
+1. **Full model**: All proposed indicators
+2. **Reduced model**: Minimal indicators per factor
+3. **With covariates**: Adding population, severity, experience
+4. **Subset models**: State vs. local governments
+
+## B.6 Software and Replication
+
+Analysis is conducted using:
+
+- Python 3.10+
+- semopy package for SEM estimation
+- pandas, numpy for data manipulation
+- matplotlib for visualization
+
+Replication materials are available in the project repository.

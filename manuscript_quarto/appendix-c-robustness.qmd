@@ -1,0 +1,59 @@
+# Appendix C: Robustness Checks {.unnumbered}
+
+## C.1 Alternative Model Specifications
+
+We compare multiple model specifications to assess sensitivity:
+
+| Model | Gov Capacity Indicators | Recovery Outcome Indicators | df |
+|-------|------------------------|----------------------------|-----|
+| Full | 3 (incl. Timeliness) | 3 (incl. Duration) | 8 |
+| Reduced | 2 | 2 | 1 |
+| Optimal V1 | 2 | 2 (log duration, CV) | 1 |
+| Improved 3x3 | 3 (incl. Startup Lag) | 3 (incl. Time to 50%) | 8 |
+
+[Include model comparison table]
+
+## C.2 Government Type Subsets
+
+We estimate the model separately for:
+
+1. **All grantees** (N = [full sample])
+2. **State governments** (N = [state sample])
+3. **Local governments** (N = [local sample])
+
+[Include subset comparison table]
+
+## C.3 Sample Sensitivity
+
+We vary the minimum quarters requirement to assess sample sensitivity:
+
+| Min Quarters | N | CFI | RMSEA | Capacity Effect |
+|--------------|---|-----|-------|-----------------|
+| 3 | | | | |
+| 4 | | | | |
+| 5 | | | | |
+| 6 | | | | |
+
+## C.4 Covariate Robustness
+
+We test sensitivity to covariate inclusion:
+
+1. **Baseline**: No covariates
+2. **Population only**: Adding population control
+3. **Full covariates**: Population, severity, and experience
+
+[Include covariate robustness table]
+
+## C.5 Standard Error Robustness
+
+We compare standard error estimates:
+
+1. **ML standard errors**: Default maximum likelihood
+2. **Bootstrap standard errors**: 500 replications
+3. **Cluster-robust adjustments**: Clustering by disaster event
+
+[Include SE comparison table]
+
+## C.6 Sensitivity Conclusions
+
+[Summarize robustness findings]

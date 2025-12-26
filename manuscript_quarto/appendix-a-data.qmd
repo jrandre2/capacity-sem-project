@@ -1,0 +1,76 @@
+# Appendix A: Data Description {.unnumbered}
+
+## A.1 Data Sources
+
+### Quarterly Performance Reports (QPR)
+
+The QPR data is extracted from HUD's DRGR (Disaster Recovery Grant Reporting) system. This administrative data captures:
+
+- Fund allocations by appropriation
+- Obligation, disbursement, and expenditure amounts
+- Activity types (housing, infrastructure, economic development, etc.)
+- Quarterly reporting periods
+
+### Population Data
+
+Population figures are obtained from:
+
+- U.S. Census Bureau decennial census (2000, 2010, 2020)
+- American Community Survey estimates for intercensal years
+
+### Disaster Severity
+
+The disaster severity index is constructed from:
+
+- FEMA declared disaster data
+- Individual Assistance (IA) and Public Assistance (PA) obligations
+- Number of affected counties
+
+### Experience Indicators
+
+Grantee experience measures are computed from:
+
+- Years since first CDBG-DR grant
+- Number of prior disaster grants managed
+- Cumulative prior obligated dollars
+
+## A.2 Variable Construction
+
+### Financial Ratios
+
+$$
+\text{Ratio\_disbursed\_to\_obligated} = \frac{\text{Total Disbursed}}{\text{Total Obligated}}
+$$
+
+$$
+\text{Ratio\_expended\_to\_disbursed} = \frac{\text{Total Expended}}{\text{Total Disbursed}}
+$$
+
+### Duration Measures
+
+Duration is computed as the number of months from first obligation to reaching 95% expenditure of the final obligated amount. Log-transformation is applied to address right-skewness:
+
+$$
+\text{Duration\_log} = \ln(\text{Duration\_months})
+$$
+
+### Spending Consistency
+
+The coefficient of variation (CV) measures spending consistency:
+
+$$
+\text{Spending\_CV} = \frac{\sigma_{\text{quarterly}}}{\mu_{\text{quarterly}}}
+$$
+
+## A.3 Sample Characteristics
+
+[Include sample characteristics tables]
+
+## A.4 Data Cleaning
+
+The following cleaning steps were applied:
+
+1. Removed total rows (aggregated across quarters)
+2. Filtered to grantees with at least 4 quarters of reporting
+3. Excluded records with zero obligated amounts
+4. Winsorized extreme ratio values at 1st and 99th percentiles
