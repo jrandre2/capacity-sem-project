@@ -46,3 +46,6 @@ outputs_backup*/
 
 # macOS metadata
 ._*
+
+# Census/spatial data (large files, download from Census Bureau)
+data_work/spatial/
