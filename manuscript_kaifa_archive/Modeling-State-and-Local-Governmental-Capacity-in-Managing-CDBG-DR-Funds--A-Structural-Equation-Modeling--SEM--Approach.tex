@@ -1,0 +1,1341 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  letterpaper,
+  DIV=11,
+  numbers=noendperiod]{scrreprt}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{5}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{needspace}
+\renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip}{\par\bigskip}
+\KOMAoption{captions}{tableheading}
+\makeatletter
+\@ifpackageloaded{bookmark}{}{\usepackage{bookmark}}
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Modeling State and Local Governmental Capacity in Managing CDBG-DR Funds: A Structural Equation Modeling (SEM) Approach},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Modeling State and Local Governmental Capacity in Managing
+CDBG-DR Funds: A Structural Equation Modeling (SEM) Approach}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+\renewcommand*\contentsname{Table of contents}
+{
+\hypersetup{linkcolor=}
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+
+\bookmarksetup{startatroot}
+
+\chapter{Modeling State and Local Governmental Capacity in Managing
+CDBG-DR Funds: A Structural Equation Modeling (SEM)
+Approach}\label{modeling-state-and-local-governmental-capacity-in-managing-cdbg-dr-funds-a-structural-equation-modeling-sem-approach}
+
+\section*{Abstract}\label{abstract}
+\addcontentsline{toc}{section}{Abstract}
+
+\markright{Abstract}
+
+This study investigates how state and local governments across the
+United States mobilize and manage federal CDBG-DR (Community Development
+Block Grant-Disaster Recovery) resources using quarterly QPR (Quarterly
+Performance Reports) data on funds obligated, disbursed, and expended in
+response to 2003-2023 disasters. By constructing average ratios of
+disbursed-to-obligated and expended-to-disbursed funds, the analysis
+develops comparable indicators of governmental capacity and
+fund-management performance across 78 disaster-affected jurisdictions.
+To examine how these capacity measures shape disaster recovery
+performance, the study applies both cross-sectional and longitudinal
+Structural Equation Modeling (SEM) to model latent constructs of
+governmental capacity and recovery outcomes at the state and local
+levels.
+
+The cross-sectional SEM results reveal clear differences in
+administrative capacity across levels of government. State governments
+consistently demonstrate stronger capacity to move funds from obligation
+to disbursement and to fully expend obligated amounts, and these
+capacity indicators show a stable, positive association with recovery
+outcomes across multiple model specifications. Local governments, by
+contrast, exhibit lower disbursement capacity and greater variability in
+administrative processes; their recovery outcomes are more sensitive to
+expenditure consistency and project-level timeliness. Sensitivity
+analyses removing highly collinear indicators, such as duration of
+completion, further show that state-level capacity-outcome relationships
+remain robust, whereas local-level relationships are more fragile and
+dependent on operational constraints.
+
+Together, these findings highlight persistent capacity disparities
+across jurisdictions and underscore the importance of targeted
+administrative support for local program implementation. As a next step,
+the study will extend the SEM framework into a longitudinal SEM design
+to capture how governmental capacity evolves over time, assess whether
+jurisdictions improve their fund-management efficiency with program
+experience, and more directly examine dynamic pathways linking
+administrative capability to long-term disaster recovery performance.
+
+\section{Introduction}\label{introduction}
+
+The effective administration of federal disaster recovery funds is
+central to advancing equitable and timely community recovery. In the
+United States, the Community Development Block Grant--Disaster Recovery
+(CDBG-DR) program has become one of the largest and most flexible
+sources of long-term recovery assistance following major disaster
+declarations. Yet despite its national importance, the pace at which
+grantees -- states, counties, cities, and territories -- obligate,
+disburse, and expend CDBG-DR funds varies markedly across jurisdictions
+and disaster events. Slow or inconsistent financial performance has been
+repeatedly linked to delayed housing reconstruction, prolonged
+displacement, uneven economic recovery, and persistent inequities for
+low-income households and historically marginalized communities (GAO,
+2019; HUD OIG, 2021).
+
+A central challenge is that governmental ``capacity'' in disaster
+recovery is difficult to measure directly. Previous evaluations often
+rely on single-period financial indicators or case-based assessments,
+making it difficult to compare capacity across time, jurisdictions, and
+disaster contexts. The Quarterly Performance Reports (QPRs) submitted
+through HUD's Disaster Recovery Grant Reporting (DRGR) system offer a
+rare opportunity to construct longitudinal, comparable indicators. These
+reports consistently document obligated, disbursed, and expended amounts
+for each grantee and activity, providing rich panel data for assessing
+financial performance. However, raw financial quantities alone cannot
+capture the multidimensional nature of administrative capacity, which
+includes efficiency, timeliness, and internal process management.
+
+To address these issues, this study develops a longitudinal Structural
+Equation Modeling (SEM) framework to conceptualize, quantify, and
+compare governmental capacity in managing CDBG-DR funds. Using quarterly
+data on obligations, disbursements, expenditures, efficiency ratios, and
+temporal lags, we define capacity as a latent construct that evolves
+over time and varies across state and local governments responding to
+different disaster types. The study proceeds by: (1) conducting a
+descriptive analysis of quarterly fund flows; (2) constructing
+operational indicators of financial efficiency and timeliness; and (3)
+estimating a SEM with latent governmental capacity to evaluate
+cross-jurisdictional and cross-hazard differences.
+
+This approach advances the literature in three ways. First, it offers a
+systematic and empirically grounded measurement of administrative
+capacity using longitudinal financial data, correcting for measurement
+error, and capturing temporal dynamics. Second, it provides a
+comparative framework to assess differences between state and local
+grantees and across disaster contexts. Third, it develops practical
+diagnostic indicators -- ratios and lags -- that can be readily
+incorporated into HUD's monitoring and technical-assistance processes.
+Together, these contributions help clarify how administrative capacity
+shapes financial performance and recovery outcomes, offering new
+insights for policy reform and institutional support programs.
+
+\section{Literature Review}\label{literature-review}
+
+\subsection{Context: CDBG-DR administration and performance
+challenges}\label{context-cdbg-dr-administration-and-performance-challenges}
+
+CDBG-DR has expanded substantially over the last two decades,
+distributing billions of dollars following major hurricanes, floods,
+wildfires, and other disasters. As a block-grant program, it affords
+grantees considerable flexibility, but this flexibility also introduces
+substantial administrative burden. Numerous evaluations have documented
+persistent delays in grant implementation, including slow procurement,
+environmental reviews, and program startups (GAO, 2019; HUD, 2020).
+Grantees differ considerably in their experience with federal recovery
+programs, staffing levels, contracting capacity, and administrative
+processes -- all factors that influence the speed and effectiveness of
+fund deployment (Zhang \& Peacock, 2019; Howell \& Elliott, 2019).
+
+HUD requires quarterly reporting through the DRGR/QPR system, which
+captures obligated, disbursed, and expended amounts by activity and
+period. These data are widely used by auditors, HUD staff, and
+researchers to assess financial performance. However, prior analyses
+generally rely on descriptive summaries or aggregate comparisons rather
+than modeling the underlying determinants or latent dimensions of
+administrative capacity.
+
+\subsection{Characteristics of disaster recovery
+administration}\label{characteristics-of-disaster-recovery-administration}
+
+In general, three consistent characteristics emerge in the fields of
+disaster recovery administration. (1) Significant cross-grantee
+variation: Grantees differ widely in their pace of obligations,
+disbursements, and expenditures. Prior experience with CDBG-DR or
+similar programs is often associated with faster deployment (GAO, 2019).
+(2) Differences between state and local administration: Some studies
+note that local governments may be more responsive in certain housing
+programs, whereas states may be more effective in infrastructure or
+regional projects (Peacock et al., 2022). However, evidence remains
+mixed due to methodological limitations and inconsistent measures. (3)
+Administrative processes strongly influence timelines: Delays often stem
+from procurement rules, environmental reviews, inconsistent staffing,
+and challenges in coordinating across agencies (Smith \& Martin, 2021).
+Institutional capacity -- not only disaster severity -- plays a critical
+role in shaping the speed of recovery.
+
+Despite substantial progress, key gaps persist in the literature: (1)
+There is a lack of a latent, multidimensional measure of administrative
+capacity, as no studies integrate multiple performance indicators
+(obligations, disbursements, expenditures, ratios, and timing lags) into
+a unified latent construct. (2) Longitudinal and comparative analyses
+remain limited; instead, most studies rely on static indicators or short
+time windows, while longitudinal modeling that captures capacity growth,
+learning effects, or decline over time remains unexplored. (3) There is
+an urgent need to conduct cross-hazard and cross-jurisdiction
+comparisons because existing analyses rarely compare performance across
+disaster types, nor do they consistently evaluate how state and local
+governments differ in their time-varying capacity. (4) Existing studies
+exhibit a weak operational linkage between research metrics and
+management tools. For instance, although QPR data are widely used, there
+are no established diagnostic indicators for HUD or grantees that link
+observed financial performance to underlying capacity indicators in a
+validated way.
+
+\subsection{Methods used in prior
+scholarship}\label{methods-used-in-prior-scholarship}
+
+Research on disaster recovery administration has primarily used four
+methodological approaches. (1) Descriptive and programmatic analyses:
+HUD and GAO frequently publish summaries highlighting differences in
+fund utilization rates across grantees (GAO, 2019; HUD, 2020). Academic
+and think-tank studies also document patterns in program launch times,
+housing completions, and expenditure trajectories (Enterprise Community
+Partners, 2024). These analyses reveal substantial variation but do not
+explain the institutional factors that drive performance. (2)
+Regression-based and panel analyses: Many public administration and
+planning studies use regression or panel models to examine how staffing,
+experience, governance type, or disaster severity influence
+implementation speed (Pipa, 2020; Gerber \& Robinson, 2022). While
+informative, these models treat financial indicators as observed
+outcomes without addressing measurement errors or the possibility that
+capacity itself is a latent construct reflected by multiple correlated
+indicators.
+
+(3) Case studies and qualitative evaluations: Qualitative studies offer
+deep insights into administrative processes, identifying barriers such
+as restrictive procurement rules, complex environmental reviews, and
+coordination challenges among agencies (Smith \& Martin, 2021; Peacock
+et al., 2022). These studies provide context but are not designed for
+comparative or longitudinal generalization. (4) Latent-variable and SEM
+approaches: In disaster studies more broadly, SEM has been used to
+measure constructs such as preparedness, perceived risk, and
+institutional resilience (Geddam et al., 2024; Cutter et al., 2019).
+However, applications of SEM to federal disaster-recovery finance,
+especially using QPR longitudinal data, remain extremely limited. No
+existing study develops a latent, time-varying measure of governmental
+capacity using efficiency ratios and financial timing indicators.
+
+\subsection{Research gaps and
+workflow}\label{research-gaps-and-workflow}
+
+In summary, there remains an unaddressed need to use longitudinal
+modeling and comparative analyses for offering a comprehensive
+understanding of state and local governmental capacity to manage the
+flow of obligated, disbursed, and expended CDBG-DR funds, particularly
+regarding efficiency ratios and timeliness across administrative
+jurisdictions and disaster events. Therefore, this study directly
+addresses this gap by constructing a quarterly, latent measure of
+governmental capacity from QPR data and estimating a longitudinal SEM to
+evaluate differences across jurisdictions and hazard types. By
+integrating efficiency ratios, expenditure timing lags, and quarterly
+variability into a unified analytic framework, the study establishes a
+rigorous, replicable, and policy-relevant method for understanding
+administrative capacity in disaster recovery.
+
+\section{Data and Research Design}\label{data-and-research-design}
+
+\subsection{Data description and
+sources}\label{data-description-and-sources}
+
+The dataset, sourced from the quarterly performance reports (QPR) of
+HUD's Disaster Recovery Grant Reporting (DRGR) system, covers quarterly
+obligated, disbursed, and expended CDBG-DR funds across 78 states and
+local governments (grantees) and 18 disaster events spanning from 2001
+to 2023. Each data row represents the set of obligated, disbursed, and
+expended QPR funds for one disaster recovery program or activity
+administered by a grantee in response to one disaster event. Notably,
+obligated QPR funds refer to the amount of federal funding that HUD has
+formally committed to a grantee for eligible disaster recovery
+activities, and these funds are reserved but not yet spent. Disbursed
+QPR funds refer to the amount of money that has been reimbursed or
+transferred from HUD to the grantee after expenditures are reported and
+approved, showing the federal government's completed payment to the
+grantee. Expended QPR funds refer to the portion of obligated funds that
+the grantee has already spent on approved recovery activities, which
+reflects actual financial outlays.
+
+Since these QPR fund data are quarterly and program-specific, this study
+has a panel (time-series cross-sectional) structure. To describe the
+overall capacity of both state and local governments, we separately
+calculated the quarterly cumulative values of obligated, disbursed, and
+expended QRP funds across different disaster recovery programs for each
+grantee. With the processed dataset, this study focuses on both state-
+and county-level data to model and compare state and local governmental
+capacity in managing CDBG-DR funds. Similarly, to compare and analyze
+governmental capacity in certain disaster recovery programs, we
+calculated the quarterly cumulative values of obligated, disbursed, and
+expended QPR funds for each grantee, separately for housing,
+administration, infrastructure, and planning programs.
+
+\subsection{Indicators of governmental
+capacity}\label{indicators-of-governmental-capacity}
+
+In this study, state and local governmental capacity in managing CDBG-DR
+funds cannot be directly observed from the dataset, but it manifests
+through how efficiently and consistently funds move from obligation,
+disbursement, to expenditure across time and programs. Therefore, to
+model state and local governmental capacity, we put forward several
+possible latent constructs as follows: (1) Administrative/managerial
+capacity, which can be measured through the ratio of disbursed to
+obligated funds, the ratio of expended to disbursed funds, and the
+timeliness (lag) between each stage; (2) Program performance, which can
+be measured by the speed and completeness of fund expenditure per
+quarter.
+
+The applications of these latent constructs are reflected in the
+following ways: (1) using descriptive statistics to describe the overall
+and program-specific capacity of state and local governments, capture
+the change over time, and further compare and analyze their differences;
+(2) incorporating these latent constructs into longitudinal modeling
+(e.g., SEM) to quantify and compare state and local governmental
+capacity in disaster recovery, and further analyze possible contributing
+factors to the performance of state and local governmental capacity.
+
+\subsection{Metrics of disaster recovery program
+outcomes}\label{metrics-of-disaster-recovery-program-outcomes}
+
+In this study, disaster recovery program outcomes are characterized by
+the average duration of completion in months across disaster events, the
+average percentage of obligated funds fully expended, and the average
+quarterly-by-quarterly variance of expended funds. Specifically, the
+duration of completion is equal to the time difference between the start
+quarter (the quarter when the funds were first obligated) and the end
+quarter (the earlier one between the current quarter and the quarter
+when over 95\% of obligated funds were fully expended). The percentage
+of obligated funds fully expended equals the ratio of total expended
+funds to total obligated funds. The quarterly-by-quarterly variance of
+expended funds refers to the normalized standard deviation of quarterly
+expended funds, indicating the smoothness of managing quarterly funds.
+
+\subsection{Research design}\label{research-design}
+
+Based on the processed dataset and capacity indicators, we conducted the
+following research design to capture state and local governmental
+capacity to manage CDBG-DR funds:
+
+\begin{itemize}
+\item
+  To conduct a descriptive analysis of quarterly variations in QPR funds
+  across local and state governments for different disaster events. This
+  includes comparing obligated, expended, and disbursed funds; financial
+  performance among selected states (e.g., California, Florida, Georgia,
+  and Texas); and responses across different disaster events.
+\item
+  To compute ratios of QPR fund disbursed/obligated and
+  expended/disbursed, as well as lags of time difference between QPR
+  fund obligation and expenditure. This creates latent variables at each
+  time point when modeling quarterly capacity.
+\item
+  To develop a Structural Equation Modeling (SEM) with latent constructs
+  of governmental capacity to quantify and compare the differences in
+  the capacity of state and local governments in responding to different
+  disaster events over time.
+\end{itemize}
+
+\section{Methodology: Structural Equation
+Modeling}\label{methodology-structural-equation-modeling}
+
+In this study, we use Structural Equation Modeling (SEM) to model and
+quantify state and local governmental capacity in managing CDBG-DR
+funds, given longitudinal quarterly data on obligated, disbursed, and
+expended amounts across multiple programs. Therefore, the goal is to
+capture state and local governmental capacity as a latent construct
+reflected in how funds are allocated and utilized over time.
+
+\subsection{Modeling approaches: Cross-sectional vs.~longitudinal
+SEM}\label{modeling-approaches-cross-sectional-vs.-longitudinal-sem}
+
+Cross-sectional SEM is used to analyze the overall capacity of state or
+local governments across quarters, specifically creating a latent
+variable \emph{StateGovCapacity} or \emph{LocalGovCapacity} measured by
+quarterly average ratios or indicators (the average ratio of disbursed
+to obligated funds across quarters, the average ratio of expended to
+disbursed funds across quarters, and the average timeliness across
+disaster events -- an inverse to the duration of completion). The goal
+is to model relationships between state or local governmental capacity
+and disaster recovery program outcomes (the average duration of
+completion in months across disaster events, the average percentage of
+obligated funds fully expended, and the average quarterly-by-quarterly
+variance of expended funds). Notably, the duration of completion is
+equal to the time difference between the start quarter (the quarter when
+the funds were first obligated) and the end quarter (the earlier one
+between the current quarter and the quarter when over 95\% of obligated
+funds were fully expended); The percentage of obligated funds fully
+expended equals to the ratio of total expended funds to total obligated
+funds; The quarterly-by-quarterly variance of expended funds refers to
+the normalized standard deviation of quarterly expended funds,
+indicating smoothness of managing quarterly funds. For cross-sectional
+SEM, we aggregated each average of these indicators at a grantee level
+(e.g., each state or local government) across different disaster events
+and disaster recovery programs. Therefore, it cannot capture the change
+of state or local governmental capacity to manage CDBG-DR funds over
+time.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_01_cross_sectional_sem.png}}
+
+}
+
+\caption{\label{fig-cross-sectional-sem}Illustration of the
+cross-sectional structural equation modeling (SEM) for modeling the
+relationship between state or local governmental capacity and disaster
+recovery program outcomes.}
+
+\end{figure}%
+
+In contrast, a longitudinal SEM is developed to investigate how state or
+local governmental capacity changes over time, specifically measuring
+each ratio or indicator at multiple quarters and applying these data to
+the latent growth curve model (LGCM) or autoregressive latent trajectory
+(ALT) model to quantify and characterize the latent constructs of state
+or local governmental capacity to manage CDBG-DR funds for disaster
+recovery. In the modeling process, this study also includes control
+variables such as population size, disaster magnitude, and
+administrative staffing to improve SEM performance and add explanatory
+power of the latent constructs of state or local governmental capacity.
+Additionally, cross-lagged effects are also incorporated into SEM to
+examine causality between fund stages and explain the efficiency and
+timeliness of CDBG-DR funds.
+
+\subsection{Experimental design and model
+evaluation}\label{experimental-design-and-model-evaluation}
+
+The SEM approach is implemented in the following ways: (1) to apply
+quarterly average ratios or indicators and control variables to
+cross-sectional SEM to evaluate the overall capacity of state or local
+governmental capacity; (2) to use quarterly ratios or indicators and
+control variables to longitudinal SEM to quantify the change of state or
+local governmental capacity over time; (3) to use multi-group SEM to
+compare state or local governmental capacity differences across regions,
+disaster events, and program types (e.g., housing, administration,
+infrastructure, and planning programs).
+
+To evaluate SEM performance, this study introduces three fit indices,
+such as Comparative Fit Index (CFI), Root Mean Square Error of
+Approximation (RMSEA), and Akaike Information Criterion (AIC), to assess
+how well SEM approach captures the data structure and models the
+relationships between state or local governmental capacity and disaster
+recovery program outcomes. Specifically, CFI compares the fit of a
+target model to a null model, with values greater than 0.96 indicating a
+good fit. RMSEA measures the fit of a model relative to the sample data,
+with lower values indicating a better fit. AIC refers to an index of
+relative model fit, with the preferred model being the one with the
+lowest AIC value.
+
+\subsection{Model interpretation}\label{model-interpretation}
+
+The outcomes of the cross-sectional SEM will output estimates of latent
+constructs of governmental capacity, which reflect the overall average
+capacity of state or local governments to manage CDBG-DR funds across
+quarters. Additionally, we can compare the differences in state or local
+governmental capacity and further identify and analyze possible
+contributing factors to the overall governmental capacity differences.
+
+In contrast, based on the longitudinal SEM, we can estimate an intercept
+to describe the baseline capacity of state or local governments and a
+slope to capture the change in governmental capacity over time.
+Specifically, baseline capacity (the estimated intercept) describes how
+capable jurisdictions were at the start, while change rate (the
+estimated slope) assesses whether they are improving or declining in
+managing CDBG-DR funds. Additionally, we can also estimate path
+coefficients to indicate how state or local governmental capacity
+influences disaster recovery program outcomes, as well as possible
+contributing factors to governmental capacity and its change over time.
+With this information, we can answer the following question: ``Are some
+jurisdictions improving in capacity over time while others stagnate?''
+
+\section{Results}\label{results}
+
+\subsection{Empirical comparison of governmental
+capacity}\label{empirical-comparison-of-governmental-capacity}
+
+The 2017 hurricane season -- including major events such as Harvey,
+Irma, and Maria -- along with a series of 2018 disaster events such as
+windstorms, wildfires, drought, flooding, mudslides, and seismic
+hazards, caused widespread devastation across the United States. These
+events resulted in substantial infrastructure damage, economic
+disruption, and loss of life. States like Florida and Texas were among
+the most severely affected: Florida faced repeated and destructive
+storms, including Hurricane Irma in 2017 and additional events in 2018,
+while Texas endured catastrophic impacts from Hurricane Harvey, one of
+the costliest natural disasters in U.S. history.
+
+Given the scale and complexity of these disasters, examining how
+governments manage QPR-reported recovery funds offers valuable and
+representative insights into their capacity to implement disaster
+recovery programs. Studying and comparing governmental performance in
+administering these funds across the 2017 and 2018 events helps
+illuminate strengths, gaps, and variations in recovery management --
+critical for improving future disaster readiness and response.
+
+\subsubsection{Quarterly average ratios of disbursed/obligated and
+expended/disbursed
+funds}\label{quarterly-average-ratios-of-disbursedobligated-and-expendeddisbursed-funds}
+
+Figure 2 illustrates substantial variation in how state and local
+governments managed QPR funds following the 2017 hurricanes. Florida and
+California exhibit the strongest overall administrative capacity,
+maintaining the highest Disbursed/Obligated ratios
+(\textasciitilde0.48-0.50), while Puerto Rico shows the lowest
+performance at roughly 0.21, indicating slower movement of obligated
+funds into active disbursement. Texas -- GLO and the Virgin Islands fall
+in the middle range, though still below California and Florida.
+
+Across all governments, the Expended/Disbursed ratio is consistently
+high -- generally between 0.90 and 1.10 -- suggesting that once funds
+are disbursed, they are effectively expended. Florida and Texas -- GLO
+exceed 1.0 on average, reflecting rapid or catch-up expenditure
+activity, whereas Missouri and the Virgin Islands fall slightly lower
+but still retain strong expenditure efficiency. In summary, the major
+differences lie in governments' ability to convert obligations into
+disbursements, while expenditure performance after disbursement remains
+uniformly strong.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_02_2017_hurricanes_ratios.png}}
+
+}
+
+\caption{\label{fig-2017-hurricanes-ratios}Illustration of quarterly
+average ratios of disbursed/obligated and expended/disbursed funds
+across different governments in response to the 2017 Hurricanes.}
+
+\end{figure}%
+
+Figure 3 shows a wide variation in governments' ability to move funds
+through the disaster recovery pipeline in 2018. Disbursed/Obligated
+ratios are generally low, with most governments disbursing less than
+half of what they obligate. Performance ranges from very limited
+disbursement in Hawaii County, American Samoa, and California (around
+0.1--0.2) to relatively strong performance in North Carolina -- NCORR,
+Wisconsin, and the ``rogco'' jurisdiction, which approaches or exceeds
+0.6-1.0.
+
+In contrast, Expended/Disbursed ratios remain consistently high across
+governments, indicating that once funds are disbursed, they are
+efficiently spent. Values hover near or above 1.0 for most
+jurisdictions, with particularly high ratios in Alaska and rogco (near
+2.0), suggesting rapid expenditure relative to disbursement. Overall,
+governments differ substantially in their ability to convert obligations
+into disbursements, while their expenditure efficiency after
+disbursement remains uniformly strong.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_03_2018_disasters_ratios.png}}
+
+}
+
+\caption{\label{fig-2018-disasters-ratios}Illustration of quarterly
+average ratios of disbursed/obligated and expended/disbursed funds
+across different governments in response to the 2018 disasters.}
+
+\end{figure}%
+
+Across both years, governments consistently show high Expended/Disbursed
+ratios, meaning that once funds are released, they are spent
+efficiently. The key difference lies in Disbursed/Obligated performance:
+2017 governments -- especially Florida and California -- generally
+disbursed a larger share of obligated funds, while many 2018 governments
+had much lower disbursement levels, with only a few (e.g., NCORR, rogco)
+performing strongly. Overall, the main capacity gap in both years is
+slow disbursement, not expenditure efficiency.
+
+\subsubsection{Quarterly variations in QPR funds across state
+governments}\label{quarterly-variations-in-qpr-funds-across-state-governments}
+
+Based on the findings from 5.1.1, we selected the four common states --
+California, Florida, Georgia, and Texas -- to further compare and
+analyze QPR-reported quarterly obligated, disbursed, and expended funds
+in response to both the 2017 Hurricanes and 2018 disasters, offering a
+more comprehensive understanding of the overall capacity of different
+state governments to manage QPR funds.
+
+2017 Hurricanes Harvey, Irma, and Maria
+
+The quarterly QPR data reveal distinct funding trajectories across
+California, Florida, Georgia, and Texas after the 2017 hurricane season,
+reflecting differences in disaster severity, federal allocation size,
+and state administrative capacity, as shown in Figure 4.
+
+\emph{Scale of allocation and initial obligations}: Texas and Florida --
+both heavily impacted by major hurricanes -- show the largest and
+fastest increases in obligated funds, highlighting the scale of damages
+and the urgency of federal support. For instance, Texas experienced an
+immediate surge to more than \$4.5 billion in obligations by late 2018,
+driven by the extensive destruction caused by Hurricane Harvey. Florida
+recorded a substantial but smaller increase, with obligations exceeding
+\$300 million early in the recovery period, reflecting the widespread
+impacts of Hurricane Irma. In contrast, California and Georgia, which
+received smaller CDBG-DR allocations tied to unmet needs and indirect
+impacts, show slower, more incremental obligation patterns. Georgia's
+obligations grow steadily over several years, while California's
+mid-cycle increase reflects later-awarded mitigation-oriented funds that
+required program setup before ramping up.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_04_2017_hurricanes_quarterly_variation.png}}
+
+}
+
+\caption{\label{fig-2017-hurricanes-quarterly}Quarterly variations of
+QPR funds obligated, disbursed, and expended in California, Florida,
+Georgia, and Texas in response to the 2017 Hurricanes}
+
+\end{figure}%
+
+\emph{Pace of expenditures and disbursements}: Differences in
+expenditure and disbursement trajectories illustrate how each state
+structured its programs and sequenced its recovery activities. Texas
+shows the most sustained and linear upward trend, with expenditures
+surpassing \$4 billion by 2025 -- consistent with long-term housing
+reconstruction, buyouts, and large infrastructure projects. Florida
+displays a similar pattern on a smaller scale, driven by ongoing
+statewide housing recovery initiatives. California records moderate
+expenditure growth associated with housing, utility resilience, and
+mitigation programs. Georgia maintains the smallest but steadily
+increasing expenditures, reflecting consistent execution within a
+limited funding envelope.
+
+\emph{Relationship between obligations, expenditures, and
+disbursements}: Across all states, expenditures and disbursements move
+closely together, indicating effective conversion of obligated funds
+into active projects. However, timing and magnitude differ: Texas shows
+the largest early gap between obligations and expenditures, aligning
+with rapid obligation of major program budgets followed by multiyear
+construction cycles. Florida demonstrates a closer alignment between
+obligations and expenditures, suggesting more incremental spending and
+shorter project timelines. California and Georgia display smaller but
+proportionate spending patterns, consistent with narrower and more
+targeted program scopes.
+
+Overall, the four-state comparison shows how disaster severity,
+allocation size, and program design shape financial trajectories in the
+QPR system. Specifically, Texas emerges as the most rapid and largest
+allocator of funds, reflecting unprecedented hurricane impacts. Florida
+follows as a major, though more moderate, recovery case. California and
+Georgia represent smaller, targeted recovery programs that progressed
+steadily across the reporting period. Together, these patterns highlight
+the need to align federal recovery allocations with actual disaster
+impacts and illustrate the varied administrative timelines states
+require to translate obligations into measurable recovery outcomes.
+
+2018 Disasters
+
+The quarterly QPR data show how California, Florida, Georgia, and Texas
+-- GLO managed CDBG-DR funds allocated for the 2018 disaster recovery
+programs, as shown in Figure 5. The trajectories illustrate differences
+in allocation size, pace of program rollout, and administrative
+capacity.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_05_2018_disasters_quarterly_variation.png}}
+
+}
+
+\caption{\label{fig-2018-disasters-quarterly}Quarterly variations of QPR
+funds obligated, disbursed, and expended in California, Florida,
+Georgia, and Texas in response to the 2018 disasters}
+
+\end{figure}%
+
+\emph{Scale of allocation and initial obligations}: Obligation levels
+vary considerably across the four states, reflecting differences in the
+scale of 2018 disaster impacts and federal allocations. For instance,
+California shows the largest and most rapid growth in obligations,
+rising sharply to nearly \$1 billion by late 2024, driven by substantial
+allocations for wildfire recovery and mitigation. Florida records
+significant obligations as well, increasing to over \$700 million,
+reflecting extensive impacts from Hurricanes Michael and other 2018
+storms. Georgia exhibits a much smaller obligation footprint, gradually
+rising to just above \$40 million, consistent with a more limited set of
+affected areas. Texas -- GLO demonstrates moderate but steady obligation
+growth, reaching approximately \$65 million, corresponding to targeted
+programs addressing localized 2018 flood and storm damage.
+
+\emph{Pace of expenditures and disbursements}: The expenditure and
+disbursement trajectories indicate how each state translated obligated
+funds into active project spending. Specifically, California shows a
+steady and gradual rise in both expenditures and disbursements,
+reflecting multi-year wildfire and mitigation projects that required
+extended planning before full implementation. Florida demonstrates a
+stronger and more consistent increase in spending, with expenditures
+closely tracking obligations -- indicative of large-scale housing and
+infrastructure recovery programs rolling out steadily. Georgia shows
+modest but continuous growth in expenditures and disbursements,
+signaling stable progress within a relatively small program. Texas --
+GLO shows accelerated spending beginning in 2023, with disbursements and
+expenditures rising in parallel, reflecting the ramp-up of targeted
+recovery activities.
+
+\emph{Relationship between obligations, expenditures, and
+disbursements}: Patterns across the four states highlight varying
+administrative timelines and program structures. California demonstrates
+a widening gap between obligations and expenditures after 2023,
+consistent with the long lead time typical of mitigation and wildfire
+resilience projects. Florida shows the closest alignment among the three
+metrics, reflecting incremental obligation practices and relatively
+rapid conversion of funds into active spending. Georgia maintains
+proportionate relationships across all metrics, consistent with a narrow
+program scope and steady implementation pace. Texas -- GLO shows an
+initial lag between obligations and expenditures, followed by stronger
+convergence as spending accelerates in 2023-2024.
+
+Overall, the four-state comparison demonstrates how differences in
+disaster scale and program design shaped QPR-reported financial
+management: California shows the largest and most rapid obligation
+growth, driven by severe wildfire impacts and significant mitigation
+investments. Florida represents a major, steadily progressing recovery
+program with strong alignment between obligations and expenditures.
+Georgia reflects a small but consistently executed program with
+proportional spending. Texas -- GLO shows a targeted program that gained
+momentum over time as expenditures increased. Together, these patterns
+highlight the varied administrative trajectories states follow as they
+move from federal allocations to on-the-ground recovery outcomes for
+2018 disaster events.
+
+\subsubsection{Latent constructs of state governmental capacity for 2017
+\& 2018 disaster recovery
+programs}\label{latent-constructs-of-state-governmental-capacity-for-2017-2018-disaster-recovery-programs}
+
+Following the SEM structure illustrated in Figure 1, the model
+incorporating three measures of governmental capacity and three
+indicators of disaster recovery outcomes -- based on data from seven
+state governments responding to the 2017 Hurricanes Harvey, Irma, and
+Maria -- exhibited poor model fit, as shown in Figure 6. The
+goodness-of-fit statistics (CFI = 0.1808, RMSEA = 2.1299, AIC =
+--38.5003) indicate that the specified relationships do not adequately
+reflect the underlying data structure. Although the estimated paths
+suggest that higher governmental capacity may be associated with
+improved recovery outcomes, these results are not reliable. The primary
+limitation is the extremely small sample size, which introduces
+substantial estimation uncertainty and constrains the model's ability to
+generate stable and interpretable parameter estimates.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_06_sem_state_2017_hurricanes.png}}
+
+}
+
+\caption{\label{fig-sem-state-2017}Illustration of SEM outputs of state
+governmental capacity to manage QPR funds for 2017 Hurricanes Harvey,
+Irma, and Maria.}
+
+\end{figure}%
+
+As shown in Figure 7, the SEM estimated using data from thirteen
+state/local governments responding to the 2018 disasters demonstrates a
+comparatively better statistical fit. The goodness-of-fit indices (CFI =
+0.6201, RMSEA = 0.6705, AIC = 18.1289) suggest that the model captures
+part of the underlying data structure, although it still falls short of
+conventional thresholds for acceptable fit. Notably, several path
+coefficients indicate that greater governmental capacity is associated
+with poorer recovery outcomes -- an unexpected result that contradicts
+theory and practical experience. This counterintuitive pattern is
+largely attributable to methodological limitations, including the small
+sample size and the combination of state and local governments within a
+single model, both of which introduce substantial estimation uncertainty
+and hinder the generation of stable, meaningful parameter estimates.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_07_sem_state_2018_disasters.png}}
+
+}
+
+\caption{\label{fig-sem-state-2018}Illustration of SEM outputs of state
+governmental capacity to manage QPR funds for 2018 Disasters.}
+
+\end{figure}%
+
+\subsection{Comparison of overall capacity of state/local
+governments}\label{comparison-of-overall-capacity-of-statelocal-governments}
+
+\subsubsection{Measurements of governmental capacity: Average ratios of
+QPR fund disbursed/obligated and
+expended/disbursed}\label{measurements-of-governmental-capacity-average-ratios-of-qpr-fund-disbursedobligated-and-expendeddisbursed}
+
+State government:
+
+Figure 8 summarizes how state governments managed QPR funds across
+disaster events from 2003-2023 using two key indicators of
+administrative capacity. The Disbursed/Obligated ratio is generally low
+and clustered between 0.2 and 0.7 for most states, indicating that many
+governments disburse only a portion of obligated funds each quarter,
+with wide variation in their ability to convert obligations into
+actionable spending. In contrast, the Expended/Disbursed ratio is
+consistently high -- typically between 0.8 and 1.5 -- showing that once
+funds are disbursed, most states are effective at expending them. A few
+extreme values, such as Mississippi's unusually high expenditure ratio,
+reflect irregular reporting or one-time spending spikes rather than
+sustained performance. Overall, the figure demonstrates that the primary
+capacity challenge for state governments lies in timely disbursement,
+while their expenditure efficiency after disbursement remains strong
+across nearly all jurisdictions.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_08_state_avg_ratios_2003_2023.png}}
+
+}
+
+\caption{\label{fig-state-ratios-2003-2023}Illustration of quarterly
+average ratios of disbursed/obligated and expended/disbursed funds
+across different state governments and 2003-2023 disaster events.}
+
+\end{figure}%
+
+Local government:
+
+Figure 9 presents two key indicators of local governmental capacity in
+managing QPR funds across disaster events from 2003-2023. Overall, local
+governments exhibit low and tightly clustered Disbursed/Obligated
+ratios, typically below 0.5, indicating that most jurisdictions disburse
+only a modest share of obligated funds each quarter. In contrast,
+Expended/Disbursed ratios are consistently high, generally falling
+between 0.8 and 1.5, suggesting strong expenditure efficiency once funds
+are disbursed. Several extreme spikes -- for example in Detroit (MI) and
+San Marcos (TX) -- reflect irregular reporting or one-time expenditure
+surges rather than sustained performance patterns.
+
+Compared with state governments, local governments show even lower
+disbursement capacity but similarly strong expenditure performance. This
+contrast highlights a systematic pattern: both state and local
+governments are effective at spending funds after disbursement, but
+local jurisdictions face greater challenges in moving obligated dollars
+into active use, likely due to more limited administrative resources,
+staffing, and program management capacity.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_09_local_avg_ratios_2003_2023.png}}
+
+}
+
+\caption{\label{fig-local-ratios-2003-2023}Illustration of quarterly
+average ratios of disbursed/obligated and expended/disbursed funds
+across different local governments and 2003-2023 disaster events.}
+
+\end{figure}%
+
+\subsubsection{Latent constructs of governmental capacity:
+Cross-sectional
+SEM}\label{latent-constructs-of-governmental-capacity-cross-sectional-sem}
+
+State government:
+
+As shown in Figure 10, the SEM estimated using data from 38 state
+governments responding to disasters between 2003 and 2023 demonstrates a
+considerably stronger model fit compared with earlier models. The
+goodness-of-fit indices (CFI = 0.8602, RMSEA = 0.3141, AIC = 24.0418)
+indicate that the specified relationships capture much of the underlying
+data structure and meaningfully reflect how state governments manage QPR
+funds.
+
+The path estimates reveal a positive and statistically significant
+relationship between state governmental capacity and overall recovery
+outcomes (\emph{β} = 71.024, \emph{p} = 0.01). This suggests that states
+with stronger administrative capacity -- measured through their ability
+to disburse, expend, and timely process QPR funds -- tend to achieve
+more favorable recovery performance. Although not all individual
+capacity indicators load equally onto the latent construct (e.g.,
+timeliness and expended/disbursed show weaker contributions), the model
+still identifies a coherent underlying dimension of administrative
+effectiveness.
+
+On the outcome side, the latent recovery construct is shaped by multiple
+program performance indicators, including duration of completion,
+quarter-to-quarter expenditure stability, and the share of fully
+expended obligated funds. The significant loading on the latter
+(\emph{β} = 0.017, \emph{p} = 0.00) indicates that effective and full
+expenditure of obligated funds is a key driver of stronger recovery
+outcomes.
+
+Taken together, the SEM supports the interpretation that states with
+higher capacity -- those able to move funds efficiently through the
+stages of obligation, disbursement, and expenditure -- tend to implement
+recovery programs more effectively. Although some relationships remain
+modest or statistically weak, the overall model suggests that
+administrative capacity is an important structural determinant of
+disaster recovery performance at the state level.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_10_sem_state_2003_2023.png}}
+
+}
+
+\caption{\label{fig-sem-state-2003-2023}Illustration of SEM outputs of
+state governmental capacity to manage QPR funds across 2003-2023
+disaster events.}
+
+\end{figure}%
+
+Local government:
+
+As shown in Figure 11, the SEM estimated using data from 40 local
+governments responding to disasters between 2003 and 2023 demonstrates a
+moderately strong model fit. The goodness-of-fit indices (CFI = 0.7847,
+RMSEA = 0.3027, AIC = 24.1708) indicate that the specified relationships
+capture much of the underlying data structure, though not as robustly as
+the state-level model.
+
+The estimated paths suggest that local governmental capacity has a
+positive and statistically significant effect on disaster recovery
+outcomes (\emph{β} = 223.685, \emph{p} = 0.00). This indicates that
+local jurisdictions with greater administrative capacity -- measured
+through fund disbursement, expenditure patterns, and timeliness -- tend
+to achieve better program performance. Among the observed indicators,
+timeliness loads strongly and significantly onto local capacity,
+suggesting that procedural efficiency plays a more central role for
+local governments than for state governments. At the same time, the
+expended/disbursed ratio shows a weaker contribution, reflecting the
+high expenditure efficiency observed across most local jurisdictions and
+therefore offering less discriminatory power in measuring capacity.
+
+On the recovery side, the latent recovery outcome variable is shaped by
+indicators such as duration of completion, quarter-to-quarter
+expenditure stability, and the proportion of fully expended obligated
+funds, with the latter showing a significant positive loading (\emph{β}
+= 0.008, \emph{p} = 0.00). This suggests that local governments
+demonstrating consistent follow-through in spending obligated funds tend
+to achieve stronger recovery outcomes.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_11_sem_local_2003_2023.png}}
+
+}
+
+\caption{\label{fig-sem-local-2003-2023}Illustration of SEM outputs of
+local governmental capacity to manage QPR funds across 2003-2023
+disaster events.}
+
+\end{figure}%
+
+When compared with the state-level SEM, two differences emerge clearly.
+First, the magnitude of the capacity effect is substantially larger for
+local governments, implying that variations in administrative capability
+play an even more decisive role at the local level, where staffing,
+expertise, and program management resources are often more constrained.
+Second, state models exhibit more balanced contributions across capacity
+indicators, whereas the local model places greater weight on timeliness
+and procedural efficiency -- core bottlenecks in local program
+implementation.
+
+Overall, the SEM results indicate that while both state and local
+governments benefit from higher administrative capacity, the sensitivity
+of recovery outcomes to capacity constraints is greater at the local
+level. This highlights the importance of sustained technical assistance,
+staffing support, and administrative investment for local governments
+managing complex, long-term federal recovery programs.
+
+\subsubsection{Latent constructs of governmental capacity:
+Cross-sectional SEM without duration of
+completion}\label{latent-constructs-of-governmental-capacity-cross-sectional-sem-without-duration-of-completion}
+
+Because timeliness, an indicator of governmental capacity, is strongly
+correlated with duration of completion, an outcome measure, we removed
+duration of completion from the SEM to reduce multicollinearity and
+improve the robustness of the model. This adjustment allows for a
+clearer separation between the latent constructs of capacity and
+recovery performance, and it also serves as a sensitivity test for the
+stability of the state- and local-level results.
+
+State government:
+
+As shown in Figure 12, the revised SEM -- estimated using data from 38
+state governments responding to disasters between 2003 and 2023 --
+exhibits improved model fit. The goodness-of-fit indices (CFI = 0.8470,
+RMSEA = 0.2531, AIC = 21.2906) indicate that the simplified structure
+captures most of the underlying data patterns and performs better than
+the full model that included duration of completion.
+
+Importantly, the path estimates reveal that state governmental capacity
+continues to have a positive and statistically significant effect on
+recovery outcomes even after removing the completion-time measure. The
+disbursed/obligated ratio remains the strongest contributor to the
+capacity construct and significantly predicts better recovery
+performance (\emph{β} = 1.235, \emph{p} = 0.01). This underscores that,
+for state governments, the ability to convert obligated funds into
+disbursed funds is a critical driver of overall program success. Other
+measures -- such as expended/disbursed and timeliness -- still load onto
+the capacity construct, but with weaker influence, reflecting less
+variation across states in later stages of fund expenditure.
+
+Comparing the SEM results with and without duration of completion
+highlights several meaningful differences. In the original model,
+duration of completion played a substantial role in defining recovery
+outcomes, and its strong correlation with timeliness risked overstating
+the influence of administrative speed. In the revised model, recovery
+outcomes are driven primarily by expenditure consistency and the
+proportion of obligated funds fully expended, both of which remain
+conceptually and empirically distinct from capacity indicators. The
+persistence of significant relationships in the reduced model shows that
+state-level capacity effects are stable and not dependent on the
+inclusion of project completion times.
+
+Overall, the sensitivity analysis demonstrates that state governmental
+capacity is strongly tied to financial throughput rather than project
+duration, and that removing duration of completion strengthens the
+clarity and reliability of the model. This contrasts with local
+governments -- where recovery performance is more dependent on
+timeliness and completion speed -- highlighting a fundamental difference
+in how administrative capacity shapes outcomes across levels of
+government.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_12_sem_state_2003_2023_no_duration.png}}
+
+}
+
+\caption{\label{fig-sem-state-2003-2023-no-duration}Illustration of SEM
+outputs of state governmental capacity to manage QPR funds across
+2003-2023 disaster events.}
+
+\end{figure}%
+
+Local government:
+
+As shown in Figure 13, the SEM estimated using data from 40 local
+governments -- after removing duration of completion from the recovery
+outcome construct -- produces a moderately improved statistical fit. The
+goodness-of-fit indices (CFI = 0.5295, RMSEA = 0.6601, AIC = 18.4010)
+indicate that although the model does not meet conventional fit
+thresholds, it captures a meaningful portion of the underlying data
+structure and performs worse than the full model that included duration
+of completion. Removing this indicator helps reduce multicollinearity
+with timeliness, one of the capacity measures, and increases the
+interpretability of the local-level SEM results.
+
+The path coefficients reveal a nuanced relationship between local
+governmental capacity and disaster recovery outcomes. Local capacity,
+defined by disbursement efficiency, expenditure efficiency, and
+timeliness, shows a statistically significant and positive association
+with recovery performance through the ratio of disbursed to obligated
+funds (\emph{β} = 1.199, \emph{p} = 0.00). This reinforces that local
+jurisdictions with stronger administrative ability to move funds early
+in the grant cycle tend to achieve better program outcomes. However, the
+expended-to-disbursed ratio and timeliness show weaker or marginal
+contributions to the capacity construct (\emph{p} = 0.14 and \emph{p} =
+0.05), reflecting wide variability in local administrative processes and
+the greater operational constraints faced by local governments.
+
+On the recovery side, indicators such as quarter-to-quarter expenditure
+stability and the share of fully expended obligated funds remain central
+to defining recovery outcomes, with the latter demonstrating a strong
+and stable loading across model specifications. This suggests that
+consistent follow-through in spending obligated funds is a primary
+marker of successful local recovery performance.
+
+Comparing the SEM results with vs.~without duration of completion
+highlights an important shift: In the full model, duration of completion
+strongly influenced the recovery construct, and its high correlation
+with timeliness risked inflating the apparent role of administrative
+speed. In the reduced model, the influence of timeliness weakens,
+indicating that local recovery outcomes are shaped more by how
+effectively funds are expended, rather than by project‐completion
+timelines alone.
+
+\begin{figure}
+
+\centering{
+
+\pandocbounded{\includegraphics[keepaspectratio]{figures/fig_13_sem_local_2003_2023_no_duration.png}}
+
+}
+
+\caption{\label{fig-sem-local-2003-2023-no-duration}Illustration of SEM
+outputs of local governmental capacity to manage QPR funds across
+2003-2023 disaster events.}
+
+\end{figure}%
+
+When contrasted with state-level SEM results, additional differences
+emerge. State governments show a stronger and more stable relationship
+between capacity and recovery outcomes, even after removing duration of
+completion. State capacity is driven largely by financial throughput --
+especially disbursement efficiency -- and the effects remain significant
+and consistent across sensitivity tests. By contrast, local governments
+exhibit greater sensitivity to model specification: their
+capacity-outcome relationship is more fragile and heavily shaped by
+variability in timeliness and expenditure behavior.
+
+Overall, the SEM results indicate that while both state and local
+governments benefit from stronger administrative capacity, local
+governments face greater operational constraints and exhibit less stable
+capacity-outcome relationships when project duration is removed. This
+underscores the need for targeted administrative support at the local
+level, where limited staffing and procedural complexity can pose
+persistent barriers to effective disaster recovery program management.
+
+\subsection{Evolution of state/local governmental capacity: Longitudinal
+SEM}\label{evolution-of-statelocal-governmental-capacity-longitudinal-sem}
+
+\section{Discussion}\label{discussion}
+
+\section{Conclusions}\label{conclusions}
+
+This study developed a Structural Equation Modeling (SEM) framework to
+measure and quantify governmental capacity as a latent construct. Use
+the model to compare differences in capacity across local and state
+governments, identify potential structural or contextual factors driving
+these differences, and offer evidence-based recommendations to improve
+governmental capacity for future climate-related risks and disasters.
+
+\section{References}\label{references}
+
+Cutter, S. L., Ash, K. D., \& Emrich, C. T. (2019). Urban--rural
+differences in disaster resilience. \emph{Annals of the American
+Association of Geographers, 109}(5), 1237--1252.
+\url{https://doi.org/10.1080/24694452.2018.1535887}
+
+Enterprise Community Partners. (2024). \emph{Federal recovery funds
+temper rent increases after disaster.} Enterprise Community Partners.
+\href{https://enterprisecommunity.org/}{https://enterprisecommunity.org}
+
+Geddam, S. M., Garg, P., \& Tyagi, A. (2024). Enhancing disaster
+management effectiveness: A structural equation modeling approach.
+\emph{International Journal of Disaster Risk Reduction, 99}, 104123.
+\url{https://doi.org/10.1016/j.ijdrr.2023.104123}
+
+Gerber, B. J., \& Robinson, S. E. (2022). Local government capacity and
+disaster resilience: The role of institutional arrangements and
+administrative resources. \emph{Public Administration Review, 82}(2),
+340--352. \url{https://doi.org/10.1111/puar.13449}
+
+Howell, J., \& Elliott, J. R. (2019). As disaster costs rise, so does
+inequality: Social disparities in spending after Hurricane Harvey.
+\emph{Social Problems, 66}(3), 448--467.
+\url{https://doi.org/10.1093/socpro/spy016}
+
+HUD. (2020). \emph{CDBG-DR: Performance measurement and reporting
+guidance.} U.S. Department of Housing and Urban Development.
+
+HUD Office of Inspector General. (2021). \emph{HUD did not adequately
+oversee Community Development Block Grant--Disaster Recovery grantees.}
+Office of Inspector General, U.S. Department of Housing and Urban
+Development.
+
+Pipa, A. (2020). \emph{Reforming disaster recovery funding: A framework
+for an effective and equitable federal approach.} Brookings Institution.
+
+Peacock, W. G., Van Zandt, S., \& Zhang, Y. (2022). Inequitable housing
+recovery? Evidence from disaster housing assistance programs in the
+United States. \emph{Natural Hazards Review, 23}(4), 04022029.
+\url{https://doi.org/10.1061/(ASCE)NH.1527-6996.0000562}
+
+Smith, G., \& Martin, A. (2021). Barriers to post-disaster housing
+recovery: Procurement, permitting, and administrative constraints.
+\emph{Journal of the American Planning Association, 87}(3), 345--359.
+\url{https://doi.org/10.1080/01944363.2020.1857071}
+
+U.S. Government Accountability Office. (2019). \emph{Disaster recovery:
+Better monitoring of CDBG-DR grants is needed to ensure program
+effectiveness} (GAO-19-232). U.S. Government Accountability Office.
+
+Zhang, Y., \& Peacock, W. G. (2019). Planning for post-disaster recovery
+and reconstruction. In H. Rodríguez, A. Trainor, \& E. L. Quarantelli
+(Eds.), \emph{Handbook of disaster research} (2nd ed., pp.~373--393).
+Springer. \url{https://doi.org/10.1007/978-3-319-63254-4_20}
+
+
+
+
+\end{document}

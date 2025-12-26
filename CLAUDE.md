@@ -24,30 +24,97 @@ python src/pipeline.py run_all
 cd manuscript_quarto && ./render_all.sh
 ```
 
-## Key Concepts
+## Current Methodology: Survival Analysis
 
-### SEM Model
+The manuscript uses **survival analysis** (Cox Proportional Hazards, Accelerated Failure Time models) to analyze disaster recovery completion timing. SEM infrastructure remains for sensitivity analysis but is not the primary methodology.
 
-We use Structural Equation Modeling to analyze how government capacity affects disaster recovery outcomes:
+### Why Survival Analysis?
 
-- **Latent Capacity**: Measured by disbursement and expenditure ratios
-- **Latent Outcome**: Measured by log duration and spending CV
-- **Structural Path**: Capacity → Outcome relationship
+With 73.7% of CDBG-DR programs incomplete at the 95% threshold, standard regression approaches face a censoring problem. Survival analysis properly handles right-censored observations while utilizing the full sample.
 
-### Key Model Specifications
+### Key Results
 
-| Model | Description |
+| Model | Disbursement HR/TR | p-value | Expenditure HR/TR | p-value |
+|-------|-------------------|---------|-------------------|---------|
+| Cox PH | 4.367 | 0.006 | 0.958 | 0.626 |
+| AFT Lognormal | 0.157 | <0.001 | 1.008 | 0.954 |
+
+- **Disbursement ratio**: Significant predictor (HR = 4.37, p = 0.006)
+- **Expenditure ratio**: Not significant
+- **Sample**: N=152 grantee-disaster pairs (with proper censoring)
+
+### Capacity Indicators
+
+- `Ratio_disbursed_to_obligated`: Cumulative mean ratio of disbursed to obligated funds
+- `Ratio_expended_to_disbursed`: Cumulative mean ratio of expended to disbursed funds
+
+---
+
+## Manuscript
+
+### Location and Rendering
+
+- **Primary manuscript**: `manuscript_quarto/index.qmd`
+- **Archived Kaifa SEM manuscript**: `manuscript_kaifa_archive/`
+- **Output**: `manuscript_quarto/_output/`
+
+```bash
+cd manuscript_quarto
+./render_all.sh                      # All formats (HTML, PDF, DOCX)
+CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Skip pipeline re-run
+```
+
+### Target Journal: Public Administration Review (PAR)
+
+| Requirement | Value |
+|-------------|-------|
+| Word limit | 8,000 (including abstract, endnotes, references) |
+| Abstract | 150 words maximum |
+| Font | 12-point Times New Roman |
+| Spacing | Double-spaced |
+| Margins | 1 inch |
+| Citations | Chicago Author-Date (16th ed.) |
+| Reference names | Full first names required |
+| Special section | Evidence for Practice (3-5 bullet points) |
+| Review type | Blind (no author identification) |
+
+### Manuscript Writing Rules
+
+#### DO NOT
+
+- Use "this study" self-references — present findings directly
+- Compare to internal prior work (Kaifa SEM manuscript)
+- Use metacommentary ("advances the literature", "first application", "most robust estimates")
+- Reference "latent constructs" or "complex measures" comparatively
+- Include "why survival analysis succeeds where SEM fails" framing
+- Add comparisons to "prior approaches" when meaning internal work
+
+#### DO
+
+- Present findings directly without self-referential framing
+- Reference legitimate external literature appropriately (GAO, HUD, academic publications)
+- Let the methodology speak for itself
+- Keep robustness comparisons in appendices (appendix-c)
+
+#### Examples
+
+| Avoid | Use Instead |
 |-------|-------------|
-| `exp_optimal_v1` | Recommended: 2x2 factor structure, log duration, CV |
-| `full` | Original 3x3 with Timeliness (has redundancy issues) |
-| `reduced` | Model without Duration indicator (for robustness) |
-| `improved_3x3` | Enhanced 3x3 addressing measurement concerns |
+| "This study examines..." | "Government administrative capacity affects..." |
+| "This approach advances the literature..." | [Simply present the analysis] |
+| "Prior latent variable approaches may overcomplicate..." | [Remove or cite external literature] |
+| "Unlike traditional SEM approaches..." | [Present survival analysis on its own merits] |
 
-### Government Subsets
+### Legitimate External References
 
-- `all` - Full sample
-- `state` - State governments only (37 grantees)
-- `local` - Local governments only (40 grantees)
+Citing published research is appropriate:
+- GAO reports: `[@gao2019]`
+- HUD evaluations: `[@hud2020]`
+- Academic literature: `[@gerber2022; @peacock2022]`
+
+**What to avoid**: References to "prior SEM approaches" when meaning our internal Kaifa manuscript (now archived).
+
+---
 
 ## Data Pipeline
 
@@ -55,6 +122,10 @@ We use Structural Equation Modeling to analyze how government capacity affects d
 data_raw/qpr_data.csv
     ↓
 data_work/qpr_raw.parquet        (s00_ingest)
+    ↓
+data_work/qpr_clean.parquet      (s00_ingest)
+    ↓
+data_work/qpr_quarterly.parquet  (s00_ingest)
     ↓
 data_work/panel.parquet          (s01_link)
     ↓
@@ -80,56 +151,76 @@ figures/*.png                    (s05_figures)
 - Run diagnostics after estimation changes
 - Re-render Quarto after modifying `.qmd` files
 
-## Data Files
+---
+
+## SEM Infrastructure (Sensitivity Analysis Only)
+
+The SEM codebase remains for robustness checks in appendix-c. For primary analysis, use survival analysis.
+
+### Available SEM Models
+
+Run `python src/pipeline.py list_models` for complete list (51+ specifications).
+
+| Category | Count | Description |
+|----------|-------|-------------|
+| Core Models | 10 | Primary analysis specifications |
+| Experimental | 15 | Alternative indicator combinations |
+| Covariates | 6 | Models with control variables |
+| Multi-Group | 3 | State vs. local comparison |
+
+### Government Subsets
+
+- `all` - Full sample
+- `state` - State governments only (37 grantees)
+- `local` - Local governments only (40 grantees)
+
+---
+
+## Archived Kaifa Manuscript
+
+**Location**: `manuscript_kaifa_archive/`
+
+This contains the original SEM-based manuscript with known methodological issues:
+
+1. **Right-censoring**: 73.7% of observations lack valid Duration at 95% threshold
+2. **Mathematical circularity**: Timeliness = 1/Duration as capacity indicator
+3. **Grantee-level aggregation**: Averaging across disasters reduces variance
+
+See `doc/ANALYSIS_COMPARISON_REPORT.md` for detailed comparison of methodologies.
+
+---
+
+## Key Data Files
 
 | File | Purpose |
 |------|---------|
-| `data_work/qpr_raw.parquet` | Ingested QPR data |
-| `data_work/panel.parquet` | Analysis panel |
-| `data_work/panel_features.parquet` | Panel with computed features |
+| `data_work/panel_features.parquet` | Analysis-ready panel with all features |
+| `data_work/qpr_quarterly.parquet` | Quarterly rollup with flows and cumulative totals |
 | `data_work/diagnostics/*.csv` | Estimation results |
+| `data_work/quality/*.csv` | Data quality reports |
 
-## Manuscript
+See [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) for complete variable definitions.
 
-Location: `manuscript_quarto/`
-
-### Rendering
-
-```bash
-cd manuscript_quarto
-./render_all.sh                  # All formats (HTML, PDF, DOCX)
-```
-
-Output in `manuscript_quarto/_output/`
+---
 
 ## Documentation
 
-- `doc/README.md` - Documentation index
-- `doc/PIPELINE.md` - Pipeline stages
-- `doc/METHODOLOGY.md` - SEM methodology
-- `doc/DATA_DICTIONARY.md` - Variable definitions
+| File | Content |
+|------|---------|
+| `doc/README.md` | Documentation index |
+| `doc/PIPELINE.md` | Pipeline stages |
+| `doc/METHODOLOGY.md` | Survival analysis and SEM methodology |
+| `doc/DATA_DICTIONARY.md` | Variable definitions |
+| `doc/MANUSCRIPT_GUIDE.md` | PAR formatting and writing rules |
+| `doc/ANALYSIS_COMPARISON_REPORT.md` | Kaifa vs. survival analysis comparison |
 
-## Project Structure
-
-```
-capacity-sem-project/
-├── CLAUDE.md              # This file
-├── README.md              # Project overview
-├── src/
-│   ├── pipeline.py        # Main CLI
-│   ├── config.py          # Configuration
-│   ├── stages/            # Pipeline stages (s00-s05)
-│   └── capacity_sem/      # Core analysis modules
-├── manuscript_quarto/     # Quarto manuscript
-├── data_raw/              # Raw data (gitignored)
-├── data_work/             # Working data
-├── figures/               # Output figures
-└── doc/                   # Documentation
-```
+---
 
 ## Troubleshooting
 
 **semopy not found**: `pip install semopy`
+
+**lifelines not found**: `pip install lifelines`
 
 **Missing data**: Run `python src/pipeline.py run_all --demo` to use demo data
 

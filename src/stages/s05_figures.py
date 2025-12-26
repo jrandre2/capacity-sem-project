@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 
 from config import DATA_WORK_DIR, FIGURES_DIR
+from stages._io_utils import safe_read_parquet
 
 # Configure matplotlib
 import matplotlib
@@ -50,7 +51,7 @@ def load_panel_features() -> pd.DataFrame:
     """Load panel with features."""
     path = DATA_WORK_DIR / "panel_features.parquet"
     if path.exists():
-        return pd.read_parquet(path)
+        return safe_read_parquet(path)
     return pd.DataFrame()
 
 
@@ -103,7 +104,12 @@ def figure_descriptive_stats(data: pd.DataFrame, output_path: Path) -> None:
 
     for ax, (var, label) in zip(axes, available_vars):
         values = data[var].dropna()
-        ax.hist(values, bins=30, edgecolor='white', alpha=0.8)
+        if values.empty:
+            ax.text(0.5, 0.5, 'No data', ha='center', va='center')
+            ax.set_axis_off()
+            continue
+        bins = min(30, max(1, values.nunique()))
+        ax.hist(values, bins=bins, edgecolor='white', alpha=0.8)
         ax.set_xlabel(label)
         ax.set_ylabel('Frequency')
         ax.axvline(values.mean(), color='red', linestyle='--', alpha=0.7,

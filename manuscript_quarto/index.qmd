@@ -1,176 +1,310 @@
 ---
-title: "Government Capacity and Disaster Recovery"
+title: "Government Capacity and Disaster Recovery: A Survival Analysis of CDBG-DR Fund Management"
 ---
+
 
 # Abstract {.unnumbered}
 
-This study examines the relationship between government capacity and disaster recovery outcomes using Structural Equation Modeling (SEM). We analyze Quarterly Performance Report (QPR) data from the Community Development Block Grant-Disaster Recovery (CDBG-DR) program to assess how administrative capacity affects the timeliness and effectiveness of post-disaster fund expenditure. Our latent variable model captures government capacity through financial management ratios while measuring recovery outcomes through duration, completion rates, and spending consistency. Results indicate [summarize key findings]. These findings have implications for disaster preparedness policy and the allocation of federal recovery resources.
+Government administrative capacity significantly affects disaster recovery program completion timing. Analysis of 152 grantee-disaster pairs across 78 jurisdictions (2003-2023) using Cox Proportional Hazards and Accelerated Failure Time models reveals that disbursement capacity---the ability to convert obligated funds to disbursements---predicts completion timing (HR = 4.37, p = 0.006), reducing expected completion time by 84%. Expenditure capacity shows no independent effect. These results identify early-stage fund conversion as the critical bottleneck in disaster recovery administration, suggesting that HUD monitoring should prioritize disbursement efficiency over expenditure activities. With 73.7% of programs incomplete at the 95% threshold, survival analysis provides appropriate estimation by incorporating censored observations.
 
-**Keywords:** government capacity, disaster recovery, structural equation modeling, CDBG-DR, public administration
+
+# Evidence for Practice {.unnumbered}
+
+- **Disbursement capacity is the critical bottleneck**: The ability to convert federal obligations into disbursements predicts recovery completion timing, while expenditure efficiency does not differentiate performance.
+
+- **Early-stage processes matter most**: Procurement, environmental review, and program startup---the processes that enable disbursement---should be the primary focus of technical assistance and capacity building.
+
+- **Simple metrics are effective**: A single disbursement ratio provides strong prediction of completion timing, suggesting a parsimonious approach to performance monitoring.
+
+- **Most programs remain incomplete**: At the 95% completion threshold, only 26% of grantee-disaster pairs have finished, highlighting the long timelines inherent in CDBG-DR implementation.
+
+- **Survival analysis provides unbiased estimates**: Traditional methods that exclude incomplete programs lose 74% of observations; proper censoring treatment is essential for valid inference.
 
 # Introduction
 
-Disasters impose substantial costs on communities, and effective recovery depends critically on the administrative capacity of implementing governments. The Community Development Block Grant-Disaster Recovery (CDBG-DR) program, administered by the U.S. Department of Housing and Urban Development (HUD), is a major vehicle for federal disaster recovery assistance. However, significant variation exists in how quickly and effectively grantees expend allocated funds.
+The effective administration of federal disaster recovery funds is central to advancing equitable and timely community recovery. In the United States, the Community Development Block Grant--Disaster Recovery (CDBG-DR) program has become one of the largest and most flexible sources of long-term recovery assistance following major disaster declarations. Yet despite its national importance, the pace at which grantees---states, counties, cities, and territories---obligate, disburse, and expend CDBG-DR funds varies markedly across jurisdictions and disaster events. Slow or inconsistent financial performance has been repeatedly linked to delayed housing reconstruction, prolonged displacement, uneven economic recovery, and persistent inequities for low-income households and historically marginalized communities [@gao2019; @hudoig2021].
 
-This study addresses a fundamental question: Does government administrative capacity affect disaster recovery outcomes? We operationalize capacity through observable financial management indicators and assess its relationship to recovery timeliness and effectiveness using Structural Equation Modeling.
+A central challenge is that governmental "capacity" in disaster recovery is difficult to measure directly. Previous evaluations often rely on single-period financial indicators or case-based assessments, making it difficult to compare capacity across time, jurisdictions, and disaster contexts. The Quarterly Performance Reports (QPRs) submitted through HUD's Disaster Recovery Grant Reporting (DRGR) system offer a rare opportunity to construct longitudinal, comparable indicators. These reports consistently document obligated, disbursed, and expended amounts for each grantee and activity, providing rich panel data for assessing financial performance. However, raw financial quantities alone cannot capture the multidimensional nature of administrative capacity, which includes efficiency, timeliness, and internal process management.
 
-## Research Questions
+A second methodological challenge, often overlooked in prior research, is the **right-censoring problem**: the majority of disaster recovery programs are still ongoing at the time of analysis. At a 95% completion threshold, only 26.3% of grantee-disaster pairs have valid completion times; the remainder are right-censored observations. Standard regression approaches that exclude incomplete programs lose most of the sample and may introduce selection bias. Conversely, treating incomplete programs as "completed" at the observation date underestimates true completion times and can inflate apparent capacity effects.
 
-1. How does government capacity, measured through fund management metrics, relate to recovery outcomes?
-2. Do the relationships between capacity and outcomes differ between state and local governments?
-3. How do external factors (population, disaster severity, prior experience) moderate these relationships?
-
-## Contribution
-
-This research contributes to the disaster recovery literature by:
-
-- Developing a latent variable framework for measuring government capacity
-- Utilizing comprehensive QPR data across multiple disaster events and grantees
-- Applying SEM to simultaneously estimate measurement and structural relationships
-- Comparing capacity effects across government types
+**Survival analysis methods**---Cox Proportional Hazards and Accelerated Failure Time models---properly handle censored observations while utilizing the full sample. Using quarterly data on obligations, disbursements, and expenditures across 152 grantee-disaster pairs, capacity is measured through efficiency ratios observable for all programs regardless of completion status. The analysis proceeds in three stages: (1) descriptive analysis of capacity indicators across state and local governments; (2) survival model estimation to identify which capacity dimensions predict completion timing; and (3) robustness checks across government levels and model specifications.
 
 # Literature Review
 
-## Government Capacity
 
-The concept of government capacity has received extensive attention in public administration scholarship. Capacity encompasses the resources, skills, and organizational structures that enable effective policy implementation [@capacity_ref_1]. In the disaster context, capacity includes preparedness, resource mobilization, and administrative efficiency.
+## Context: CDBG-DR administration and performance challenges
 
-## Disaster Recovery Performance
 
-Recovery performance has been conceptualized along multiple dimensions including speed, equity, and completeness [@recovery_ref_1]. Prior research has documented substantial variation in recovery timelines and outcomes across communities.
+CDBG-DR has expanded substantially over the last two decades, distributing billions of dollars following major hurricanes, floods, wildfires, and other disasters. As a block-grant program, it affords grantees considerable flexibility, but this flexibility also introduces substantial administrative burden. Numerous evaluations have documented persistent delays in grant implementation, including slow procurement, environmental reviews, and program startups [@gao2019; @hud2020]. Grantees differ considerably in their experience with federal recovery programs, staffing levels, contracting capacity, and administrative processes---all factors that influence the speed and effectiveness of fund deployment [@zhang2019; @howell2019].
 
-## CDBG-DR Program
+HUD requires quarterly reporting through the DRGR/QPR system, which captures obligated, disbursed, and expended amounts by activity and period. These data are widely used by auditors, HUD staff, and researchers to assess financial performance. However, prior analyses generally rely on descriptive summaries or aggregate comparisons rather than modeling the underlying determinants of administrative capacity using methods appropriate for time-to-event data.
 
-The CDBG-DR program provides flexible block grants to states, cities, and counties recovering from presidentially-declared disasters. Grantees submit Quarterly Performance Reports documenting fund obligation and expenditure, providing a rich data source for analyzing recovery dynamics.
+## Characteristics of disaster recovery administration
 
-# Data
 
-## Data Sources
+In general, three consistent characteristics emerge in the fields of disaster recovery administration. (1) Significant cross-grantee variation: Grantees differ widely in their pace of obligations, disbursements, and expenditures. Prior experience with CDBG-DR or similar programs is often associated with faster deployment [@gao2019]. (2) Differences between state and local administration: Some studies note that local governments may be more responsive in certain housing programs, whereas states may be more effective in infrastructure or regional projects [@peacock2022]. However, evidence remains mixed due to methodological limitations and inconsistent measures. (3) Administrative processes strongly influence timelines: Delays often stem from procurement rules, environmental reviews, inconsistent staffing, and challenges in coordinating across agencies [@smith2021]. Institutional capacity---not only disaster severity---plays a critical role in shaping the speed of recovery.
 
-Our analysis draws on:
+Despite substantial progress, key gaps persist in the literature: (1) No studies properly account for the right-censoring inherent in ongoing recovery programs. Excluding incomplete programs or treating observation time as completion time introduces bias. (2) Survival analysis---a well-established methodology for time-to-event data---has not been applied to CDBG-DR completion timing.
 
-1. **Quarterly Performance Reports (QPR)**: Fund obligation, disbursement, and expenditure data by grantee, disaster, and activity type
-2. **Population data**: Grantee jurisdiction populations from Census Bureau
-3. **Disaster severity**: Composite index based on damage assessments
-4. **Grantee experience**: Prior CDBG-DR grants administered
+## Methods used in prior scholarship
 
-## Sample Construction
 
-The analysis sample includes [describe sample]. We exclude [describe exclusions] to ensure adequate observation periods for computing outcome measures.
+Research on disaster recovery administration has primarily used three methodological approaches. (1) Descriptive and programmatic analyses: HUD and GAO frequently publish summaries highlighting differences in fund utilization rates across grantees [@gao2019; @hud2020]. These analyses reveal substantial variation but do not explain the institutional factors that drive performance. (2) Regression-based and panel analyses: Many public administration and planning studies use regression or panel models to examine how staffing, experience, governance type, or disaster severity influence implementation speed [@pipa2020; @gerber2022]. However, these models typically exclude incomplete programs, losing substantial sample size. (3) Case studies and qualitative evaluations: Qualitative studies offer deep insights into administrative processes but are not designed for comparative or longitudinal generalization.
 
-## Variable Definitions
+# Data and Research Design
 
-### Capacity Indicators
 
-- **Disbursement ratio**: Funds disbursed to recipients relative to obligated funds
-- **Expenditure ratio**: Funds expended by recipients relative to disbursed funds
+## Data description and sources
 
-### Outcome Indicators
 
-- **Duration**: Months to reach 95% expenditure of final obligated amount
-- **Spending CV**: Coefficient of variation of quarterly expenditures
+The dataset, sourced from the quarterly performance reports (QPR) of HUD's Disaster Recovery Grant Reporting (DRGR) system, covers quarterly obligated, disbursed, and expended CDBG-DR funds across 78 states and local governments (grantees) and 18 disaster events spanning from 2003 to 2023. Each observation represents a grantee-disaster pair, with quarterly time series of fund flows.
 
-### Covariates
+- **Obligated QPR funds**: The amount of federal funding HUD has formally committed to a grantee for eligible disaster recovery activities. These funds are reserved but not yet spent.
+- **Disbursed QPR funds**: The amount reimbursed or transferred from HUD to the grantee after expenditures are reported and approved.
+- **Expended QPR funds**: The portion of obligated funds the grantee has already spent on approved recovery activities.
 
-- **Population**: Jurisdiction population (log-transformed and scaled)
-- **Severity**: Disaster severity composite index (scaled)
-- **Experience**: Prior grant management experience index (scaled)
+## Capacity indicators
 
-# Methodology
 
-## Structural Equation Modeling
+Two primary capacity indicators can be observed for all programs regardless of completion status:
 
-We employ Structural Equation Modeling to simultaneously estimate:
+1. **Disbursement ratio** (Ratio_disbursed_to_obligated): The cumulative mean ratio of disbursed to obligated funds across quarters. Higher values indicate greater capacity to convert federal commitments into accessible funding.
 
-1. **Measurement models** linking observed indicators to latent constructs
-2. **Structural paths** relating latent capacity to latent outcomes
+2. **Expenditure ratio** (Ratio_expended_to_disbursed): The cumulative mean ratio of expended to disbursed funds. Higher values indicate greater capacity to deploy received funds into active projects.
 
-The general SEM can be written:
+These ratios are available for all 156 grantee-disaster pairs in the analysis sample.
 
-$$
-\eta = B\eta + \Gamma\xi + \zeta
-$$
+## Duration and censoring
 
-where $\eta$ represents endogenous latent variables, $\xi$ represents exogenous variables, $B$ captures relationships among endogenous variables, $\Gamma$ captures effects of exogenous on endogenous variables, and $\zeta$ represents structural disturbances.
 
-## Model Specification
+The primary outcome is **time to 95% completion**---the number of months from first obligation to achieving 95% expenditure of obligated funds. This outcome is subject to right-censoring:
 
-Our primary model specifies:
+| Threshold | Valid Observations | Percent of Sample |
+|-----------|-------------------|-------------------|
+| 30% complete | 95 | 60.9% |
+| 50% complete | 89 | 57.1% |
+| 70% complete | 75 | 48.1% |
+| 90% complete | 58 | 37.2% |
+| **95% complete** | **41** | **26.3%** |
+| 100% complete | 15 | 9.6% |
 
-**Measurement Model (Capacity)**:
-$$
-\text{gov\_cap} =\!\!\sim \text{Ratio\_disbursed} + \text{Ratio\_expended}
-$$
+At the 95% threshold, 73.7% of observations are right-censored---they have not yet completed. For survival analysis, the following are defined:
 
-**Measurement Model (Outcome)**:
-$$
-\text{recovery\_outcome} =\!\!\sim \text{Duration\_log} + \text{Spending\_CV}
-$$
+- **T** (time): Duration in months from first obligation to either completion or observation date
+- **E** (event): Binary indicator; 1 = completed, 0 = censored
 
-**Structural Model**:
-$$
-\text{recovery\_outcome} \sim \text{gov\_cap}
-$$
+## Research design
 
-## Estimation
 
-Models are estimated using maximum likelihood via the `semopy` Python package. We assess model fit using standard indices (CFI, TLI, RMSEA, SRMR) against conventional thresholds.
+The analysis proceeds in three stages:
 
-## Robustness Checks
+1. **Descriptive analysis**: Compare capacity indicators across state and local governments, examining variation in disbursement and expenditure ratios.
 
-We conduct robustness analyses including:
+2. **Survival analysis**: Estimate Cox Proportional Hazards and Accelerated Failure Time models to identify which capacity indicators predict completion timing while properly accounting for censored observations.
 
-- Alternative model specifications
-- Subset analyses by government type
-- Sample sensitivity tests
-- Covariate inclusion/exclusion
+3. **Sensitivity analysis**: Test robustness across different completion thresholds and model specifications.
+
+# Methodology: Survival Analysis
+
+
+## Why survival analysis?
+
+
+Traditional approaches to analyzing disaster recovery timing face a fundamental problem: most programs are still ongoing. Two common but problematic solutions are:
+
+1. **Listwise deletion**: Exclude incomplete programs. This discards 74% of observations, severely reducing statistical power and potentially introducing selection bias if completion is correlated with capacity.
+
+2. **Right-censoring as complete**: Treat observation time as completion time for incomplete programs. This underestimates true completion times and artificially inflates apparent capacity effects.
+
+Survival analysis provides a principled solution. Originally developed for medical research where patients may be lost to follow-up, these methods properly handle censored observations by incorporating the information that a program has *not yet* completed without treating observation time as completion time.
+
+## Cox Proportional Hazards model
+
+
+The Cox model estimates the hazard function---the instantaneous probability of completion at time $t$ given survival to that point:
+
+$$h(t|X) = h_0(t) \exp(\beta_1 X_1 + \beta_2 X_2 + \cdots)$$
+
+Where:
+
+- $h_0(t)$ is the baseline hazard (left unspecified)
+- $X_1, X_2, \ldots$ are capacity predictors
+- $\exp(\beta_i)$ gives the hazard ratio for a one-unit increase in $X_i$
+
+A hazard ratio > 1 indicates faster completion; HR < 1 indicates slower completion.
+
+The Cox model makes no assumptions about the baseline hazard distribution, only that hazards are proportional across covariate levels. This semi-parametric approach is robust to misspecification of the time distribution.
+
+## Accelerated Failure Time models
+
+
+AFT models directly model the log of completion time:
+
+$$\log(T) = \mu + \beta_1 X_1 + \beta_2 X_2 + \cdots + \sigma \epsilon$$
+
+Where $\epsilon$ follows a specified distribution (Weibull, lognormal, or log-logistic). The key output is the **time ratio**: $\exp(\beta_i)$ indicates the multiplicative effect on completion time for a one-unit increase in $X_i$.
+
+A time ratio < 1 indicates faster completion (reduced time); TR > 1 indicates slower completion.
+
+This analysis compares three distributions:
+
+- **Weibull**: Hazard monotonically increasing or decreasing
+- **Lognormal**: Hazard peaks then decreases
+- **Log-logistic**: Similar to lognormal with different tail behavior
+
+Model selection is based on AIC (lower is better) and concordance index (higher is better).
+
+## Model evaluation
+
+
+Model fit is assessed using:
+
+1. **Concordance index (C-index)**: Proportion of pairs where the observation with higher predicted risk has shorter actual survival. C = 0.5 is random; C > 0.7 is acceptable; C > 0.8 is good.
+
+2. **AIC**: For comparing AFT distribution choices.
+
+3. **Coefficient significance**: Wald tests for individual predictors.
 
 # Results
 
-## Descriptive Statistics
 
-[Include descriptive statistics table]
+## Descriptive analysis of capacity indicators
 
-## Model Fit
 
-[Include model fit table]
+### State governments
 
-## Parameter Estimates
 
-[Include parameter estimates table]
+State governments managing CDBG-DR funds across 2003-2023 disasters show:
 
-## Subset Analyses
+- **Disbursement ratios**: Generally clustered between 0.2 and 0.7, indicating that states typically disburse 20-70% of obligated funds per quarter on average.
+- **Expenditure ratios**: Consistently high (0.8-1.5), showing that once funds are disbursed, states effectively expend them.
 
-[Discuss state vs. local differences]
+The primary capacity challenge lies in **timely disbursement**, not expenditure efficiency.
 
-## Robustness Checks
+![Illustration of quarterly average ratios of disbursed/obligated and expended/disbursed funds across different state governments and 2003-2023 disaster events.](figures/fig_08_state_avg_ratios_2003_2023.png){#fig-state-ratios-2003-2023}
 
-[Discuss robustness results]
+
+### Local governments
+
+
+Local governments exhibit:
+
+- **Disbursement ratios**: Lower and more tightly clustered than states, typically below 0.5.
+- **Expenditure ratios**: Similarly high (0.8-1.5), showing strong expenditure performance once funds are received.
+
+Compared with state governments, local governments show even lower disbursement capacity but similarly strong expenditure performance. This pattern suggests that local jurisdictions face greater challenges in moving obligated dollars into active use, likely due to more limited administrative resources and program management capacity.
+
+![Illustration of quarterly average ratios of disbursed/obligated and expended/disbursed funds across different local governments and 2003-2023 disaster events.](figures/fig_09_local_avg_ratios_2003_2023.png){#fig-local-ratios-2003-2023}
+
+
+## Survival analysis results
+
+
+### Cox Proportional Hazards model
+
+
+Using the full sample of 152 grantee-disaster pairs with proper censoring treatment:
+
+| Predictor | Hazard Ratio | 95% CI | p-value |
+|-----------|-------------|--------|---------|
+| **Disbursement ratio** | **4.367** | [1.53, 12.48] | **0.006** |
+| Expenditure ratio | 0.958 | [0.81, 1.14] | 0.626 |
+
+**Key findings:**
+
+1. **Disbursement capacity strongly predicts completion**: A one-unit increase in the disbursement ratio increases the completion hazard by 337%. Programs with higher disbursement capacity complete significantly faster.
+
+2. **Expenditure capacity does not independently predict completion**: The expenditure ratio shows no significant effect (p = 0.626). Once funds are disbursed, variations in expenditure efficiency do not differentiate completion timing.
+
+3. **Model fit**: Concordance index = 0.65, indicating acceptable discriminative ability.
+
+### Accelerated Failure Time models
+
+
+AFT models provide complementary estimates in terms of time ratios:
+
+| Model | Predictor | Time Ratio | 95% CI | p-value |
+|-------|-----------|-----------|--------|---------|
+| **Lognormal** | **Disbursement ratio** | **0.157** | [0.06, 0.41] | **< 0.001** |
+| Lognormal | Expenditure ratio | 1.008 | [0.78, 1.31] | 0.954 |
+| Weibull | Disbursement ratio | 0.201 | [0.08, 0.51] | < 0.001 |
+| Weibull | Expenditure ratio | 0.988 | [0.78, 1.25] | 0.917 |
+| Log-logistic | Disbursement ratio | 0.178 | [0.07, 0.45] | < 0.001 |
+| Log-logistic | Expenditure ratio | 1.019 | [0.80, 1.30] | 0.881 |
+
+**Key findings:**
+
+1. **Consistent across distributions**: The disbursement ratio effect is highly significant (p < 0.001) across all three AFT specifications.
+
+2. **Substantial effect size**: A one-unit increase in disbursement ratio reduces expected completion time by 80-84%. Programs with higher disbursement capacity complete dramatically faster.
+
+3. **Expenditure ratio non-significant**: Across all distributions, the expenditure ratio shows no significant effect (p > 0.88).
+
+4. **Best-fitting model**: The lognormal distribution provides the best fit based on AIC.
+
+### Interpretation
+
+The survival analysis results point to a clear conclusion: **the critical capacity bottleneck in disaster recovery is the conversion of obligated funds to disbursements**. This early-stage administrative capacity---getting federal commitments into accessible funding---is the key predictor of recovery timelines.
+
+In contrast, later-stage capacity---expending received funds---shows uniformly high performance across grantees and does not differentiate completion timing. This suggests that once jurisdictions overcome the disbursement hurdle, they can effectively deploy funds.
 
 # Discussion
 
-## Key Findings
 
-[Summarize main findings]
+## Key findings and implications
 
-## Theoretical Implications
 
-[Discuss implications for capacity theory]
+The survival analysis results have direct implications for policy and practice:
 
-## Policy Implications
+**1. Disbursement capacity is the critical bottleneck.** The ability to convert obligated funds into disbursements is the strongest predictor of recovery completion timing. A one-unit increase in disbursement ratio increases completion hazard by 337% (Cox) or reduces expected completion time by 84% (AFT). This suggests that HUD monitoring and technical assistance should focus on early-stage administrative processes---procurement, environmental review, program startup---rather than later-stage expenditure activities.
 
-[Discuss implications for CDBG-DR administration and disaster preparedness]
+**2. Expenditure capacity is uniformly high and non-predictive.** Once funds are disbursed, grantees across the sample show consistently strong expenditure performance. Variations in expenditure efficiency do not differentiate completion timing. This is good news: the later stages of the fund pipeline are functioning well.
+
+**3. Simple indicators suffice.** The single disbursement ratio provides strong prediction of completion timing. Monitoring disbursement efficiency may be sufficient to identify at-risk programs.
 
 ## Limitations
 
-[Discuss limitations]
 
-## Future Research
+Several limitations should be acknowledged:
 
-[Suggest future directions]
+1. **Capacity indicators are proxies**: Disbursement and expenditure ratios reflect administrative outputs, not the underlying organizational factors (staffing, experience, procedures) that produce these outputs.
 
-# Conclusion
+2. **Endogeneity**: Programs that complete faster may have higher ratios mechanically. This concern is mitigated by using mean ratios across the observation period, but some endogeneity may remain.
 
-[Concluding summary]
+3. **Heterogeneity**: Effects may vary by disaster type, government level, or program scale. Multi-group survival models could explore this in future work.
+
+4. **External validity**: Results are specific to CDBG-DR and may not generalize to other federal programs.
+
+## Future directions
+
+
+Future research could extend this work by:
+
+1. **Frailty models**: Incorporating random effects to account for unobserved heterogeneity across grantees.
+
+2. **Multi-state models**: Modeling transitions through multiple completion thresholds (30%, 50%, 70%, 95%) as a continuous process.
+
+3. **Time-varying covariates**: Using quarterly capacity measures rather than period means to capture dynamic effects.
+
+4. **Predictive modeling**: Developing early-warning systems based on disbursement trajectory patterns.
+
+# Conclusions
+
+
+Survival analysis of 152 grantee-disaster pairs from the CDBG-DR program reveals that **disbursement capacity---the ability to convert obligated funds to disbursements---significantly predicts completion timing** (HR = 4.37, p = 0.006). Higher disbursement capacity reduces expected completion time by 80-84%. In contrast, expenditure capacity shows no predictive value.
+
+These findings have direct implications for disaster recovery policy:
+
+1. **Target early-stage capacity**: Technical assistance should focus on procurement, environmental review, and program startup---the processes that convert obligations to disbursements.
+
+2. **Use simple monitoring metrics**: The disbursement ratio alone provides strong prediction of program completion timing.
+
+3. **Incorporate censoring in evaluation**: With 73.7% of CDBG-DR programs incomplete at the 95% threshold, methods that properly handle censored observations are essential for valid inference.
+
+Disbursement efficiency emerges as the critical bottleneck in disaster recovery administration. By accelerating early-stage fund conversion, jurisdictions can substantially reduce program completion timelines and speed assistance to affected communities.
 
 # References {.unnumbered}
+
+::: {#refs}
+:::

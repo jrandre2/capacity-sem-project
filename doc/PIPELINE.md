@@ -10,18 +10,38 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 
 **Command**: `python src/pipeline.py ingest_data`
 
-**Purpose**: Load QPR data and external covariates.
+**Purpose**: Load QPR data, standardize columns, build quarterly rollups with cumulative totals, and ingest external covariates.
 
 **Inputs**:
 - `data_raw/qpr_data.csv` - Raw QPR export
 
 **Outputs**:
 - `data_work/qpr_raw.parquet` - Validated QPR data
-- `data_work/covariates.parquet` - Combined external covariates (population, severity, employment)
+- `data_work/qpr_clean.parquet` - Cleaned QPR data with QA flags and imputed grantee state
+- `data_work/qpr_quarterly.parquet` - Quarterly rollup with flow + cumulative series
+- `data_work/quality/qpr_quality_report.csv` - Row-level quality summary for QPR data
+- `data_work/quality/qpr_quarterly_quality_report.csv` - Quarterly rollup quality summary
+- `data_work/population.parquet` - Grantee population covariates
+- `data_work/grantee_disaster_population.parquet` - Grantee-disaster population covariates (if available)
+- `data_work/severity.parquet` - Disaster severity covariates
+- `data_work/employment.parquet` - Employment covariates
 
 **Key Functions**:
 - `ingest_qpr_data()` - Load and validate QPR CSV
+- `build_qpr_quarterly()` - Build quarterly rollup and cumulative series
 - `ingest_covariates()` - Load external datasets
+
+**Data Quality Outputs**:
+- `qpr_clean.parquet` includes row-level `QA_` flags, `QPR_Date`, and `Grantee State` imputed from the grant code when missing.
+- `data_work/quality/qpr_quality_report.csv` summarizes row-level QA flags and basic counts.
+- `data_work/quality/qpr_quarterly_quality_report.csv` summarizes quarterly rollup issues (negative flows and cumulative decreases).
+
+**Known Data Issues (current exports)**:
+- Some rows lack `QPR Actual Quarter`, so they are excluded from the quarterly rollup.
+- Some rows lack `Grantee State`; it is imputed from the grant code and tracked in `Grantee State Source`.
+- Negative obligated/disbursed/expended values appear (adjustments or corrections); they are flagged but not modified.
+- Cumulative totals can decrease within a grantee-disaster series (reflecting revisions); flagged in the quarterly quality report.
+- Location data are limited to `Grantee State`; no sub-state geographies are present in the QPR export.
 
 ---
 
@@ -32,8 +52,12 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 **Purpose**: Link data sources and construct analysis panel.
 
 **Inputs**:
-- `data_work/qpr_raw.parquet`
-- `data_work/*.parquet` (covariates)
+- `data_work/qpr_quarterly.parquet` (preferred)
+- `data_work/qpr_raw.parquet` (fallback if quarterly not present)
+- `data_work/population.parquet`
+- `data_work/grantee_disaster_population.parquet`
+- `data_work/severity.parquet`
+- `data_work/employment.parquet`
 
 **Outputs**:
 - `data_work/panel.parquet` - Grantee-disaster level panel
@@ -45,6 +69,12 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 - `compute_ratios()` - Calculate financial ratios
 - `scale_covariates()` - Z-score standardization
 
+**Ratio Configuration**:
+- `RATIO_DEFINITION` in `src/config.py` controls ratio construction:
+  - `mean_cumulative`: mean of quarterly cumulative ratios across quarters
+  - `final_cumulative`: ratio of final cumulative totals
+- `QPR_DOLLAR_FIELDS_ARE_FLOW` controls whether raw QPR dollar fields are treated as quarterly net flows (default) or cumulative totals.
+
 ---
 
 ### Stage 2: Feature Engineering (`s02_features.py`)
@@ -55,7 +85,9 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 
 **Inputs**:
 - `data_work/panel.parquet`
-- `data_work/qpr_raw.parquet`
+- `data_work/qpr_clean.parquet` (preferred)
+- `data_work/qpr_raw.parquet` (fallback)
+- `data_work/qpr_quarterly.parquet`
 
 **Outputs**:
 - `data_work/panel_features.parquet` - Panel with all computed features
@@ -65,6 +97,8 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 - `compute_additional_timeliness_metrics()` - Progress rate, CV, log duration
 - `build_experience_dataset()` - Prior grant experience
 - `add_program_type_column()` - Activity type classification
+
+Timeliness and spending consistency metrics are computed from `qpr_quarterly` (quarterly flows and cumulative series).
 
 ---
 
@@ -90,6 +124,52 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 - `run_model_comparison()` - Compare specifications
 - `run_subset_comparison()` - Compare government types
 
+**Data Considerations**:
+- SEM fitting uses complete-case observations for variables in the model specification; missing indicators (e.g., `Duration_log`, `Spending_CV`) can materially reduce sample size.
+
+---
+
+### Stage 3b: Kaifa's Models Replication (`s03_manuscript_replication.py`) - EXPERIMENTAL
+
+**Command**: `PYTHONPATH=src python3 src/stages/s03_manuscript_replication.py --subset state`
+
+**Purpose**: Replicate Kaifa's original manuscript analysis for verification and critique.
+
+**WARNING**: This stage is experimental and for verification only. Use the canonical pipeline (Stage 3) for production analyses.
+
+**Key Differences from Canonical Pipeline**:
+
+1. **Grantee-level aggregation**: Averages across disasters per grantee (N~38 state, ~40 local) instead of grantee-disaster pairs (N~156)
+2. **Right-censoring**: Incomplete programs use observation time (N_Quarters) as Duration
+3. **Original 3x3 model**: Includes Timeliness = 1/Duration (creates mathematical coupling)
+4. **Mean-of-ratios**: Computes mean of quarterly ratios (vs. final cumulative ratio)
+
+**Inputs**:
+
+- `data_work/panel_features.parquet`
+- `data_work/qpr_quarterly.parquet`
+
+**Outputs**:
+
+- `data_work/diagnostics/manuscript_replication_estimates_*.csv`
+- `data_work/diagnostics/manuscript_replication_summary_*.csv`
+- `data_work/diagnostics/manuscript_replication_critique_*.csv`
+
+**Kaifa's Model Specifications**:
+
+| Model | Description |
+|-------|-------------|
+| `kaifa_3x3_full` | Original 3x3 with censored Duration and Timeliness |
+| `kaifa_3x3_no_duration` | 3x3 without Duration indicator |
+| `kaifa_2x2_minimal` | Minimal 2x2 specification |
+
+**Methodological Critique Points**:
+
+- Right-censoring biases duration downward (treats incomplete as complete)
+- Timeliness = 1/Duration creates deterministic relationship
+- Grantee-level aggregation loses within-grantee variation
+- Small sample (N<40) may produce unstable estimates
+
 ---
 
 ### Stage 4: Robustness Checks (`s04_robustness.py`)
@@ -112,6 +192,22 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 - `run_subset_robustness()` - State vs. local comparison
 - `run_sample_sensitivity()` - Vary minimum quarters
 - `run_covariate_robustness()` - Test covariate inclusion
+
+**Extended Analyses** (via `--extended` flag):
+
+| Analysis | Function | Description |
+|----------|----------|-------------|
+| Multi-group SEM | `run_multigroup_analysis()` | State vs. local measurement invariance |
+| Mediation | `run_mediation_analysis()` | Indirect effect decomposition |
+| Formative vs. Reflective | `run_formative_comparison()` | Alternative capacity specification |
+
+**Multi-group SEM Output**:
+- `data_work/diagnostics/robustness_multigroup.csv` - Separate state/local estimates
+- Tests configural, metric, and scalar invariance
+
+**Mediation Analysis Output**:
+- `data_work/diagnostics/robustness_mediation.csv` - Direct/indirect effects
+- Bootstrap confidence intervals for indirect effects
 
 ---
 

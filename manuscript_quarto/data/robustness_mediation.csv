@@ -1,0 +1,2 @@
+Path_a_IV_to_Med,Path_b_Med_to_DV,Path_c_Direct,Indirect_Effect,Total_Effect,Sobel_z,Sobel_p,Interpretation
+-0.14339890439356434,-0.020819514913940667,0.4110369233511757,0.0029854956286645648,0.41402241897984027,0.06019824169824283,0.9519977460985845,No effect: Neither indirect nor direct effects are significant

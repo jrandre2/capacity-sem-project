@@ -3,13 +3,16 @@ Timeliness and duration metrics for recovery outcomes.
 
 This module provides functions to calculate duration and timeliness metrics
 that measure disaster recovery performance.
+
+Supports multi-threshold duration analysis to avoid arbitrary threshold choice
+and enable robustness testing across completion stages.
 """
 
 import pandas as pd
 import numpy as np
-from typing import Optional
+from typing import Optional, List, Dict
 
-from ..config import COMPLETION_THRESHOLD
+from config import COMPLETION_THRESHOLD, DURATION_THRESHOLDS
 from ..utils.date_utils import quarter_to_date
 
 
@@ -171,3 +174,162 @@ def calculate_all_timeliness_metrics(
         'Timeliness': timeliness,
         'Quarter_by_quarter_variance_expended': variance
     }
+
+
+def calculate_multi_threshold_duration(
+    df: pd.DataFrame,
+    thresholds: Optional[List[float]] = None,
+    quarter_col: str = 'QPR Actual Quarter',
+    obligated_col: str = 'QPR Fund Obligated $',
+    expended_col: str = 'QPR Fund Expended $',
+    include_log: bool = True
+) -> Dict[str, float]:
+    """
+    Calculate duration at multiple completion thresholds.
+
+    This enables robustness analysis across completion stages and avoids
+    arbitrary threshold choice. Lower thresholds have more observations
+    (less censoring), while higher thresholds capture full completion.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Grantee funding DataFrame with date and funding columns.
+    thresholds : list of float, optional
+        Completion thresholds (e.g., [0.30, 0.35, ..., 1.00]).
+        If None, uses DURATION_THRESHOLDS from config.
+    quarter_col : str
+        Column name for quarter identifier.
+    obligated_col : str
+        Column name for obligated funds.
+    expended_col : str
+        Column name for expended funds.
+    include_log : bool
+        Whether to include log-transformed duration columns.
+
+    Returns
+    -------
+    dict
+        Dictionary with Duration_Xpct and Duration_Xpct_log columns for each threshold.
+
+    Examples
+    --------
+    >>> results = calculate_multi_threshold_duration(grantee_df)
+    >>> results['Duration_50pct']  # Duration to reach 50% completion
+    24.5
+    >>> results['Duration_95pct']  # Duration to reach 95% completion (may be NaN)
+    nan
+    """
+    if thresholds is None:
+        thresholds = DURATION_THRESHOLDS
+
+    results = {}
+
+    if df.empty or quarter_col not in df.columns:
+        # Return NaN for all thresholds
+        for threshold in thresholds:
+            pct_str = f"{int(threshold * 100)}pct"
+            results[f'Duration_{pct_str}'] = np.nan
+            if include_log:
+                results[f'Duration_{pct_str}_log'] = np.nan
+        return results
+
+    df = df.copy()
+
+    # Add date column if not present
+    if 'QPR_Date' not in df.columns:
+        df['QPR_Date'] = df[quarter_col].apply(quarter_to_date)
+
+    # Sort by date
+    df = df.sort_values('QPR_Date')
+
+    # Calculate percentage of obligated funds expended
+    final_obligated = df[obligated_col].iloc[-1]
+    if final_obligated == 0:
+        # Return minimum duration (3 months) for all thresholds
+        for threshold in thresholds:
+            pct_str = f"{int(threshold * 100)}pct"
+            results[f'Duration_{pct_str}'] = 3.0
+            if include_log:
+                results[f'Duration_{pct_str}_log'] = np.log(3.0)
+        return results
+
+    df['pct_obligated'] = df[expended_col] / final_obligated
+    start_date = df['QPR_Date'].iloc[0]
+
+    # Calculate duration for each threshold
+    for threshold in thresholds:
+        pct_str = f"{int(threshold * 100)}pct"
+
+        # Find quarter when threshold is reached
+        completion_row = df[df['pct_obligated'] >= threshold].head(1)
+
+        if not completion_row.empty:
+            completion_date = completion_row['QPR_Date'].iloc[0]
+            # Calculate duration in months
+            duration = (completion_date - start_date).days / 30.4 + 3  # Add minimum quarter
+        else:
+            # Not yet reached - censor
+            duration = np.nan
+
+        results[f'Duration_{pct_str}'] = duration
+
+        if include_log:
+            if pd.notna(duration) and duration > 0:
+                results[f'Duration_{pct_str}_log'] = np.log(duration)
+            else:
+                results[f'Duration_{pct_str}_log'] = np.nan
+
+    # Also compute current completion percentage for reference
+    results['Completion_Pct'] = df['pct_obligated'].iloc[-1]
+
+    return results
+
+
+def calculate_all_timeliness_metrics_multi_threshold(
+    df: pd.DataFrame,
+    thresholds: Optional[List[float]] = None,
+    include_legacy: bool = True
+) -> Dict[str, float]:
+    """
+    Calculate comprehensive timeliness metrics including multi-threshold durations.
+
+    Combines the legacy single-threshold metrics with multi-threshold analysis.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Grantee funding DataFrame.
+    thresholds : list of float, optional
+        Completion thresholds for duration analysis.
+    include_legacy : bool
+        Whether to include legacy Duration_of_completion and Timeliness columns.
+
+    Returns
+    -------
+    dict
+        Dictionary containing all timeliness metrics.
+    """
+    results = {}
+
+    # Multi-threshold duration metrics
+    multi_results = calculate_multi_threshold_duration(df, thresholds)
+    results.update(multi_results)
+
+    # Legacy metrics (for backwards compatibility)
+    if include_legacy:
+        duration = calculate_duration_of_completion(df, COMPLETION_THRESHOLD)
+        timeliness = calculate_timeliness(duration)
+        variance = calculate_quarter_variance(df)
+
+        results['Duration_of_completion'] = duration
+        results['Timeliness'] = timeliness
+        results['Quarter_by_quarter_variance_expended'] = variance
+
+        # Log-transformed duration for legacy column
+        if pd.notna(duration) and duration > 0:
+            results['Duration_log'] = np.log(duration)
+        else:
+            results['Duration_log'] = np.nan
+
+    return results

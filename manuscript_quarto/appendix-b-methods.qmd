@@ -1,86 +1,159 @@
 # Appendix B: Methodological Details {.unnumbered}
 
-## B.1 Structural Equation Modeling Framework
+## B.1 Survival Analysis Framework
 
-Structural Equation Modeling combines confirmatory factor analysis (CFA) with path analysis. The key advantage is simultaneous estimation of:
+Survival analysis is a class of statistical methods for analyzing time-to-event data, particularly when observations may be censored (i.e., the event has not yet occurred at the time of observation). These methods originated in biostatistics but are widely applicable to any duration outcome.
 
-1. Measurement relationships (indicators → latents)
-2. Structural relationships (latents → latents)
+### Key Concepts
 
-### Notation
+- **Survival time (T)**: Time from a defined starting point to the occurrence of an event
+- **Censoring**: When the event has not occurred by the observation end
+  - Right-censored: Event occurs after observation ends
+  - Left-censored: Event occurs before observation begins
+  - Interval-censored: Event occurs within a time interval
+- **Hazard function h(t)**: Instantaneous rate of event occurrence at time t
+- **Survival function S(t)**: Probability of surviving beyond time t
 
-- $\eta$: Endogenous latent variables
-- $\xi$: Exogenous latent variables
-- $y$: Observed indicators for endogenous latents
-- $x$: Observed indicators for exogenous latents
-- $\Lambda_y$, $\Lambda_x$: Factor loading matrices
-- $B$: Structural coefficients among endogenous latents
-- $\Gamma$: Structural coefficients from exogenous to endogenous
-- $\Psi$: Covariance matrix of structural errors
-- $\Theta_\varepsilon$, $\Theta_\delta$: Measurement error covariances
+### Relationship Between Functions
 
-### Model Equations
+$$S(t) = P(T > t) = \exp\left(-\int_0^t h(u) du\right)$$
 
-**Measurement Model**:
-$$
-y = \Lambda_y \eta + \varepsilon
-$$
-$$
-x = \Lambda_x \xi + \delta
-$$
+The cumulative hazard is $H(t) = \int_0^t h(u) du$, so $S(t) = \exp(-H(t))$.
 
-**Structural Model**:
-$$
-\eta = B\eta + \Gamma\xi + \zeta
-$$
+## B.2 Cox Proportional Hazards Model
 
-## B.2 Model Identification
+### Model Specification
 
-For model identification, we require:
+The Cox model expresses the hazard as:
 
-1. At least 2 indicators per latent variable (preferably 3+)
-2. Scale setting for each latent (fix first loading to 1 or fix variance to 1)
-3. Positive degrees of freedom: $df = \frac{p(p+1)}{2} - q > 0$
+$$h(t|X) = h_0(t) \exp(\beta_1 X_1 + \beta_2 X_2 + \cdots + \beta_p X_p)$$
 
-where $p$ is the number of observed variables and $q$ is the number of free parameters.
+Where:
+- $h_0(t)$ is the baseline hazard (unspecified, estimated nonparametrically)
+- $X_1, \ldots, X_p$ are covariates
+- $\beta_1, \ldots, \beta_p$ are regression coefficients
 
-## B.3 Estimation Method
+### Interpretation
 
-Maximum likelihood estimation minimizes the fitting function:
+- **Hazard ratio**: $HR = \exp(\beta)$ for a one-unit increase in X
+- $HR > 1$: Higher values of X increase the hazard (faster event occurrence)
+- $HR < 1$: Higher values of X decrease the hazard (slower event occurrence)
+- $HR = 1$: No effect
 
-$$
-F_{ML} = \ln|\Sigma(\theta)| + \text{tr}(S\Sigma(\theta)^{-1}) - \ln|S| - p
-$$
+### Proportional Hazards Assumption
 
-where $\Sigma(\theta)$ is the model-implied covariance matrix, $S$ is the sample covariance matrix, and $p$ is the number of observed variables.
+The model assumes that hazard ratios are constant over time:
 
-## B.4 Model Fit Assessment
+$$\frac{h(t|X_1)}{h(t|X_2)} = \exp(\beta(X_1 - X_2)) \text{ for all } t$$
 
-We evaluate model fit using multiple indices:
+We test this assumption using Schoenfeld residuals.
 
-| Index | Good Fit | Acceptable Fit |
-|-------|----------|----------------|
-| CFI | ≥ 0.95 | ≥ 0.90 |
-| TLI | ≥ 0.95 | ≥ 0.90 |
-| RMSEA | ≤ 0.05 | ≤ 0.08 |
-| SRMR | ≤ 0.05 | ≤ 0.08 |
+### Partial Likelihood Estimation
 
-## B.5 Alternative Specifications
+The Cox model uses partial likelihood, which eliminates the baseline hazard:
 
-We test multiple model specifications:
+$$L(\beta) = \prod_{i: D_i = 1} \frac{\exp(X_i \beta)}{\sum_{j \in R(t_i)} \exp(X_j \beta)}$$
 
-1. **Full model**: All proposed indicators
-2. **Reduced model**: Minimal indicators per factor
-3. **With covariates**: Adding population, severity, experience
-4. **Subset models**: State vs. local governments
+Where $D_i = 1$ indicates an event (not censored) and $R(t_i)$ is the risk set at time $t_i$.
 
-## B.6 Software and Replication
+## B.3 Accelerated Failure Time Models
+
+### Model Specification
+
+AFT models directly model the log of survival time:
+
+$$\log(T) = \mu + \beta_1 X_1 + \cdots + \beta_p X_p + \sigma \epsilon$$
+
+Where $\epsilon$ follows a specified distribution.
+
+### Common Distributions
+
+| Distribution | Error Distribution | Hazard Shape |
+|--------------|-------------------|--------------|
+| Weibull | Extreme value | Monotonic (increasing or decreasing) |
+| Lognormal | Normal | Non-monotonic (peaks then decreases) |
+| Log-logistic | Logistic | Non-monotonic (similar to lognormal) |
+| Exponential | Standard extreme value | Constant (special case of Weibull) |
+
+### Interpretation
+
+- **Time ratio**: $TR = \exp(\beta)$ for a one-unit increase in X
+- $TR > 1$: Higher values of X increase expected time (slower completion)
+- $TR < 1$: Higher values of X decrease expected time (faster completion)
+- $TR = 1$: No effect
+
+### Model Selection
+
+We compare distributions using:
+- **AIC**: Lower is better
+- **BIC**: Lower is better (penalizes complexity more)
+- **Concordance index**: Higher is better
+
+## B.4 Model Evaluation
+
+### Concordance Index (C-index)
+
+The C-index measures discriminative ability:
+
+$$C = P(\hat{T}_i < \hat{T}_j | T_i < T_j)$$
+
+Interpretation:
+- C = 0.5: Random (no discrimination)
+- C = 0.6-0.7: Weak discrimination
+- C = 0.7-0.8: Acceptable discrimination
+- C > 0.8: Good discrimination
+
+### Residual Diagnostics
+
+- **Cox-Snell residuals**: Check overall model fit
+- **Martingale residuals**: Detect nonlinearity in covariates
+- **Schoenfeld residuals**: Test proportional hazards assumption
+- **Deviance residuals**: Identify outliers
+
+## B.5 Handling Right-Censoring
+
+In our CDBG-DR data, 73.7% of observations are right-censored at the 95% completion threshold. Survival analysis handles this by:
+
+1. Including censored observations in risk sets until censoring time
+2. Not treating censoring time as event time
+3. Using likelihood contributions that account for censoring status
+
+The likelihood contribution for observation i is:
+
+$$L_i = [h(t_i)]^{D_i} S(t_i)$$
+
+Where $D_i = 1$ if the event occurred and $D_i = 0$ if censored.
+
+## B.6 Comparison with SEM Approach
+
+| Aspect | SEM | Survival Analysis |
+|--------|-----|-------------------|
+| Sample size | N=40 (after exclusions) | N=152 (full sample) |
+| Censoring treatment | Listwise deletion | Proper statistical modeling |
+| Latent variables | Yes | No (direct predictors) |
+| Complexity | Multi-indicator constructs | Parsimonious |
+| Power | Low (~55%) | Adequate (~95%) |
+
+## B.7 Software and Replication
 
 Analysis is conducted using:
 
 - Python 3.10+
-- semopy package for SEM estimation
+- lifelines package for survival analysis (Cox PH, AFT models)
+- semopy package for SEM comparison models
 - pandas, numpy for data manipulation
 - matplotlib for visualization
 
-Replication materials are available in the project repository.
+Replication materials are available in the project repository:
+
+```bash
+# Run survival analysis
+python src/pipeline.py run_alternatives --survival-only
+
+# Run all alternative analyses
+python src/pipeline.py run_alternatives
+```
+
+Key output files in `data_work/diagnostics/`:
+- `alternatives_survival.csv`: Cox and AFT results
+- `alternatives_comparison.csv`: Cross-method comparison

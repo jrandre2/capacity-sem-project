@@ -17,7 +17,7 @@ except ImportError:
     SEMOPY_AVAILABLE = False
 
 from .sem_specifications import get_model_spec
-from ..config import STATE_GOVERNMENTS, LOCAL_GOVERNMENTS
+from config import STATE_GOVERNMENTS, LOCAL_GOVERNMENTS
 
 
 def _prepare_data_for_model(
@@ -302,15 +302,20 @@ def compute_cluster_robust_se(
         deff = 1 + (n / m - 1) * 0.05  # Design effect approximation
 
         if 'Std. Err' in estimates.columns:
-            estimates['Robust SE'] = estimates['Std. Err'] * np.sqrt(deff)
+            from scipy import stats
+
+            # Convert Std. Err to numeric (handles '-' values from fixed params)
+            se_numeric = pd.to_numeric(estimates['Std. Err'], errors='coerce')
+            estimates['Robust SE'] = se_numeric * np.sqrt(deff)
             estimates['Cluster Adjustment'] = np.sqrt(deff)
             estimates['N Clusters'] = n_clusters
 
-            # Recompute z-values and p-values
-            estimates['Robust z'] = estimates['Estimate'] / estimates['Robust SE']
-            estimates['Robust p-value'] = 2 * (1 - np.abs(estimates['Robust z']).apply(
-                lambda x: 0.5 * (1 + np.math.erf(x / np.sqrt(2)))
-            ))
+            # Convert Estimate to numeric for z-value calculation
+            est_numeric = pd.to_numeric(estimates['Estimate'], errors='coerce')
+
+            # Recompute z-values and p-values using scipy.stats.norm
+            estimates['Robust z'] = est_numeric / estimates['Robust SE']
+            estimates['Robust p-value'] = 2 * (1 - stats.norm.cdf(np.abs(estimates['Robust z'])))
 
         return estimates
 

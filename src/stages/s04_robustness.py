@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 
 from config import DATA_WORK_DIR, STATE_GOVERNMENTS, LOCAL_GOVERNMENTS
+from stages._io_utils import safe_read_parquet
 
 # Import from existing modules
 from capacity_sem.models.sem_specifications import MODEL_REGISTRY, get_model_spec
@@ -30,6 +31,18 @@ from capacity_sem.models.sem_diagnostics import (
     evaluate_model_fit,
     compare_models,
     extract_fit_stat,
+    get_standardized_estimates,
+    get_reliability_summary,
+)
+from capacity_sem.models.sem_multigroup import (
+    fit_multigroup,
+    compare_structural_paths,
+    compare_fit_statistics,
+    assess_measurement_invariance,
+    add_government_type_column,
+)
+from capacity_sem.models.sem_mediation import (
+    compute_mediation_effects,
 )
 
 
@@ -40,7 +53,7 @@ def load_panel_features() -> pd.DataFrame:
         raise FileNotFoundError(
             f"Panel features not found at {path}. Run compute_features first."
         )
-    return pd.read_parquet(path)
+    return safe_read_parquet(path)
 
 
 def ensure_diagnostics_dir() -> Path:
@@ -279,7 +292,212 @@ def run_bootstrap_inference(
     return boot_results
 
 
-def main(models: Optional[List[str]] = None):
+def run_multigroup_comparison(
+    data: pd.DataFrame,
+    model_type: str = 'multigroup_2x2',
+    verbose: bool = True
+) -> Dict[str, Any]:
+    """
+    Run multi-group SEM comparison (state vs. local governments).
+
+    This analysis tests:
+    1. Whether the same model fits both groups (configural invariance)
+    2. Whether factor loadings are equivalent (metric invariance)
+    3. Whether structural paths differ between groups
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data with grantee column.
+    model_type : str, default 'multigroup_2x2'
+        Model specification to use for comparison.
+    verbose : bool, default True
+        Whether to print progress.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Multi-group analysis results including:
+        - 'fit_comparison': Fit statistics by group
+        - 'structural_comparison': Path coefficients by group with tests
+        - 'invariance': Measurement invariance assessment
+        - 'loading_comparison': Factor loadings by group
+    """
+    if model_type not in MODEL_REGISTRY:
+        print(f"  Unknown model: {model_type}")
+        return {}
+
+    # Add government type column
+    data = add_government_type_column(data, grantee_col='Grantee')
+
+    # Filter to state and local (exclude unknown)
+    data_mg = data[data['Government_Type'].isin(['state', 'local'])].copy()
+
+    if verbose:
+        state_n = (data_mg['Government_Type'] == 'state').sum()
+        local_n = (data_mg['Government_Type'] == 'local').sum()
+        print(f"  State governments: {state_n}")
+        print(f"  Local governments: {local_n}")
+
+    # Get model specification
+    model_spec = get_model_spec(model_type)
+
+    # Run multi-group analysis
+    results = {}
+
+    try:
+        # Fit models to each group
+        multigroup = fit_multigroup(
+            model_spec, data_mg,
+            group_col='Government_Type',
+            verbose=verbose
+        )
+
+        # Fit comparison table
+        fit_comp = compare_fit_statistics(multigroup)
+        results['fit_comparison'] = fit_comp
+
+        # Structural path comparison with significance tests
+        struct_comp = compare_structural_paths(multigroup, verbose=verbose)
+        results['structural_comparison'] = struct_comp
+
+        # Measurement invariance assessment
+        invariance = assess_measurement_invariance(multigroup, verbose=verbose)
+        results['invariance'] = invariance
+
+        # Loading comparison
+        from capacity_sem.models.sem_multigroup import compare_group_parameters
+        loading_comp = compare_group_parameters(multigroup, 'loadings')
+        results['loading_comparison'] = loading_comp
+
+    except Exception as e:
+        if verbose:
+            print(f"  Multi-group analysis failed: {e}")
+        results['error'] = str(e)
+
+    return results
+
+
+def run_mediation_analysis(
+    data: pd.DataFrame,
+    model_type: str = 'mediation_spending_cv',
+    bootstrap: bool = False,
+    n_boot: int = 200,
+    verbose: bool = True
+) -> Dict[str, Any]:
+    """
+    Run mediation analysis for indirect effects.
+
+    Tests whether the capacity → outcome relationship is mediated by
+    spending consistency (Spending_CV) or startup speed (Startup_Lag).
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data with features.
+    model_type : str, default 'mediation_spending_cv'
+        Mediation model specification.
+    bootstrap : bool, default False
+        Whether to compute bootstrap CI for indirect effect.
+    n_boot : int, default 200
+        Number of bootstrap samples.
+    verbose : bool, default True
+        Whether to print results.
+
+    Returns
+    -------
+    Dict[str, Any]
+        Mediation analysis results.
+    """
+    if model_type not in MODEL_REGISTRY:
+        print(f"  Unknown model: {model_type}")
+        return {}
+
+    model_spec = get_model_spec(model_type)
+
+    # Determine mediator and outcome based on model
+    if 'spending_cv' in model_type.lower():
+        iv = 'gov_cap'
+        mediator = 'Spending_CV'
+        dv = 'Duration_log'
+    elif 'startup' in model_type.lower():
+        iv = 'gov_cap'
+        mediator = 'Startup_Lag'
+        dv = 'Duration_log'
+    elif 'progress' in model_type.lower():
+        iv = 'gov_cap'
+        mediator = 'Progress_Rate'
+        dv = 'Duration_log'
+    else:
+        print(f"  Could not determine mediation structure for {model_type}")
+        return {}
+
+    try:
+        results = compute_mediation_effects(
+            model_spec, data, iv, mediator, dv,
+            bootstrap=bootstrap, n_boot=n_boot, verbose=verbose
+        )
+        return results
+    except Exception as e:
+        if verbose:
+            print(f"  Mediation analysis failed: {e}")
+        return {'error': str(e)}
+
+
+def run_formative_comparison(
+    data: pd.DataFrame,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Compare reflective vs. formative capacity models.
+
+    Tests whether capacity is better conceptualized as:
+    - Reflective: Capacity causes indicator scores
+    - Formative: Indicator scores form capacity
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data.
+    verbose : bool, default True
+        Whether to print results.
+
+    Returns
+    -------
+    pd.DataFrame
+        Comparison of reflective vs. formative models.
+    """
+    models_to_compare = [
+        ('Reflective (exp_optimal_v1)', 'exp_optimal_v1'),
+        ('Formative capacity', 'formative_capacity'),
+    ]
+
+    results = []
+    names = []
+
+    for name, model_type in models_to_compare:
+        if model_type not in MODEL_REGISTRY:
+            continue
+
+        try:
+            result = fit_and_summarize(data, model_type, 'all')
+            result['evaluation'] = evaluate_model_fit(result['fit_stats'])
+            results.append(result)
+            names.append(name)
+            if verbose:
+                print(f"  {name}: n={result['sample_size']}")
+        except Exception as e:
+            if verbose:
+                print(f"  {name}: Failed - {e}")
+            continue
+
+    if not results:
+        return pd.DataFrame()
+
+    return compare_models(results, names)
+
+
+def main(models: Optional[List[str]] = None, run_extended: bool = False):
     """
     Main entry point for robustness checks.
 
@@ -287,6 +505,8 @@ def main(models: Optional[List[str]] = None):
     ----------
     models : List[str], optional
         Models to run robustness checks for.
+    run_extended : bool, default False
+        Whether to run extended analyses (multi-group, mediation).
     """
     print("=" * 60)
     print("Stage 04: Robustness Checks")
@@ -344,6 +564,64 @@ def main(models: Optional[List[str]] = None):
         cov_comparison.to_csv(cov_path, index=False)
         print(f"\n  Saved to: {cov_path}")
 
+    # 5. Multi-group comparison (state vs. local)
+    print("\n5. Multi-Group Comparison (State vs. Local)")
+    print("-" * 40)
+    multigroup_results = run_multigroup_comparison(data)
+    if multigroup_results and 'fit_comparison' in multigroup_results:
+        # Save fit comparison
+        mg_fit_path = diag_dir / "robustness_multigroup_fit.csv"
+        multigroup_results['fit_comparison'].to_csv(mg_fit_path, index=False)
+        print(f"\n  Fit comparison saved to: {mg_fit_path}")
+
+        # Save structural comparison
+        if 'structural_comparison' in multigroup_results:
+            mg_struct_path = diag_dir / "robustness_multigroup_paths.csv"
+            multigroup_results['structural_comparison'].to_csv(mg_struct_path, index=False)
+            print(f"  Path comparison saved to: {mg_struct_path}")
+
+        # Save invariance assessment summary
+        if 'invariance' in multigroup_results:
+            inv = multigroup_results['invariance']
+            inv_summary = pd.DataFrame([{
+                'Configural_Invariance': inv.get('configural', False),
+                'Metric_Invariance_Approx': inv.get('metric_approximate', False),
+                'Notes': '; '.join(inv.get('notes', []))
+            }])
+            inv_path = diag_dir / "robustness_multigroup_invariance.csv"
+            inv_summary.to_csv(inv_path, index=False)
+            print(f"  Invariance summary saved to: {inv_path}")
+
+    # 6. Formative vs. Reflective comparison
+    print("\n6. Reflective vs. Formative Capacity Model")
+    print("-" * 40)
+    formative_comparison = run_formative_comparison(data)
+    if not formative_comparison.empty:
+        form_path = diag_dir / "robustness_formative.csv"
+        formative_comparison.to_csv(form_path, index=False)
+        print(f"\n  Saved to: {form_path}")
+
+    # Extended analyses (optional, slower)
+    if run_extended:
+        # 7. Mediation analysis
+        print("\n7. Mediation Analysis (Spending CV)")
+        print("-" * 40)
+        mediation_results = run_mediation_analysis(data, 'mediation_spending_cv')
+        if mediation_results and 'paths' in mediation_results:
+            med_summary = pd.DataFrame([{
+                'Path_a_IV_to_Med': mediation_results['paths'].get('a', np.nan),
+                'Path_b_Med_to_DV': mediation_results['paths'].get('b', np.nan),
+                'Path_c_Direct': mediation_results['paths'].get('c_prime', np.nan),
+                'Indirect_Effect': mediation_results['paths'].get('indirect', np.nan),
+                'Total_Effect': mediation_results['paths'].get('total', np.nan),
+                'Sobel_z': mediation_results.get('sobel', {}).get('z', np.nan),
+                'Sobel_p': mediation_results.get('sobel', {}).get('p', np.nan),
+                'Interpretation': mediation_results.get('interpretation', '')
+            }])
+            med_path = diag_dir / "robustness_mediation.csv"
+            med_summary.to_csv(med_path, index=False)
+            print(f"\n  Saved to: {med_path}")
+
     print("\n✓ Robustness checks complete")
     print(f"  Results saved to: {diag_dir}")
 
@@ -354,6 +632,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run robustness checks")
     parser.add_argument("--models", "-m", nargs="+", default=None,
                         help="Model specifications to run")
+    parser.add_argument("--extended", "-e", action="store_true",
+                        help="Run extended analyses (mediation, bootstrap)")
 
     args = parser.parse_args()
-    main(models=args.models)
+    main(models=args.models, run_extended=args.extended)

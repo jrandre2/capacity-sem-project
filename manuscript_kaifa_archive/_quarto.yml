@@ -1,0 +1,58 @@
+project:
+  output-dir: _output
+  pre-render: ./pre_render.sh
+  render:
+    - index.qmd
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    theme: cosmo
+
+  pdf:
+    documentclass: article
+    papersize: letter
+    geometry:
+      - margin=1in
+    number-sections: true
+    toc: true
+    keep-tex: true
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{needspace}
+        \renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip}{\par\bigskip}
+
+  docx:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    reference-doc: reference.docx
+    highlight-style: github
+
+bibliography: references.bib
+csl: csl/apa.csl
+
+execute:
+  freeze: auto
+  cache: false
+  warning: false
+  message: false
+  echo: false
+
+crossref:
+  fig-prefix: "Figure"
+  tbl-prefix: "Table"
+  eq-prefix: "Equation"
+  sec-prefix: "Section"
+
+knitr:
+  opts_chunk:
+    echo: false
+    fig.align: center
+    out.width: "100%"

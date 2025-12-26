@@ -63,6 +63,23 @@ def cmd_run_robustness(args):
     s04_robustness.main(models=args.models)
 
 
+def cmd_run_alternatives(args):
+    """Run alternative modeling approaches."""
+    from stages import s06_alternatives
+
+    # Handle convenience flags
+    if args.survival_only:
+        methods = ['survival']
+    elif args.sem_only:
+        methods = ['threshold', 'duration_free', 'milestone']
+    elif args.methods and 'all' in args.methods:
+        methods = None
+    else:
+        methods = args.methods
+
+    s06_alternatives.main(methods=methods, subset=args.subset)
+
+
 def cmd_make_figures(args):
     """Generate publication figures."""
     from stages import s05_figures
@@ -200,6 +217,36 @@ def main():
         help="Model specifications to check"
     )
     p_robust.set_defaults(func=cmd_run_robustness)
+
+    # run_alternatives
+    p_alternatives = subparsers.add_parser(
+        "run_alternatives",
+        help="Run alternative modeling approaches (survival, threshold, duration-free, milestone)"
+    )
+    p_alternatives.add_argument(
+        "--methods", "-m",
+        nargs="+",
+        default=None,
+        choices=['survival', 'threshold', 'duration_free', 'milestone', 'all'],
+        help="Methods to run (default: all)"
+    )
+    p_alternatives.add_argument(
+        "--subset", "-s",
+        default="all",
+        choices=["all", "state", "local"],
+        help="Government subset"
+    )
+    p_alternatives.add_argument(
+        "--survival-only",
+        action="store_true",
+        help="Run only survival analysis"
+    )
+    p_alternatives.add_argument(
+        "--sem-only",
+        action="store_true",
+        help="Run only SEM alternatives (no survival)"
+    )
+    p_alternatives.set_defaults(func=cmd_run_alternatives)
 
     # make_figures
     p_figures = subparsers.add_parser(

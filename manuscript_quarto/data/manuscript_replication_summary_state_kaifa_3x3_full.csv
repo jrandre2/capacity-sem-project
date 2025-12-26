@@ -1,0 +1,2 @@
+methodology,subset,model_type,sample_size,beta,se,p_value,significant,manuscript_beta,manuscript_p
+manuscript_replication,state,kaifa_3x3_full,36,113.65239145027482,17.534883756302044,9.081380092368363e-11,True,71.024,0.01
