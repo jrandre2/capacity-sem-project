@@ -31,6 +31,40 @@ python src/pipeline.py review_archive       # Archive completed review
 python src/pipeline.py review_report        # Summary of all review cycles
 ```
 
+## Project Branching Strategy
+
+This project uses **git branches** to manage alternative analytical approaches while preserving the main analysis.
+
+### Current Branches
+
+| Branch | Purpose | Status | Key Files |
+|--------|---------|--------|-----------|
+| `main` | Time-varying survival with capacity ratios | Complete (null findings) | manuscript_quarto/ |
+| `analysis/alternative-capacity-measures` | Explore non-ratio capacity operationalizations | Planned | TBD |
+
+### Branch Workflow
+
+1. **Preserve main**: All commits to main are tagged at major milestones
+2. **Create analysis branch**: `git checkout -b analysis/[approach-name]`
+3. **Develop alternative**: Modify capacity measure calculation, re-run analyses
+4. **Document findings**: Update branch-specific documentation
+5. **Decision point**: Merge to main if superior, archive if not
+
+### Archived Manuscripts
+
+| Directory | Method | Finding | Date Archived |
+|-----------|--------|---------|---------------|
+| `manuscript_kaifa_archive/` | SEM with latent constructs | β=71.02, p=0.01 (N=36-40) | Dec 2024 |
+| TBD | Time-varying with ratios | HR=1.10, p>0.05 (null) | TBD |
+
+### Tags for Milestone Tracking
+
+- `v0.1.0`: Initial commit with SEM infrastructure
+- `v0.2.0-time-varying-null-findings`: Time-varying survival complete, null findings documented
+- Future: `v0.3.0-alternative-capacity-[result]`
+
+---
+
 ## Current Methodology: Survival Analysis
 
 The manuscript uses **survival analysis** (Cox Proportional Hazards, Accelerated Failure Time models) to analyze disaster recovery completion timing. SEM infrastructure remains for sensitivity analysis but is not the primary methodology.
