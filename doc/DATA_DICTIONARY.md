@@ -60,6 +60,49 @@ Raw column names are normalized using `COLUMN_MAPPING` (e.g., `QPR Funds Obligat
 
 ---
 
+## Standardized QPR Variables (`qpr_standardized.parquet`)
+
+**Purpose**: Quarterly data with fixed denominators and winsorized velocity to eliminate computational artifacts.
+
+**Created by**: Stage 00b (s00b_standardize.py)
+
+**Documentation**: See `doc/ETL_STANDARDIZATION.md` for methodology
+
+| Variable | Type | Description |
+|----------|------|-------------|
+| `Obligated_Final` | Float | Final obligated amount (used as stable denominator for all quarters) |
+| `Obligated_Clean` | Float | Monotonic obligated amount (cummax of QPR Fund Obligated $) |
+| `Disbursed_Clean` | Float | Monotonic disbursed amount (cummax of QPR Fund Disbursed $) |
+| `Expended_Clean` | Float | Monotonic expended amount (cummax of QPR Fund Expended $) |
+| `Ratio_Disbursed_Std` | Float | Standardized disbursement ratio: Disbursed_Clean / Obligated_Final |
+| `Ratio_Expended_Std` | Float | Standardized expenditure ratio: Expended_Clean / Obligated_Final |
+| `Velocity_Disb_Std` | Float | Standardized disbursement velocity (quarterly change, fraction) |
+| `Velocity_Exp_Std` | Float | Standardized expenditure velocity (quarterly change, fraction) |
+| `Velocity_Disb_Std_pp` | Float | Standardized disbursement velocity (percentage points/quarter) |
+| `Velocity_Exp_Std_pp` | Float | Standardized expenditure velocity (percentage points/quarter) |
+| `Velocity_Disb_Std_pp_winsor` | Float | **PRIMARY VELOCITY MEASURE**: Winsorized at 1%/99% percentiles |
+| `Velocity_Exp_Std_pp_winsor` | Float | Winsorized expenditure velocity |
+| `Velocity_Index_Std_pp` | Float | Capacity velocity index (average of disbursement and expenditure velocity) |
+| `Velocity_Index_Std_pp_winsor` | Float | Winsorized capacity velocity index |
+| `Velocity_Disb_Std_pp_roll2` | Float | 2-quarter rolling mean velocity (disbursement) |
+| `Velocity_Disb_Std_pp_roll4` | Float | 4-quarter rolling mean velocity (disbursement) |
+| `Velocity_Exp_Std_pp_roll2` | Float | 2-quarter rolling mean velocity (expenditure) |
+| `Velocity_Exp_Std_pp_roll4` | Float | 4-quarter rolling mean velocity (expenditure) |
+| `QA_Extreme_Velocity` | Bool | Raw velocity exceeds ±100 pp/quarter (before winsorization) |
+| `QA_Obligated_Jump` | Bool | Obligated amount changed >10% from prior quarter |
+| `QA_Negative_Adjustment` | Bool | Disbursed or expended decreased (negative flow) |
+
+**Key features**:
+- **Fixed denominators**: Uses final obligated amount for all quarters, eliminating spurious velocity swings
+- **Monotonic series**: Clean series ensure cumulative totals never decrease
+- **Winsorization**: Primary velocity measures capped at 1%/99% percentiles to handle outliers
+- **Rolling averages**: Smooth out quarterly volatility
+- **QA flags**: Track data quality issues for investigation
+
+**Impact**: Extreme velocity observations reduced from 0.6% to 0.24%; velocity std dev reduced 68%
+
+---
+
 ## Quality Flags (`qpr_clean.parquet`)
 
 All `QA_` fields are boolean flags indicating row-level data quality issues.
@@ -179,6 +222,95 @@ Additional covariates engineered for time-varying survival models:
 | `Startup_Lag` | Integer | Quarters before first expenditure |
 | `Capacity_Index` | Float | Mean of disbursement and expenditure ratios (formative models) |
 
+### Phase-Specific Velocity Features (Week 5)
+
+**Purpose**: Decompose velocity effects across program timeline to identify WHEN velocity matters.
+
+**Method**: Each program's observation period is divided into thirds chronologically, and velocity statistics are computed separately for each phase.
+
+| Feature | Description | Units | Typical Range |
+|---------|-------------|-------|---------------|
+| `Velocity_Early` | Mean velocity in first third of program duration | pp/quarter | -5 to 15 |
+| `Velocity_Early_median` | Median velocity in first third | pp/quarter | -3 to 10 |
+| `Velocity_Mid` | Mean velocity in middle third of program duration | pp/quarter | -5 to 15 |
+| `Velocity_Mid_median` | Median velocity in middle third | pp/quarter | -3 to 10 |
+| `Velocity_Late` | Mean velocity in final third of program duration | pp/quarter | -5 to 15 |
+| `Velocity_Late_median` | Median velocity in final third | pp/quarter | -3 to 10 |
+| `Velocity_Acceleration` | Change in velocity from early to late phase (Late - Early) | pp/quarter | -10 to 10 |
+
+**Missing Data**: Programs with <3 quarters of data may have missing phase-specific features.
+
+**Usage**: Used in `run_phase_specific_analysis.py` to test Cox PH models with phase-specific predictors.
+
+**Key Finding**: Late-phase velocity (HR=5.00, p=0.040) dominates when all phases are included simultaneously.
+
+### Program Type Features (panel_program_types.parquet)
+
+**Purpose**: Characterize program portfolio composition to test heterogeneity by activity type.
+
+**Method**: Activity-level obligated dollars aggregated to grantee-disaster level across 6 program categories.
+
+**Dollar Amounts** (in USD):
+
+| Feature | Description | Typical Range |
+|---------|-------------|---------------|
+| `Housing` | Total obligated for housing activities | $0 - $8B |
+| `Infrastructure` | Total obligated for infrastructure activities | $0 - $3B |
+| `Economic Development` | Total obligated for economic development activities | $0 - $500M |
+| `Acquisition` | Total obligated for acquisition activities | $0 - $1B |
+| `Administration` | Total obligated for administrative activities | $0 - $200M |
+| `Other` | Total obligated for uncategorized activities | $0 - $100M |
+| `Total_Obligated_by_Category` | Sum across all categories (validation field) | $1M - $8B |
+
+**Portfolio Composition** (percentages):
+
+| Feature | Description | Units | Typical Range |
+|---------|-------------|-------|---------------|
+| `Housing_Pct` | Housing as % of total obligated | proportion | 0.00 - 1.00 |
+| `Infrastructure_Pct` | Infrastructure as % of total obligated | proportion | 0.00 - 1.00 |
+| `Economic Development_Pct` | Economic development as % of total obligated | proportion | 0.00 - 0.50 |
+| `Acquisition_Pct` | Acquisition as % of total obligated | proportion | 0.00 - 0.40 |
+| `Administration_Pct` | Administration as % of total obligated | proportion | 0.00 - 0.20 |
+| `Other_Pct` | Other activities as % of total obligated | proportion | 0.00 - 0.20 |
+
+**Derived Features**:
+
+| Feature | Description | Units | Typical Range |
+|---------|-------------|-------|---------------|
+| `Primary_Program_Type` | Category with highest obligated dollars | categorical | Housing, Infrastructure, Administration |
+| `Program_Diversity_Index` | Herfindahl index: 1 - Σ(share²) | 0-1 scale | 0.00 - 0.83 |
+| `N_Active_Categories` | Count of categories with >5% of obligated | integer | 1 - 6 |
+
+**Distribution**:
+- Housing-dominant: 85 programs (54%)
+- Infrastructure-dominant: 58 programs (37%)
+- Administration-dominant: 10 programs (6%)
+- Other: 3 programs (2%)
+
+**Usage**: Merged with panel_features_std.parquet in `run_program_type_analysis.py` for stratified survival analysis.
+
+**Key Finding**: Administration programs show extreme velocity effects (HR=30.74, p=0.004), suggesting rapid spending is critical for administrative efficiency.
+
+### Multi-Stage Lag Features (panel_features_std.parquet)
+
+**Purpose**: Identify bottlenecks in the administrative pipeline (Obligate→Disburse→Expend).
+
+**Method**: Compute time lag (in quarters) from first non-zero value in each stage to the next stage.
+
+| Feature | Description | Units | Typical Range |
+|---------|-------------|-------|---------------|
+| `Lag_Obligate_to_Disburse` | Quarters from first obligated to first disbursed > 0 | quarters | 0 - 8 |
+| `Lag_Disburse_to_Expend` | Quarters from first disbursed to first expended > 0 | quarters | 0 - 12 |
+| `Lag_Total_Pipeline` | Total lag from first obligated to first expended | quarters | 0 - 20 |
+| `Stage1_Efficiency` | Mean(Disbursed/Obligated) across all quarters | ratio | 0.2 - 1.0 |
+| `Stage2_Efficiency` | Mean(Expended/Disbursed) across all quarters | ratio | 0.3 - 1.0 |
+
+**Missing Data**: Programs that never disburse or never expend have missing lag values (treated as censored).
+
+**Usage**: Used in `run_multistage_analysis.py` for competing risks survival analysis.
+
+**Key Finding**: Stage 1 (obligate→disburse) typically 1-2 quarters, Stage 2 (disburse→expend) typically 3-5 quarters. Stage 2 bottlenecks are more common.
+
 ---
 
 ## Outcome Indicators
@@ -272,13 +404,24 @@ Variables used in Kaifa's manuscript replication with right-censoring applied:
 
 ### Experience
 
-| Variable | Type | Description |
-|----------|------|-------------|
-| `Years_Experience` | Float | Years since first CDBG-DR grant |
-| `Prior_Grant_Count` | Integer | Number of prior disaster grants |
-| `Prior_Grant_Dollars` | Float | Cumulative prior obligated dollars |
-| `Experience_Index` | Float | Composite experience score (0-1) |
-| `Experience_Index_scaled` | Float | Z-score standardized experience |
+Organizational learning proxies based on prior CDBG-DR grant management history.
+
+| Variable | Type | Description | Range |
+|----------|------|-------------|-------|
+| `Years_Experience` | Float | Years since first CDBG-DR grant | 0-25 |
+| `Prior_Grant_Count` | Integer | Number of prior CDBG-DR disasters managed before current | 0-7 |
+| `Prior_Grant_Dollars` | Float | Total obligated dollars from prior disasters ($) | 0-$10B |
+| `Experience_Index` | Float | Composite experience score (normalized 0-1) | 0-1 |
+| `Experience_Index_scaled` | Float | Z-score standardized experience | -2 to +3 |
+
+**Computation**: Uses DRGR_DISASTER_YEARS mapping to determine chronological order. "Prior" means disasters that occurred in earlier years than the current disaster. Computed by `build_experience_dataset()` in `experience_indicators.py` and integrated into standardized features at Stage 1b.
+
+**Missing Data**: First-time grantees (no prior CDBG-DR experience) have all values = 0.
+
+**Sample Statistics** (standardized panel):
+- 47% of grantee-disasters (73/156) have prior grant experience
+- Mean Prior_Grant_Count: 0.93
+- Mean Prior_Grant_Dollars: $1.28B
 
 ### Employment
 

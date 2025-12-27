@@ -45,6 +45,57 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 
 ---
 
+### Stage 0b: Data Standardization (`s00b_standardize.py`) ✨ NEW
+
+**Command**: `python src/pipeline.py standardize_data`
+
+**Purpose**: Standardize quarterly data with fixed denominators and winsorized velocity to eliminate computational artifacts in time-varying analyses.
+
+**Inputs**:
+- `data_work/qpr_clean.parquet` - Cleaned QPR data from Stage 0
+
+**Outputs**:
+- `data_work/qpr_standardized.parquet` - Standardized quarterly data (130,605 rows, 35 columns)
+- `data_work/quality/qpr_standardized_report.csv` - Standardization quality report
+
+**Key Functions**:
+- `compute_stable_denominator()` - Compute final or max obligated amount per grantee-disaster
+- `standardize_grantee_disaster()` - Apply fixed-denominator standardization per group
+- `apply_winsorization()` - Winsorize velocity at 1%/99% percentiles dataset-wide
+- `generate_standardization_report()` - Create quality metrics report
+
+**Standardization Logic**:
+
+1. **Fixed denominators**: Use final obligated amount as stable denominator across all quarters
+   ```python
+   Ratio_Disbursed_Std = Disbursed_Clean / Obligated_Final
+   Velocity_Disb_Std = Ratio_Disbursed_Std - Ratio_Disbursed_Std_lag1
+   ```
+
+2. **Monotonic series**: Apply cummax to ensure cumulative totals never decrease
+   ```python
+   Obligated_Clean = QPR_Fund_Obligated.clip(lower=0).cummax()
+   ```
+
+3. **Winsorization**: Cap velocity at 1st/99th percentiles to handle outliers
+   ```python
+   Velocity_winsor = np.clip(Velocity, lower=p01, upper=p99)
+   ```
+
+**Quality Assurance**:
+- `QA_Extreme_Velocity`: Flags observations with velocity >100 pp/quarter (before winsorization)
+- `QA_Obligated_Jump`: Flags quarters where obligated changed >10%
+- `QA_Negative_Adjustment`: Flags quarters with negative flows
+
+**Impact**:
+- Extreme velocity observations reduced from 0.6% to 0.24%
+- Velocity standard deviation reduced by 68% (48 → 15 pp/quarter)
+- Eliminates spurious velocity swings from changing denominators
+
+**Documentation**: See `doc/ETL_STANDARDIZATION.md` for full methodology
+
+---
+
 ### Stage 1: Panel Construction (`s01_link.py`)
 
 **Command**: `python src/pipeline.py build_panel`
@@ -77,11 +128,120 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 
 ---
 
-### Stage 2: Feature Engineering (`s02_features.py`)
+### Stage 1b: Standardized Feature Engineering (`s01b_features.py`) ✨ NEW
+
+**Command**: `python src/pipeline.py build_features_std`
+
+**Purpose**: Aggregate standardized quarterly data to grantee-disaster level and compute analysis-ready features using fixed-denominator velocity measures.
+
+**Inputs**:
+- `data_work/qpr_standardized.parquet` - Standardized quarterly data from Stage 0b
+- `data_work/panel.parquet` - Base panel from Stage 1
+
+**Outputs**:
+- `data_work/panel_features_std.parquet` - Standardized features panel (156 rows, 182 columns)
+
+**Key Functions**:
+- `aggregate_standardized_velocity()` - Aggregate velocity to grantee-disaster level (mean, median, std)
+- `compute_timeliness_features_std()` - Duration to 17 completion thresholds (20%-100%)
+- `compute_experience_features()` - Prior grant experience indicators using chronological disaster ordering
+- `add_survival_covariates()` - Government type, log obligated, disaster year
+- `add_capacity_indices()` - Composite capacity measures
+- `add_interaction_terms()` - Ratio × velocity interactions
+
+**Feature Categories** (182 total):
+- **Velocity features** (106): Mean/median/std of standardized velocity, rolling averages, scaled versions
+- **Duration features** (20): Time to reach 20%, 25%, ..., 100% completion thresholds
+- **Interaction terms** (22): Ratio × velocity interactions at various thresholds
+- **Experience indicators** (4): Prior_Grant_Count, Prior_Grant_Dollars, Years_Experience, Experience_Index
+- **Survival covariates** (6): Government_Type_State, Log_Obligated, Prior_Grant_Count, Prior_Grant_Dollars_log, Disaster_Year, Population_log
+- **Other features** (24): Capacity ratios, indices, quartiles
+
+**Experience Computation**:
+- Uses `build_experience_dataset()` from `experience_indicators.py` with DRGR_DISASTER_YEARS chronological mapping
+- "Prior" grants = disasters occurring in earlier years than current disaster
+- First-time grantees assigned 0 for all experience variables
+- Integrated after timeliness features, before survival covariate engineering
+- Sample: 47% of grantee-disasters (73/156) have prior grant experience
+
+**Key Advantages Over Legacy Pipeline**:
+- Uses pre-computed standardized velocity from s00b (fixed denominators, winsorized)
+- Single source of truth for velocity calculations
+- Proper handling of computational artifacts
+- Backward-compatible column names (Duration_of_completion, N_Quarters)
+
+**Documentation**: See `doc/ETL_STANDARDIZATION.md` for velocity methodology
+
+---
+
+### Stage 1c: Aggregate Program Types (`s01c_program_types.py`)
+
+**Command**: `python src/pipeline.py aggregate_program_types`
+
+**Purpose**: Aggregate activity-level data to grantee-disaster level to create program portfolio features.
+
+**Inputs**:
+- `data_work/qpr_standardized.parquet` - Quarterly data with Activity Type column
+- `data_work/panel_features_std.parquet` - Base panel (for validation)
+
+**Outputs**:
+- `data_work/panel_program_types.parquet`
+  - 156 grantee-disaster pairs
+  - 18 columns: grantee/disaster identifiers + 6 dollar amounts + 6 percentages + 4 derived features
+
+**Processing Steps**:
+
+1. **Activity Classification**: Map 51 raw activity types to 6 categories using PROGRAM_TYPE_MAPPING
+   - Housing (15 activities)
+   - Infrastructure (14 activities)
+   - Economic Development (7 activities)
+   - Acquisition (7 activities)
+   - Administration (4 activities)
+   - Other (4 activities)
+
+2. **Dollar Aggregation**: For each grantee-disaster pair:
+   - Get maximum obligated amount per activity (across all quarters)
+   - Sum by category to get total obligated per category
+   - Calculate total obligated across all categories
+
+3. **Portfolio Features**:
+   - Category percentages: `Housing_Pct`, `Infrastructure_Pct`, etc.
+   - Primary program type: Category with highest obligated dollars
+   - Program diversity index: Herfindahl index (1 - Σ(share_i²))
+   - Number of active categories: Count of categories with >5% of obligated
+
+**Features Created**:
+- `Housing`, `Infrastructure`, `Economic Development`, `Acquisition`, `Administration`, `Other` - Dollar amounts
+- `Housing_Pct`, `Infrastructure_Pct`, etc. - Percentage of total obligated
+- `Primary_Program_Type` - Categorical: largest category
+- `Program_Diversity_Index` - Continuous: 0 (single category) to ~0.83 (perfectly diverse)
+- `N_Active_Categories` - Integer: number of categories with >5% share
+- `Total_Obligated_by_Category` - Total obligated summed across categories (for validation)
+
+**Usage in Analysis**:
+- Used by `scripts/run_program_type_analysis.py` to stratify velocity effects by program type
+- Enables testing of heterogeneity: Do velocity effects vary by what grantees do?
+
+**Runtime**: ~2-3 seconds
+
+**Dependencies**:
+- `config.PROGRAM_TYPE_MAPPING` - Activity type classification scheme
+- `fastparquet` - Parquet serialization (fallback to pyarrow)
+
+---
+
+### Stage 2: Feature Engineering (`s02_features.py`) ⚠️ DEPRECATED
+
+> **⚠️ DEPRECATED**: Use Stage 1b (`build_features_std`) for all new analyses.
+> Stage 2 is retained only for replication of legacy results. Do not use for new research.
+
+**Status**: **DEPRECATED** - Use Stage 1b (s01b_features.py) for new analyses
 
 **Command**: `python src/pipeline.py compute_features`
 
-**Purpose**: Compute timeliness metrics, experience indicators, and program stratification.
+**Purpose**: Legacy feature engineering with dynamic-denominator velocity (retained for replication only).
+
+**Deprecation Reason**: Uses dynamic denominators for velocity calculation, which creates computational artifacts (extreme outliers ±1,933 pp/quarter). Replaced by standardized pipeline (Stages 0b + 1b) with fixed denominators.
 
 **Inputs**:
 - `data_work/panel.parquet`
@@ -99,6 +259,18 @@ The Capacity-SEM analysis pipeline consists of six sequential stages that proces
 - `add_program_type_column()` - Activity type classification
 
 Timeliness and spending consistency metrics are computed from `qpr_quarterly` (quarterly flows and cumulative series).
+
+**Additional capacity measures** (exploratory):
+- Absolute dollars (log): `Obligated_log`, `Disbursed_log`, `Expended_log`
+- Velocity: `Disbursement_Velocity`, `Expenditure_Velocity`, `Capacity_Velocity_Index`
+- Velocity (percent-per-quarter): `Disbursement_Velocity_pp`, `Expenditure_Velocity_pp`, `Capacity_Velocity_Index_pp`
+- Velocity (winsorized): `Disbursement_Velocity_winsor`, `Expenditure_Velocity_winsor`, `Capacity_Velocity_Index_winsor`
+- Standardized velocity (z-score): `Disbursement_Velocity_scaled`, `Expenditure_Velocity_scaled`, `Capacity_Velocity_Index_scaled`
+- Early-window velocity (first 2/3/4/6 quarters): `Disbursement_Velocity_early_2q`/`3q`/`4q`/`6q`, `Expenditure_Velocity_early_2q`/`3q`/`4q`/`6q` (pp variants), and `Capacity_Velocity_Index_early_*` (pp, winsor, scaled variants)
+- Fixed calendar windows (first 12/18 months): `Disbursement_Velocity_fixed_12m`/`18m`, `Expenditure_Velocity_fixed_12m`/`18m`, and `Capacity_Velocity_Index_fixed_*` (pp, winsor, scaled variants)
+- Ratio x velocity interactions (centered and threshold/spline): `Ratio_disbursed_to_obligated_c`, `Ratio_disbursed_to_obligated_high`, `Ratio_disbursed_to_obligated_above`, alternative cutoffs (`*_high_q25/q33/q67/q75`, `*_above_q25/q33/q67/q75`), `Disbursement_Velocity_pp_c`, `Capacity_Velocity_Index_pp_c`, plus interaction terms
+- Composite indices: `Capacity_Absolute_Index`, `Capacity_PCA1`
+- Quartile dummies (non-parametric): `Capacity_Index_Q2-Q4`, `Capacity_Absolute_Index_Q2-Q4`, `Capacity_Velocity_Index_Q2-Q4`, `Capacity_Velocity_Index_pp_Q2-Q4`, `Capacity_Velocity_Index_winsor_Q2-Q4`, `Capacity_Velocity_Index_scaled_Q2-Q4`
 
 ---
 
@@ -158,8 +330,10 @@ Timeliness and spending consistency metrics are computed from `qpr_quarterly` (q
 
 1. **Capacity Only (No Covariates)**: Tests capacity ratios without controls
 2. **Full Covariates (Main Specification)**: Includes government type, grant size, experience, disaster year, population
-3. **Stratified by Government Type**: Tests whether state vs. local differ
-4. **Alternative Lag Structures**: Tests lag=0 (contemporaneous), lag=1 (main), lag=2 (longer lag)
+3. **Velocity (Percent-Per-Quarter)**: Lagged velocity and velocity index specifications
+4. **Rolling/Cumulative Velocity**: Rolling-window and cumulative velocity robustness checks
+5. **Stratified by Government Type**: Tests whether state vs. local differ
+6. **Alternative Lag Structures**: Tests lag=0 (contemporaneous), lag=1 (main), lag=2 (longer lag)
 
 **Time-Varying Panel Structure**:
 
@@ -291,6 +465,43 @@ NYC-Sandy        | 45    | 48   | 1 | 0.89            | Local    | 17.2
 
 **Options**:
 - `--style, -s`: Figure style (`publication`, `presentation`)
+
+---
+
+### Stage 6: Alternative Modeling (`s06_alternatives.py`)
+
+**Command**: `python src/pipeline.py run_alternatives [--methods METHODS] [--capacity-sets all]`
+
+**Purpose**: Run alternative survival capacity sets and SEM robustness checks.
+
+**Outputs**:
+- `data_work/diagnostics/alternatives_survival.csv` (single-set survival)
+- `data_work/diagnostics/alternatives_survival_capacity_sets.csv`
+- `data_work/diagnostics/alternatives_survival_stratified_velocity.csv`
+- `data_work/diagnostics/alternatives_survival_velocity_strata_models.csv`
+- `data_work/diagnostics/alternatives_threshold_sensitivity.csv`
+- `data_work/diagnostics/alternatives_duration_free.csv`
+- `data_work/diagnostics/alternatives_milestone.csv`
+- `data_work/diagnostics/alternatives_comparison.csv`
+
+**Notes**:
+- Stratified outputs include penalized Cox fits for low-event strata.
+- Pooled/stratified interaction models test differential velocity effects
+  across ratio quartiles.
+
+---
+
+### Stage 7: Capacity Summary (`s07_capacity_summary.py`)
+
+**Command**: `python src/pipeline.py capacity_summary`
+
+**Purpose**: Apply multiple-testing corrections across capacity-set survival
+models (static + time-varying) and produce a compact table and figure.
+
+**Outputs**:
+- `data_work/diagnostics/multiple_testing_capacity_sets_time_varying.csv`
+- `data_work/diagnostics/capacity_corrected_table.csv`
+- `figures/fig_capacity_corrected.png`
 
 ---
 

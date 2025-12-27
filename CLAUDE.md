@@ -9,13 +9,27 @@ source .venv/bin/activate  # REQUIRED for all scripts
 ### Common Commands
 
 ```bash
-# Pipeline
-python src/pipeline.py ingest_data
-python src/pipeline.py build_panel
-python src/pipeline.py compute_features
+# Standardized Pipeline (RECOMMENDED) ✨
+python src/pipeline.py ingest_data          # Stage 0: Ingest raw data
+python src/pipeline.py standardize_data     # Stage 0b: Standardize with fixed denominators
+python src/pipeline.py build_panel          # Stage 1: Create grantee-disaster panel
+python src/pipeline.py build_features_std   # Stage 1b: Build features from standardized data
+python src/pipeline.py aggregate_program_types  # Stage 1c: Aggregate program type features
+python src/pipeline.py run_survival         # Stage 3b: Time-varying survival analysis
+
+# Legacy Pipeline (DEPRECATED - for replication only)
+python src/pipeline.py compute_features     # Stage 2: OLD - uses dynamic denominators
+
+# SEM Models (for sensitivity analysis)
 python src/pipeline.py run_estimation --model exp_optimal_v1
 python src/pipeline.py run_robustness
 python src/pipeline.py make_figures
+
+# Additional Analysis Commands
+python src/pipeline.py run_alternatives             # Stage 6: Alternative modeling approaches
+python src/pipeline.py run_survival_threshold_sensitivity  # Threshold sensitivity (20-100%)
+python src/pipeline.py capacity_summary             # Stage 7: Corrected capacity summary
+python src/pipeline.py list_models                  # List available SEM specifications
 
 # Run complete pipeline
 python src/pipeline.py run_all
@@ -23,12 +37,12 @@ python src/pipeline.py run_all
 # Manuscript
 cd manuscript_quarto && ./render_all.sh
 
-# Synthetic Peer Review (NEW)
-python src/pipeline.py review_status        # Check current review status
-python src/pipeline.py review_new --focus par_general  # Start new review cycle
-python src/pipeline.py review_verify        # Run verification and PAR compliance checks
-python src/pipeline.py review_archive       # Archive completed review
-python src/pipeline.py review_report        # Summary of all review cycles
+# Synthetic Peer Review (Multi-Manuscript)
+python src/pipeline.py review_status --manuscript velocity   # Check review status
+python src/pipeline.py review_new --manuscript velocity --focus par_general  # New review
+python src/pipeline.py review_verify --manuscript velocity   # PAR compliance checks
+python src/pipeline.py review_archive --manuscript velocity  # Archive completed review
+python src/pipeline.py review_report        # Summary across all manuscripts
 ```
 
 ## Project Branching Strategy
@@ -40,7 +54,7 @@ This project uses **git branches** to manage alternative analytical approaches w
 | Branch | Purpose | Status | Key Files |
 |--------|---------|--------|-----------|
 | `main` | Time-varying survival with capacity ratios | Complete (null findings) | manuscript_quarto/ |
-| `analysis/alternative-capacity-measures` | Explore non-ratio capacity operationalizations | Planned | TBD |
+| `analysis/alternative-capacity-measures` | Explore non-ratio capacity operationalizations | Active | src/stages/s01b_features.py, scripts/ |
 
 ### Branch Workflow
 
@@ -75,19 +89,128 @@ With 73.7% of CDBG-DR programs incomplete at the 95% threshold, standard regress
 
 ### Key Results
 
-| Model | Disbursement HR/TR | p-value | Expenditure HR/TR | p-value |
-|-------|-------------------|---------|-------------------|---------|
-| Cox PH | 4.367 | 0.006 | 0.958 | 0.626 |
-| AFT Lognormal | 0.157 | <0.001 | 1.008 | 0.954 |
-
-- **Disbursement ratio**: Significant predictor (HR = 4.37, p = 0.006)
-- **Expenditure ratio**: Not significant
-- **Sample**: N=152 grantee-disaster pairs (with proper censoring)
+- **Sample**: N=143-151 grantee-disaster pairs
+- **Events**: 71 at 95% completion threshold
+- See `doc/RESEARCH_SYNTHESIS_REPORT.md` for detailed findings
 
 ### Capacity Indicators
 
 - `Ratio_disbursed_to_obligated`: Cumulative mean ratio of disbursed to obligated funds
 - `Ratio_expended_to_disbursed`: Cumulative mean ratio of expended to disbursed funds
+
+---
+
+## Standardized ETL Pipeline
+
+**Status**: Production-ready (December 2025)
+
+**Purpose**: Eliminate computational artifacts in velocity calculations through fixed-denominator approach.
+
+### Problem Solved
+
+Time-varying velocity calculations produced extreme outliers (±1,933 pp/quarter) due to **dynamic denominators**:
+
+```
+# BEFORE (Dynamic denominators):
+Velocity_t = (Disbursed_t / Obligated_t) - (Disbursed_{t-1} / Obligated_{t-1})
+# When Obligated changes → spurious velocity swings
+
+# AFTER (Fixed denominators):
+Velocity_t^std = (Disbursed_t / Obligated_final) - (Disbursed_{t-1} / Obligated_final)
+# Stable denominator → only numerator changes create velocity
+```
+
+**Impact**: Extreme velocity reduced from 0.6% to 0.24%; velocity std dev reduced 68%
+
+### New Pipeline Stages
+
+| Stage | Command | Purpose |
+|-------|---------|---------|
+| **0b** | `standardize_data` | Standardize with fixed denominators + winsorization |
+| **1b** | `build_features_std` | Aggregate standardized velocity to grantee-disaster level |
+
+**Output files**:
+- `data_work/qpr_standardized.parquet` - Standardized quarterly data (130,605 rows)
+- `data_work/panel_features_std.parquet` - Standardized features (156 rows, 177 columns)
+
+### Usage
+
+**Always use standardized pipeline for new analyses**:
+
+```bash
+python src/pipeline.py ingest_data           # 0: Ingest
+python src/pipeline.py standardize_data      # 0b: Standardize
+python src/pipeline.py build_panel           # 1: Panel
+python src/pipeline.py build_features_std    # 1b: Features
+python src/pipeline.py run_survival          # 3b: Analysis (auto-uses standardized data)
+```
+
+**Legacy pipeline** (s02_features.py) deprecated - use only for replication.
+
+### Key Features
+
+- **Fixed denominators**: Uses final obligated amount across all quarters
+- **Winsorization**: Caps velocity at 1%/99% percentiles
+- **QA flags**: Tracks extreme velocity, obligated jumps, negative adjustments
+- **Backward compatible**: Adds Duration_of_completion, N_Quarters aliases
+- **Single source of truth**: Pre-computed velocity eliminates inconsistencies
+
+### Documentation
+
+- **Methodology**: `doc/ETL_STANDARDIZATION.md`
+- **Test results**: `doc/STANDARDIZED_PIPELINE_TEST_RESULTS.md`
+- **Column definitions**: `doc/DATA_DICTIONARY.md` (Standardized QPR Variables section)
+- **Pipeline stages**: `doc/PIPELINE.md` (Stages 0b and 1b)
+
+---
+
+## Research Extension: Velocity Mechanisms & Heterogeneity
+
+**Purpose**: Investigate whether spending velocity predicts CDBG-DR program completion through mechanistic analysis and heterogeneity testing.
+
+**Documentation**: See `doc/RESEARCH_SYNTHESIS_REPORT.md` for complete findings.
+
+### Analysis Scripts
+
+Extended analysis scripts are in `scripts/`:
+
+```bash
+python scripts/run_multistage_analysis.py     # Multi-stage bottleneck identification
+python scripts/run_trajectory_clustering.py   # Velocity trajectory clustering
+python scripts/run_meta_analysis.py           # Aggregate all velocity estimates
+```
+
+### New Pipeline Stage: Stage 1c
+
+**Command**: `python src/pipeline.py aggregate_program_types`
+
+**Purpose**: Aggregate activity-level data to grantee-disaster level to create program portfolio features.
+
+**Inputs**:
+- `data_work/qpr_standardized.parquet` (quarterly data with Activity Type)
+- `data_work/panel_features_std.parquet` (base panel)
+
+**Outputs**:
+- `data_work/panel_program_types.parquet` (156 records, 18 columns)
+  - Primary_Program_Type (Housing, Infrastructure, Administration, etc.)
+  - Program_Diversity_Index (Herfindahl index)
+  - Category percentages (Housing_Pct, Infrastructure_Pct, etc.)
+
+### New Features in Panel
+
+**Phase-Specific Velocity** (added to panel_features_std.parquet, 202 columns total):
+- `Velocity_Early` - Mean velocity in first third of program duration
+- `Velocity_Mid` - Mean velocity in middle third
+- `Velocity_Late` - Mean velocity in final third
+- `Velocity_Acceleration` - Change from early to late phase (Late - Early)
+- Median versions: `Velocity_Early_median`, etc.
+
+### Outputs
+
+- **Synthesis**: `doc/RESEARCH_SYNTHESIS_REPORT.md`
+- **Diagnostics**: `data_work/diagnostics/*.csv`
+- **Figures**: `figures/*.png`
+- **Analysis logs**: `doc/archive/analysis_logs/`
 
 ---
 
@@ -227,7 +350,32 @@ This contains the original SEM-based manuscript with known methodological issues
 2. **Mathematical circularity**: Timeliness = 1/Duration as capacity indicator
 3. **Grantee-level aggregation**: Averaging across disasters reduces variance
 
-See `doc/ANALYSIS_COMPARISON_REPORT.md` for detailed comparison of methodologies.
+See `doc/archive/ANALYSIS_COMPARISON_REPORT.md` for detailed comparison of methodologies.
+
+---
+
+## Velocity Manuscript (manuscript_velocity/)
+
+**Location**: `manuscript_velocity/`
+**Status**: Development
+
+### Structure
+
+| File | Purpose |
+|------|---------|
+| `index.qmd` | Main manuscript |
+| `appendix-a-data.qmd` | Data appendix |
+| `appendix-b-methods.qmd` | Methods appendix |
+| `appendix-c-heterogeneity.qmd` | Heterogeneity analysis |
+| `appendix-d-meta-analysis.qmd` | Effect heterogeneity summary |
+
+### Rendering
+
+```bash
+cd manuscript_velocity
+./render_all.sh                           # All formats (HTML, PDF, DOCX)
+CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Skip pipeline re-run
+```
 
 ---
 
@@ -246,7 +394,7 @@ See [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) for complete variable defin
 
 ## Synthetic Peer Review System
 
-A systematic approach to stress-testing the manuscript before PAR submission using LLM-generated synthetic reviews.
+A systematic approach to stress-testing manuscripts before PAR submission using LLM-generated synthetic reviews.
 
 ### Overview
 
@@ -254,30 +402,88 @@ A systematic approach to stress-testing the manuscript before PAR submission usi
 - **Focus Areas**: par_general (comprehensive), methods (methodology), policy (practitioner relevance), clarity (writing)
 - **Documentation**: See [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) for full methodology
 
+### Multi-Manuscript Architecture
+
+The review system supports multiple manuscript approaches:
+
+| Manuscript | Directory | Reviews | Status |
+|------------|-----------|---------|--------|
+| `velocity` | `manuscript_velocity/` | `doc/reviews/velocity/` | Active |
+
+Each manuscript has its own:
+- `REVISION_TRACKER.md` - Current review tracking
+- `doc/reviews/{name}/` - Review-specific index and archive
+- Focus-specific prompts tailored to the manuscript's methodology
+
 ### Workflow
 
-1. **Generate Review**: `python src/pipeline.py review_new --focus par_general`
+1. **Generate Review**: `python src/pipeline.py review_new --manuscript velocity --focus par_general`
 2. **Obtain LLM Review**: Send manuscript + embedded prompt to Claude/GPT-4
-3. **Triage Comments**: Classify as VALID/ADDRESSED/SCOPE/INVALID in `manuscript_quarto/REVISION_TRACKER.md`
+3. **Triage Comments**: Classify as VALID/ADDRESSED/SCOPE/INVALID in `manuscript_velocity/REVISION_TRACKER.md`
 4. **Implement Changes**: Address valid concerns, update manuscript, re-render
-5. **Verify**: `python src/pipeline.py review_verify` (includes PAR compliance checks)
-6. **Archive**: `python src/pipeline.py review_archive` when complete
+5. **Verify**: `python src/pipeline.py review_verify --manuscript velocity` (includes PAR compliance checks)
+6. **Archive**: `python src/pipeline.py review_archive --manuscript velocity` when complete
 
 ### PAR Compliance Checks
 
 The `review_verify` command automatically checks:
 
-- Word count ≤ 8,000 (currently ~7,851)
-- No "this study" self-references (currently 0)
+- Word count ≤ 8,000
+- No "this study" self-references
 - Evidence for Practice section present
 - Abstract ≤ 150 words
 
+### Manuscript Word Count
+
+**Important**: PAR's 8,000-word limit applies to **prose text only** in the main body, including abstract, endnotes, and references. It does **NOT** include:
+
+- Tables and their contents
+- Code blocks
+- YAML front matter
+- Appendices (these are supplementary)
+- Figure captions (usually)
+
+**How to count words accurately**:
+
+```bash
+# Count prose words in a .qmd file (excludes code blocks, tables, YAML)
+cat manuscript.qmd | \
+  sed '/^```/,/^```/d' | \      # Remove code blocks
+  sed '/^---$/,/^---$/d' | \    # Remove YAML front matter
+  sed '/^|/d' | \               # Remove markdown tables
+  sed '/^\$/d' | \              # Remove LaTeX equations
+  sed '/^#|/d' | \              # Remove Quarto chunk options
+  grep -v '^\s*$' | \           # Remove blank lines
+  wc -w
+
+# Quick one-liner version:
+cat index.qmd | sed '/^```/,/^```/d' | sed '/^---$/,/^---$/d' | sed '/^|/d' | sed '/^\$/d' | sed '/^#|/d' | grep -v '^\s*$' | wc -w
+```
+
+**Target word counts for PAR**:
+
+- **Abstract**: 150 words maximum
+- **Main body**: 6,000-7,500 words typical
+- **Total with references**: ≤8,000 words
+
+**Note**: A manuscript with ~3,000 prose words is substantially under-length for PAR and likely needs expansion. Typical full-length PAR articles run 6,000-7,500 words of prose.
+
 ### Review History
 
-All completed reviews are archived in `doc/reviews/archive/` with the format:
+All completed reviews are archived in `doc/reviews/{manuscript}/archive/` with the format:
 `review_NN_YYYY-MM-DD_FOCUS.md`
 
 Track all review cycles: `python src/pipeline.py review_report`
+
+### Adding a New Manuscript
+
+When creating a new analytical approach:
+
+1. Create manuscript directory: `manuscript_{name}/`
+2. Add entry to `MANUSCRIPTS` dict in `src/review_management.py`
+3. Create review subdirectory: `doc/reviews/{name}/`
+4. Create `manuscript_{name}/REVISION_TRACKER.md`
+5. Update pipeline.py choices list for `--manuscript` argument
 
 ---
 
@@ -289,11 +495,10 @@ Track all review cycles: `python src/pipeline.py review_report`
 | `doc/PIPELINE.md` | Pipeline stages |
 | `doc/METHODOLOGY.md` | Survival analysis and SEM methodology |
 | `doc/DATA_DICTIONARY.md` | Variable definitions |
-| `doc/MANUSCRIPT_GUIDE.md` | PAR formatting and writing rules |
-| `doc/ANALYSIS_COMPARISON_REPORT.md` | Kaifa vs. survival analysis comparison |
-| `doc/SYNTHETIC_REVIEW_PROCESS.md` | **NEW**: Synthetic peer review methodology |
-| `doc/MANUSCRIPT_REVISION_CHECKLIST.md` | **NEW**: High-level revision tracking |
-| `doc/reviews/README.md` | **NEW**: Review cycle index |
+| `doc/ETL_STANDARDIZATION.md` | Fixed-denominator methodology |
+| `doc/RESEARCH_SYNTHESIS_REPORT.md` | Research findings synthesis |
+| `doc/reports/` | Analysis reports |
+| `doc/archive/` | Historical documentation |
 
 ---
 

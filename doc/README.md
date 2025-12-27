@@ -31,25 +31,36 @@
 
 ## Pipeline Commands
 
-### Data Processing
+### Data Processing (Standardized - RECOMMENDED)
 
 ```bash
-python src/pipeline.py ingest_data     # Load QPR, build quarterly rollups, and external data
-python src/pipeline.py build_panel     # Construct analysis panel
-python src/pipeline.py compute_features # Calculate indicators
+python src/pipeline.py ingest_data              # Load QPR and external data
+python src/pipeline.py standardize_data         # Standardize with fixed denominators
+python src/pipeline.py build_panel              # Construct analysis panel
+python src/pipeline.py build_features_std       # Build standardized features
+python src/pipeline.py aggregate_program_types  # Aggregate program types
+```
+
+### Legacy Data Processing (DEPRECATED)
+
+```bash
+python src/pipeline.py compute_features  # OLD: Uses dynamic denominators
 ```
 
 ### Analysis
 
 ```bash
-python src/pipeline.py run_estimation --model exp_optimal_v1
-python src/pipeline.py run_robustness
+python src/pipeline.py run_survival      # Time-varying survival analysis
+python src/pipeline.py run_alternatives  # Alternative modeling approaches
+python src/pipeline.py run_estimation --model exp_optimal_v1  # SEM estimation
+python src/pipeline.py run_robustness    # Robustness checks
 ```
 
 ### Output
 
 ```bash
-python src/pipeline.py make_figures
+python src/pipeline.py make_figures      # Publication figures
+python src/pipeline.py capacity_summary  # Corrected capacity summary
 ```
 
 ### Complete Pipeline
@@ -76,13 +87,17 @@ python src/pipeline.py review_report
 |-----------|---------|
 | `src/pipeline.py` | Main CLI entry point |
 | `src/config.py` | Configuration constants |
-| `src/stages/` | Pipeline stage modules (s00-s05) |
+| `src/stages/` | Pipeline stage modules (s00-s07) |
 | `src/capacity_sem/` | Core analysis modules |
 
 ### Extended Analysis Modules
 
 | Module | Purpose |
 |--------|---------|
+| `src/stages/s00b_standardize.py` | Data standardization with fixed denominators |
+| `src/stages/s01b_features.py` | Build features from standardized data |
+| `src/stages/s01c_program_types.py` | Aggregate program type features |
+| `src/stages/s03b_survival_estimation.py` | Time-varying survival analysis |
 | `src/stages/s03_manuscript_replication.py` | Kaifa's Models replication (experimental) |
 | `src/capacity_sem/models/sem_multigroup.py` | Multi-group SEM and invariance testing |
 | `src/capacity_sem/models/sem_mediation.py` | Indirect effect computation |
@@ -96,12 +111,13 @@ python src/pipeline.py review_report
 | File | Purpose |
 |------|---------|
 | `data_work/qpr_raw.parquet` | Ingested QPR data |
-| `data_work/qpr_clean.parquet` | Cleaned QPR data with QA flags and imputed grantee state |
+| `data_work/qpr_clean.parquet` | Cleaned QPR data with QA flags |
 | `data_work/qpr_quarterly.parquet` | Quarterly rollup with flows and cumulative totals |
-| `data_work/quality/qpr_quality_report.csv` | Row-level QPR quality summary |
-| `data_work/quality/qpr_quarterly_quality_report.csv` | Quarterly rollup quality summary |
+| `data_work/qpr_standardized.parquet` | Standardized QPR with fixed denominators (NEW) |
 | `data_work/panel.parquet` | Analysis panel |
-| `data_work/panel_features.parquet` | Panel with computed features |
+| `data_work/panel_features.parquet` | Panel with computed features (legacy) |
+| `data_work/panel_features_std.parquet` | Panel with standardized features (RECOMMENDED) |
+| `data_work/panel_program_types.parquet` | Program type aggregations (NEW) |
 | `data_work/diagnostics/` | Estimation results |
 | `data_work/population.parquet` | Population covariates |
 | `data_work/grantee_disaster_population.parquet` | Grantee-disaster population covariates |
@@ -203,3 +219,43 @@ python src/pipeline.py run_robustness --extended  # Multi-group and mediation
 
 Use the quality reports to track current counts: `data_work/quality/qpr_quality_report.csv` and `data_work/quality/qpr_quarterly_quality_report.csv`.
 Re-run `python src/pipeline.py ingest_data` to refresh the quality summaries after updating `qpr_data.csv`.
+
+---
+
+## Analysis Reports
+
+| Report | Purpose |
+|--------|---------|
+| [reports/VELOCITY_DIAGNOSTICS_REPORT.md](reports/VELOCITY_DIAGNOSTICS_REPORT.md) | Velocity calculation diagnostics |
+| [reports/MEASUREMENT_VALIDATION_REPORT.md](reports/MEASUREMENT_VALIDATION_REPORT.md) | Measurement validation results |
+| [reports/PREDICTOR_DISCOVERY_REPORT.md](reports/PREDICTOR_DISCOVERY_REPORT.md) | Predictor analysis findings |
+| [reports/DATA_QUALITY_FIXES.md](reports/DATA_QUALITY_FIXES.md) | Data quality issues and fixes |
+| [RESEARCH_SYNTHESIS_REPORT.md](RESEARCH_SYNTHESIS_REPORT.md) | Comprehensive research synthesis |
+
+---
+
+## Standalone Analysis Scripts
+
+Extended analysis scripts are in `scripts/`:
+
+```bash
+python scripts/run_multistage_analysis.py     # Multi-stage efficiency
+python scripts/run_trajectory_clustering.py   # Velocity trajectory clustering
+python scripts/run_meta_analysis.py           # Meta-analysis of velocity effects
+```
+
+---
+
+## Archive
+
+Historical documentation is preserved in `archive/`:
+
+| File | Original Name |
+|------|---------------|
+| [archive/analysis_logs/01_INITIAL_SETUP.md](archive/analysis_logs/01_INITIAL_SETUP.md) | PHASE1_WEEK1_SUMMARY |
+| [archive/analysis_logs/02_MULTISTAGE_EFFICIENCY.md](archive/analysis_logs/02_MULTISTAGE_EFFICIENCY.md) | PHASE2_WEEK3_SUMMARY |
+| [archive/analysis_logs/03_BOTTLENECK_ANALYSIS.md](archive/analysis_logs/03_BOTTLENECK_ANALYSIS.md) | PHASE2_WEEK4_SUMMARY |
+| [archive/analysis_logs/04_VELOCITY_TRAJECTORIES.md](archive/analysis_logs/04_VELOCITY_TRAJECTORIES.md) | PHASE2_WEEK5_SUMMARY |
+| [archive/analysis_logs/05_LEARNING_CURVES.md](archive/analysis_logs/05_LEARNING_CURVES.md) | PHASE2_WEEK6_SUMMARY |
+| [archive/ETL_STANDARDIZATION_PROPOSAL.md](archive/ETL_STANDARDIZATION_PROPOSAL.md) | Original proposal (superseded) |
+| [archive/ANALYSIS_COMPARISON_REPORT.md](archive/ANALYSIS_COMPARISON_REPORT.md) | Kaifa vs survival comparison |

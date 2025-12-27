@@ -33,6 +33,9 @@ All notable changes to this project will be documented in this file.
 - Quality report includes adjustment/anomaly/censoring statistics
 
 #### Analysis Enhancements
+- Quartile ratio interaction cutoffs/knots (q25/q75) for velocity interaction tests
+- Penalized stratified Cox fits and pooled/stratified interaction models for ratio strata
+- New diagnostics output: `alternatives_survival_velocity_strata_models.csv`
 - Cluster-robust standard errors for grantee-disaster analysis
 - Standardized coefficient reporting
 - Composite reliability (CR) and Average Variance Extracted (AVE) computation
@@ -69,6 +72,34 @@ All notable changes to this project will be documented in this file.
 - Feature engineering prefers cleaned QPR data when available
 
 ### Fixed
+
+#### Critical Duration Calculation Bug (December 27, 2025)
+- **BREAKING**: Fixed Duration calculation in `s01b_features.py`
+  - `compute_timeliness_features_std()` was counting activity rows (~9 per quarter) instead of unique quarters
+  - Duration=326 "quarters" was actually 326 rows → ~36 actual quarters
+  - All velocity findings now NULL (HR≈1.00) with correct calculation
+  - See `doc/ANALYSIS_JOURNEY.md` Phase 5 for complete narrative
+- **Impact on prior results**:
+  - Original velocity HR=4.37 (p=0.006) was artifact of bug
+  - Corrected velocity HR≈1.00 (p≈1.00) - null effect
+  - All phase-specific and heterogeneity effects also null
+- **Fix details**:
+  - Aggregate by quarter before computing duration
+  - Use `group[quarter_col].nunique()` instead of `len(group)`
+  - Added sanity checks for impossible Duration values
+
+#### Data Quality Fixes (December 26, 2025)
+- **Prior Grant Experience Integration**: Integrated `build_experience_dataset()` into s01b_features.py
+  - Resolves zero-variance errors in full covariate survival models
+  - 73/156 grantee-disasters (47%) now have non-zero prior experience
+  - Adds Prior_Grant_Count, Prior_Grant_Dollars, Years_Experience, Experience_Index
+  - Panel features increased from 177 to 182 columns
+- **Government Classification**: Added 'rogco' (Northern Mariana Islands) to STATE_GOVERNMENTS list
+  - Eliminates "Unknown grantee 'rogco'" warning
+  - Corrects classification from Local to State
+- See `doc/DATA_QUALITY_FIXES.md` for complete documentation
+
+#### Earlier Fixes
 - Duration calculation now handles incomplete programs correctly (censoring option)
 - Ratio anomalies flagged instead of silently removed
 - Zero-denominator handling documented (4 affected grantees)
