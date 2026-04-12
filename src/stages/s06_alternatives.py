@@ -14,6 +14,7 @@ Commands:
 
 Outputs:
     data_work/diagnostics/alternatives_survival.csv
+    data_work/diagnostics/alternatives_survival_capacity_sets.csv
     data_work/diagnostics/alternatives_threshold_sensitivity.csv
     data_work/diagnostics/alternatives_duration_free.csv
     data_work/diagnostics/alternatives_milestone.csv
@@ -31,8 +32,11 @@ from config import (
     STATE_GOVERNMENTS,
     LOCAL_GOVERNMENTS,
     SURVIVAL_CAPACITY_COLS,
+    CAPACITY_ALTERNATIVE_SETS,
     AFT_DISTRIBUTIONS,
     COX_PENALIZER,
+    COX_STRATIFIED_LOW_EVENT_THRESHOLD,
+    COX_STRATIFIED_LOW_EVENT_PENALIZER,
 )
 from stages._io_utils import safe_read_parquet
 
@@ -53,6 +57,13 @@ from capacity_sem.models.sem_alternatives import (
     get_available_duration_thresholds,
 )
 
+SCIPY_AVAILABLE = False
+try:
+    from scipy.stats import chi2
+    SCIPY_AVAILABLE = True
+except ImportError:
+    chi2 = None
+
 
 def load_panel_features() -> pd.DataFrame:
     """Load panel with features."""
@@ -69,6 +80,24 @@ def ensure_diagnostics_dir() -> Path:
     diag_dir = DATA_WORK_DIR / "diagnostics"
     diag_dir.mkdir(parents=True, exist_ok=True)
     return diag_dir
+
+
+def resolve_capacity_sets(capacity_sets: Optional[List[str]]) -> Dict[str, List[str]]:
+    """Resolve capacity set names into column lists."""
+    if capacity_sets is None:
+        return {'ratios': SURVIVAL_CAPACITY_COLS}
+
+    if 'all' in capacity_sets:
+        return CAPACITY_ALTERNATIVE_SETS
+
+    resolved = {}
+    for name in capacity_sets:
+        if name in CAPACITY_ALTERNATIVE_SETS:
+            resolved[name] = CAPACITY_ALTERNATIVE_SETS[name]
+        else:
+            warnings.warn(f"Unknown capacity set '{name}'. Available: {list(CAPACITY_ALTERNATIVE_SETS)}")
+
+    return resolved or {'ratios': SURVIVAL_CAPACITY_COLS}
 
 
 # =============================================================================
@@ -184,6 +213,440 @@ def run_survival_analysis(
 
     return results
 
+
+def run_survival_capacity_sets(
+    data: pd.DataFrame,
+    capacity_sets: Dict[str, List[str]],
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Run survival analysis across multiple capacity indicator sets.
+
+    Returns a stacked coefficient table with Capacity_Set labels.
+    """
+    results = []
+
+    for set_name, cols in capacity_sets.items():
+        available_cols = [col for col in cols if col in data.columns]
+        if not available_cols:
+            if verbose:
+                print(f"\n  Skipping capacity set '{set_name}': no columns found")
+            continue
+
+        if verbose:
+            print("\n" + "-" * 60)
+            print(f"  Capacity set: {set_name}")
+            print(f"  Columns: {available_cols}")
+
+        survival_results = run_survival_analysis(
+            data,
+            capacity_cols=available_cols,
+            verbose=verbose
+        )
+
+        coeffs = survival_results.get('coefficients', pd.DataFrame())
+        if coeffs.empty:
+            continue
+
+        coeffs = coeffs.copy()
+        coeffs['Capacity_Set'] = set_name
+        coeffs['N'] = survival_results.get('n_obs')
+        coeffs['Events'] = survival_results.get('n_events')
+        results.append(coeffs)
+
+    if results:
+        return pd.concat(results, ignore_index=True)
+
+    return pd.DataFrame()
+
+
+# =============================================================================
+# STRATIFIED VELOCITY ANALYSIS
+# =============================================================================
+
+def select_stratum_penalizer(scheme: str, label: str, n_events: int) -> tuple[float, str]:
+    """Select penalizer for low-stratum or low-event Cox models."""
+    penalizer = COX_PENALIZER
+    reasons = []
+    low_labels = {
+        'median': ['low'],
+        'tercile': ['low'],
+        'quartile': ['q1'],
+    }
+
+    if label in low_labels.get(scheme, []):
+        penalizer = max(penalizer, COX_STRATIFIED_LOW_EVENT_PENALIZER)
+        reasons.append('low_stratum')
+
+    if n_events < COX_STRATIFIED_LOW_EVENT_THRESHOLD:
+        penalizer = max(penalizer, COX_STRATIFIED_LOW_EVENT_PENALIZER)
+        reasons.append('low_events')
+
+    return penalizer, '+'.join(reasons) if reasons else 'base'
+
+
+def run_velocity_stratified_by_ratio(
+    data: pd.DataFrame,
+    ratio_col: str = 'Ratio_disbursed_to_obligated',
+    velocity_cols: Optional[List[str]] = None,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Re-estimate velocity effects within strata of baseline ratios.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Panel data with capacity measures.
+    ratio_col : str
+        Baseline ratio column used to define strata.
+    velocity_cols : list of str, optional
+        Velocity measures to re-estimate within strata.
+    verbose : bool
+        Whether to print progress.
+
+    Returns
+    -------
+    pd.DataFrame
+        Stratified Cox results for velocity measures.
+    """
+    if not LIFELINES_AVAILABLE:
+        if verbose:
+            print("  Skipping stratified velocity analysis: lifelines not installed")
+        return pd.DataFrame()
+
+    if velocity_cols is None:
+        velocity_cols = ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp']
+
+    if ratio_col not in data.columns:
+        warnings.warn(f"Ratio column '{ratio_col}' not found; skipping stratified velocity analysis")
+        return pd.DataFrame()
+
+    ratio_series = data[ratio_col].dropna()
+    if ratio_series.empty:
+        warnings.warn("No valid ratio values for stratification; skipping")
+        return pd.DataFrame()
+
+    q25 = ratio_series.quantile(0.25)
+    q33 = ratio_series.quantile(0.33)
+    q50 = ratio_series.quantile(0.50)
+    q67 = ratio_series.quantile(0.67)
+    q75 = ratio_series.quantile(0.75)
+
+    strat_specs = [
+        {
+            'scheme': 'median',
+            'bins': [(-np.inf, q50, 'low'), (q50, np.inf, 'high')]
+        },
+        {
+            'scheme': 'tercile',
+            'bins': [(-np.inf, q33, 'low'), (q33, q67, 'mid'), (q67, np.inf, 'high')]
+        },
+        {
+            'scheme': 'quartile',
+            'bins': [(-np.inf, q25, 'q1'), (q25, q50, 'q2'), (q50, q75, 'q3'), (q75, np.inf, 'q4')]
+        },
+    ]
+
+    results = []
+    for spec in strat_specs:
+        scheme = spec['scheme']
+        for low, high, label in spec['bins']:
+            subset = data[(data[ratio_col] > low) & (data[ratio_col] <= high)].copy()
+            if subset.empty:
+                continue
+
+            for velocity_col in velocity_cols:
+                if velocity_col not in subset.columns:
+                    continue
+
+                surv_data = prepare_survival_data(subset, capacity_cols=[velocity_col])
+                if surv_data.empty:
+                    continue
+
+                try:
+                    n_events = int(surv_data['E'].sum())
+                    if n_events < 2:
+                        results.append({
+                            'Scheme': scheme,
+                            'Stratum': label,
+                            'Ratio_Low': low if np.isfinite(low) else np.nan,
+                            'Ratio_High': high if np.isfinite(high) else np.nan,
+                            'Velocity_Var': velocity_col,
+                            'HR': np.nan,
+                            'HR_Lower': np.nan,
+                            'HR_Upper': np.nan,
+                            'p_value': np.nan,
+                            'N': len(surv_data),
+                            'Events': n_events,
+                            'Penalizer': np.nan,
+                            'Penalty_Reason': 'insufficient_events',
+                            'Status': 'skipped',
+                        })
+                        continue
+
+                    penalizer, penalty_reason = select_stratum_penalizer(scheme, label, n_events)
+                    cox_result = fit_cox_model(surv_data, [velocity_col], penalizer=penalizer)
+                except Exception as e:
+                    if verbose:
+                        print(f"  Stratified Cox failed ({scheme}, {label}, {velocity_col}): {e}")
+                    results.append({
+                        'Scheme': scheme,
+                        'Stratum': label,
+                        'Ratio_Low': low if np.isfinite(low) else np.nan,
+                        'Ratio_High': high if np.isfinite(high) else np.nan,
+                        'Velocity_Var': velocity_col,
+                        'HR': np.nan,
+                        'HR_Lower': np.nan,
+                        'HR_Upper': np.nan,
+                        'p_value': np.nan,
+                        'N': len(surv_data),
+                        'Events': int(surv_data['E'].sum()) if 'E' in surv_data else 0,
+                        'Penalizer': penalizer,
+                        'Penalty_Reason': penalty_reason,
+                        'Status': 'failed',
+                    })
+                    continue
+
+                if 'summary' not in cox_result or velocity_col not in cox_result['summary'].index:
+                    results.append({
+                        'Scheme': scheme,
+                        'Stratum': label,
+                        'Ratio_Low': low if np.isfinite(low) else np.nan,
+                        'Ratio_High': high if np.isfinite(high) else np.nan,
+                        'Velocity_Var': velocity_col,
+                        'HR': np.nan,
+                        'HR_Lower': np.nan,
+                        'HR_Upper': np.nan,
+                        'p_value': np.nan,
+                        'N': len(surv_data),
+                        'Events': int(surv_data['E'].sum()),
+                        'Penalizer': penalizer,
+                        'Penalty_Reason': penalty_reason,
+                        'Status': 'failed',
+                    })
+                    continue
+
+                summary = cox_result['summary'].loc[velocity_col]
+                hr = np.exp(summary['coef'])
+                ci_lower = np.exp(summary['coef'] - 1.96 * summary['se(coef)'])
+                ci_upper = np.exp(summary['coef'] + 1.96 * summary['se(coef)'])
+                p_val = summary['p']
+
+                results.append({
+                    'Scheme': scheme,
+                    'Stratum': label,
+                    'Ratio_Low': low if np.isfinite(low) else np.nan,
+                    'Ratio_High': high if np.isfinite(high) else np.nan,
+                    'Velocity_Var': velocity_col,
+                    'HR': hr,
+                    'HR_Lower': ci_lower,
+                    'HR_Upper': ci_upper,
+                    'p_value': p_val,
+                    'N': len(surv_data),
+                    'Events': int(surv_data['E'].sum()),
+                    'Penalizer': penalizer,
+                    'Penalty_Reason': penalty_reason,
+                    'Status': 'ok',
+                })
+
+    return pd.DataFrame(results)
+
+
+# =============================================================================
+# POOLED / STRATIFIED INTERACTION MODELS
+# =============================================================================
+
+def add_ratio_strata_dummies(
+    data: pd.DataFrame,
+    ratio_col: str = 'Ratio_disbursed_to_obligated',
+    q: int = 4
+) -> tuple[pd.DataFrame, Dict[str, Any]]:
+    """Add quartile-style ratio strata with dummy indicators."""
+    if ratio_col not in data.columns:
+        warnings.warn(f"Ratio column '{ratio_col}' not found; cannot build strata")
+        return data, {}
+
+    ratio_series = data[ratio_col].dropna()
+    if ratio_series.empty or ratio_series.nunique() < 2:
+        warnings.warn("Insufficient ratio variation for strata; skipping pooled models")
+        return data, {}
+
+    try:
+        bins = pd.qcut(ratio_series, q=q, labels=False, duplicates='drop') + 1
+    except ValueError as exc:
+        warnings.warn(f"Unable to compute ratio strata: {exc}")
+        return data, {}
+
+    data = data.copy()
+    data['Ratio_Stratum'] = np.nan
+    data.loc[bins.index, 'Ratio_Stratum'] = bins.astype(int)
+
+    max_bin = int(bins.max())
+    dummy_cols = []
+    for bin_id in range(2, max_bin + 1):
+        dummy_col = f'Ratio_Stratum_Q{bin_id}'
+        data[dummy_col] = (data['Ratio_Stratum'] == bin_id).astype(int)
+        dummy_cols.append(dummy_col)
+
+    quantiles = {}
+    for quantile in np.linspace(1 / q, (q - 1) / q, q - 1):
+        label = int(round(quantile * 100))
+        quantiles[f'q{label}'] = ratio_series.quantile(quantile)
+
+    return data, {
+        'n_bins': max_bin,
+        'dummy_cols': dummy_cols,
+        'quantiles': quantiles,
+        'stratum_col': 'Ratio_Stratum',
+    }
+
+
+def fit_velocity_strata_models(
+    data: pd.DataFrame,
+    velocity_col: str,
+    base_covariates: List[str],
+    interaction_covariates: List[str],
+    strata_cols: Optional[List[str]] = None,
+    penalizer: float = COX_PENALIZER
+) -> Optional[Dict[str, Any]]:
+    """Fit base and interaction Cox models for pooled/stratified comparisons."""
+    full_cols = interaction_covariates + (strata_cols or [])
+    surv_full = prepare_survival_data(data, capacity_cols=full_cols)
+    if surv_full.empty:
+        return None
+
+    base_cols = ['T', 'E'] + base_covariates + (strata_cols or [])
+    int_cols = ['T', 'E'] + interaction_covariates + (strata_cols or [])
+    base_data = surv_full[base_cols].dropna()
+    int_data = surv_full[int_cols].dropna()
+
+    if base_data.empty or int_data.empty:
+        return None
+
+    base_fit = fit_cox_model(
+        base_data,
+        base_covariates,
+        penalizer=penalizer,
+        strata_cols=strata_cols
+    )
+    int_fit = fit_cox_model(
+        int_data,
+        interaction_covariates,
+        penalizer=penalizer,
+        strata_cols=strata_cols
+    )
+
+    if 'model' not in base_fit or 'model' not in int_fit:
+        return None
+
+    lrt_stat = 2 * (int_fit['model'].log_likelihood_ - base_fit['model'].log_likelihood_)
+    lrt_df = max(len(interaction_covariates) - len(base_covariates), 1)
+    lrt_p = chi2.sf(lrt_stat, lrt_df) if SCIPY_AVAILABLE else np.nan
+
+    return {
+        'base_fit': base_fit,
+        'int_fit': int_fit,
+        'n_obs': len(int_data),
+        'n_events': int(int_data['E'].sum()),
+        'lrt_stat': lrt_stat,
+        'lrt_df': lrt_df,
+        'lrt_p': lrt_p,
+        'velocity_col': velocity_col,
+        'penalizer': penalizer,
+    }
+
+
+def run_velocity_ratio_strata_models(
+    data: pd.DataFrame,
+    ratio_col: str = 'Ratio_disbursed_to_obligated',
+    velocity_cols: Optional[List[str]] = None,
+    verbose: bool = True
+) -> pd.DataFrame:
+    """
+    Fit pooled and stratified-baseline interaction models to test differential velocity effects.
+    """
+    if not LIFELINES_AVAILABLE:
+        if verbose:
+            print("  Skipping pooled/hierarchical models: lifelines not installed")
+        return pd.DataFrame()
+
+    if velocity_cols is None:
+        velocity_cols = ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp']
+
+    data, strata_meta = add_ratio_strata_dummies(data, ratio_col=ratio_col, q=4)
+    if not strata_meta or strata_meta.get('n_bins', 0) < 2:
+        return pd.DataFrame()
+
+    dummy_cols = strata_meta['dummy_cols']
+    stratum_col = strata_meta['stratum_col']
+    quantiles = strata_meta.get('quantiles', {})
+
+    results = []
+    for velocity_col in velocity_cols:
+        if velocity_col not in data.columns:
+            continue
+
+        model_data = data.copy()
+        centered_col = f'{velocity_col}_c'
+        model_data[centered_col] = model_data[velocity_col] - model_data[velocity_col].mean(skipna=True)
+
+        interaction_cols = []
+        for dummy_col in dummy_cols:
+            inter_col = f'{centered_col}_x_{dummy_col}'
+            model_data[inter_col] = model_data[centered_col] * model_data[dummy_col]
+            interaction_cols.append(inter_col)
+
+        pooled_base = [centered_col] + dummy_cols
+        pooled_int = pooled_base + interaction_cols
+        pooled_fit = fit_velocity_strata_models(
+            model_data,
+            velocity_col=velocity_col,
+            base_covariates=pooled_base,
+            interaction_covariates=pooled_int,
+            strata_cols=None,
+            penalizer=COX_PENALIZER
+        )
+
+        strat_base = [centered_col]
+        strat_int = strat_base + interaction_cols
+        strat_fit = fit_velocity_strata_models(
+            model_data,
+            velocity_col=velocity_col,
+            base_covariates=strat_base,
+            interaction_covariates=strat_int,
+            strata_cols=[stratum_col],
+            penalizer=COX_PENALIZER
+        )
+
+        for model_type, fit_result in [('pooled', pooled_fit), ('stratified_baseline', strat_fit)]:
+            if fit_result is None:
+                continue
+
+            summary = fit_result['int_fit'].get('summary', pd.DataFrame())
+            if summary.empty:
+                continue
+
+            for term, row in summary.iterrows():
+                results.append({
+                    'Model_Type': model_type,
+                    'Velocity_Var': velocity_col,
+                    'Term': term,
+                    'coef': row.get('coef'),
+                    'HR': row.get('exp(coef)'),
+                    'p_value': row.get('p'),
+                    'N': fit_result['n_obs'],
+                    'Events': fit_result['n_events'],
+                    'Penalizer': fit_result['penalizer'],
+                    'LRT_stat': fit_result['lrt_stat'],
+                    'LRT_df': fit_result['lrt_df'],
+                    'LRT_p': fit_result['lrt_p'],
+                    'Ratio_Q25': quantiles.get('q25'),
+                    'Ratio_Q50': quantiles.get('q50'),
+                    'Ratio_Q75': quantiles.get('q75'),
+                })
+
+    return pd.DataFrame(results)
 
 # =============================================================================
 # LOWER THRESHOLD ANALYSIS
@@ -493,6 +956,7 @@ def run_all_alternatives(
     data: pd.DataFrame,
     subsets: List[str] = ['all', 'state', 'local'],
     methods: Optional[List[str]] = None,
+    capacity_sets: Optional[Dict[str, List[str]]] = None,
     save_results: bool = True,
     verbose: bool = True
 ) -> Dict[str, Any]:
@@ -531,12 +995,49 @@ def run_all_alternatives(
             print("SURVIVAL ANALYSIS")
             print("=" * 60)
 
-        survival_results = run_survival_analysis(data, verbose=verbose)
-        results['survival'] = survival_results
+        resolved_sets = capacity_sets or {'ratios': SURVIVAL_CAPACITY_COLS}
+        if len(resolved_sets) == 1 and 'ratios' in resolved_sets:
+            survival_results = run_survival_analysis(
+                data,
+                capacity_cols=resolved_sets['ratios'],
+                verbose=verbose
+            )
+            results['survival'] = survival_results
 
-        if save_results and 'coefficients' in survival_results:
-            path = diag_dir / "alternatives_survival.csv"
-            survival_results['coefficients'].to_csv(path, index=False)
+            if save_results and 'coefficients' in survival_results:
+                path = diag_dir / "alternatives_survival.csv"
+                survival_results['coefficients'].to_csv(path, index=False)
+                if verbose:
+                    print(f"\n  Saved to: {path}")
+        else:
+            survival_capacity_df = run_survival_capacity_sets(
+                data,
+                capacity_sets=resolved_sets,
+                verbose=verbose
+            )
+            results['survival_capacity_sets'] = survival_capacity_df
+
+            if save_results and not survival_capacity_df.empty:
+                path = diag_dir / "alternatives_survival_capacity_sets.csv"
+                survival_capacity_df.to_csv(path, index=False)
+                if verbose:
+                    print(f"\n  Saved to: {path}")
+
+        stratified_df = run_velocity_stratified_by_ratio(data, verbose=verbose)
+        results['survival_stratified_velocity'] = stratified_df
+
+        if save_results and not stratified_df.empty:
+            path = diag_dir / "alternatives_survival_stratified_velocity.csv"
+            stratified_df.to_csv(path, index=False)
+            if verbose:
+                print(f"\n  Saved to: {path}")
+
+        pooled_df = run_velocity_ratio_strata_models(data, verbose=verbose)
+        results['survival_velocity_strata_models'] = pooled_df
+
+        if save_results and not pooled_df.empty:
+            path = diag_dir / "alternatives_survival_velocity_strata_models.csv"
+            pooled_df.to_csv(path, index=False)
             if verbose:
                 print(f"\n  Saved to: {path}")
 
@@ -650,7 +1151,8 @@ def run_all_alternatives(
 def main(
     methods: Optional[List[str]] = None,
     subset: str = 'all',
-    save_results: bool = True
+    save_results: bool = True,
+    capacity_sets: Optional[List[str]] = None
 ):
     """
     Main entry point for alternative analyses.
@@ -664,6 +1166,8 @@ def main(
         Government subset (used for selecting single subset).
     save_results : bool
         Whether to save to disk.
+    capacity_sets : list, optional
+        Capacity sets to run for survival analysis (names from config).
     """
     print("=" * 60)
     print("Stage 06: Alternative Modeling Approaches")
@@ -684,11 +1188,15 @@ def main(
     else:
         subsets = [subset]
 
+    # Resolve capacity sets for survival analysis
+    resolved_sets = resolve_capacity_sets(capacity_sets)
+
     # Run analyses
     results = run_all_alternatives(
         data,
         subsets=subsets,
         methods=methods,
+        capacity_sets=resolved_sets,
         save_results=save_results,
         verbose=True
     )
@@ -698,6 +1206,476 @@ def main(
     print("=" * 60)
 
     return results
+
+
+# =============================================================================
+# Phase 1: Measurement Validation Functions
+# =============================================================================
+
+
+def run_qa_flag_sensitivity_analysis(
+    panel: pd.DataFrame,
+    save_results: bool = True
+) -> pd.DataFrame:
+    """
+    Analysis 1.1: QA Flag Sensitivity Analysis
+
+    Test if velocity effects persist after excluding quality-flagged observations.
+
+    Parameters
+    ----------
+    panel : pd.DataFrame
+        Panel with QA flag columns
+    save_results : bool
+        Save results to diagnostics directory
+
+    Returns
+    -------
+    pd.DataFrame
+        Comparison of velocity HR with/without flagged observations
+    """
+    if not LIFELINES_AVAILABLE:
+        raise ImportError("lifelines not available")
+
+    from lifelines import CoxPHFitter
+
+    print("\n" + "=" * 80)
+    print("Analysis 1.1: QA Flag Sensitivity Analysis")
+    print("=" * 80)
+
+    # Prepare survival data
+    # Event = 1 if Duration notna (reached 95% threshold), 0 if Duration is NA (censored)
+    panel_surv = panel.copy()
+    panel_surv['Event'] = panel_surv['Duration'].notna() & (panel_surv['Duration'] > 0)
+
+    # For censored observations, use last observed quarter as duration
+    if 'N_Quarters' in panel_surv.columns:
+        panel_surv['Duration_Surv'] = panel_surv['Duration'].fillna(panel_surv['N_Quarters'])
+    else:
+        # If N_Quarters not available, drop censored observations
+        panel_surv = panel_surv[panel_surv['Event']].copy()
+        panel_surv['Duration_Surv'] = panel_surv['Duration']
+
+    # Scale velocity by 100 to get true percentage points and avoid convergence issues
+    for vel_col in ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp', 'Disbursement_Velocity_pp']:
+        if vel_col in panel_surv.columns:
+            panel_surv[f'{vel_col}_scaled'] = panel_surv[vel_col] * 100
+
+    results = []
+
+    # Baseline model (all observations)
+    print("\n1. Baseline model (all observations, N={}, Events={})".format(len(panel_surv), panel_surv['Event'].sum()))
+
+    for vel_var in ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp', 'Disbursement_Velocity_pp']:
+        vel_var_scaled = f'{vel_var}_scaled'
+        if vel_var_scaled not in panel_surv.columns:
+            continue
+
+        subset = panel_surv[['Duration_Surv', 'Event', vel_var_scaled, 'Government_Type_State']].dropna()
+
+        if len(subset) < 20:
+            print(f"  Skipping {vel_var}: insufficient sample (N={len(subset)})")
+            continue
+
+        cph = CoxPHFitter(penalizer=0.01)
+        try:
+            cph.fit(subset, duration_col='Duration_Surv', event_col='Event')
+
+            results.append({
+                'Model': 'Baseline',
+                'Velocity_Measure': vel_var.replace('_pp', ''),
+                'Sample': 'All',
+                'N': len(subset),
+                'Events': subset['Event'].sum(),
+                'Velocity_HR': np.exp(cph.params_[vel_var_scaled]),
+                'Velocity_CI_lower': np.exp(cph.confidence_intervals_[vel_var_scaled][0]),
+                'Velocity_CI_upper': np.exp(cph.confidence_intervals_[vel_var_scaled][1]),
+                'Velocity_p': cph.summary.loc[vel_var_scaled, 'p'],
+                'Velocity_HR_Interpretation': f'Per 1 pp/quarter increase',
+            })
+            print(f"  {vel_var}: HR = {np.exp(cph.params_[vel_var_scaled]):.3f} per 1 pp/quarter, p = {cph.summary.loc[vel_var_scaled, 'p']:.4f}")
+        except Exception as e:
+            print(f"  {vel_var} failed: {e}")
+
+    # Exclude high-flag programs
+    print("\n2. Excluding high-flag programs (>2 extreme velocity or obligated jump flags)")
+    panel_clean = panel_surv[panel_surv['QA_High_Flag_Program'] == False].copy()
+    print(f"   Clean sample: N={len(panel_clean)} ({len(panel_clean)/len(panel_surv)*100:.1f}% of total)")
+
+    for vel_var in ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp', 'Disbursement_Velocity_pp']:
+        vel_var_scaled = f'{vel_var}_scaled'
+        if vel_var_scaled not in panel_clean.columns:
+            continue
+
+        subset = panel_clean[['Duration_Surv', 'Event', vel_var_scaled, 'Government_Type_State']].dropna()
+
+        if len(subset) < 10:
+            print(f"  Skipping {vel_var}: insufficient sample (N={len(subset)})")
+            continue
+
+        cph = CoxPHFitter(penalizer=0.05)  # Higher penalization for small sample
+        try:
+            cph.fit(subset, duration_col='Duration_Surv', event_col='Event')
+
+            results.append({
+                'Model': 'Exclude_High_Flag',
+                'Velocity_Measure': vel_var.replace('_pp', ''),
+                'Sample': 'QA_High_Flag_Program=False',
+                'N': len(subset),
+                'Events': subset['Event'].sum(),
+                'Velocity_HR': np.exp(cph.params_[vel_var_scaled]),
+                'Velocity_CI_lower': np.exp(cph.confidence_intervals_[vel_var_scaled][0]),
+                'Velocity_CI_upper': np.exp(cph.confidence_intervals_[vel_var_scaled][1]),
+                'Velocity_p': cph.summary.loc[vel_var_scaled, 'p'],
+            })
+            print(f"  {vel_var}: HR = {np.exp(cph.params_[vel_var_scaled]):.3f}, p = {cph.summary.loc[vel_var_scaled, 'p']:.4f}")
+        except Exception as e:
+            print(f"  {vel_var} failed: {e}")
+
+    # Exclude any extreme velocity flags
+    print("\n3. Excluding programs with ANY extreme velocity flags")
+    panel_no_extreme = panel_surv[panel_surv['Flag_Count_Extreme_Velocity'] == 0].copy()
+    print(f"   No-extreme sample: N={len(panel_no_extreme)} ({len(panel_no_extreme)/len(panel_surv)*100:.1f}% of total)")
+
+    for vel_var in ['Expenditure_Velocity_pp', 'Capacity_Velocity_Index_pp', 'Disbursement_Velocity_pp']:
+        vel_var_scaled = f'{vel_var}_scaled'
+        if vel_var_scaled not in panel_no_extreme.columns:
+            continue
+
+        subset = panel_no_extreme[['Duration_Surv', 'Event', vel_var_scaled, 'Government_Type_State']].dropna()
+
+        if len(subset) < 10:
+            print(f"  Skipping {vel_var}: insufficient sample (N={len(subset)})")
+            continue
+
+        cph = CoxPHFitter(penalizer=0.05)
+        try:
+            cph.fit(subset, duration_col='Duration_Surv', event_col='Event')
+
+            results.append({
+                'Model': 'Exclude_Any_Extreme',
+                'Velocity_Measure': vel_var.replace('_pp', ''),
+                'Sample': 'Flag_Count_Extreme_Velocity=0',
+                'N': len(subset),
+                'Events': subset['Event'].sum(),
+                'Velocity_HR': np.exp(cph.params_[vel_var_scaled]),
+                'Velocity_CI_lower': np.exp(cph.confidence_intervals_[vel_var_scaled][0]),
+                'Velocity_CI_upper': np.exp(cph.confidence_intervals_[vel_var_scaled][1]),
+                'Velocity_p': cph.summary.loc[vel_var_scaled, 'p'],
+            })
+            print(f"  {vel_var}: HR = {np.exp(cph.params_[vel_var_scaled]):.3f}, p = {cph.summary.loc[vel_var_scaled, 'p']:.4f}")
+        except Exception as e:
+            print(f"  {vel_var} failed: {e}")
+
+    results_df = pd.DataFrame(results)
+
+    if save_results:
+        diag_dir = ensure_diagnostics_dir()
+        output_path = diag_dir / "measurement_validation_qa_flags.csv"
+        results_df.to_csv(output_path, index=False)
+        print(f"\n✓ Saved results to {output_path}")
+
+    return results_df
+
+
+def run_velocity_operationalization_comparison(
+    panel: pd.DataFrame,
+    save_results: bool = True
+) -> pd.DataFrame:
+    """
+    Analysis 1.2: Alternative Velocity Operationalizations
+
+    Test velocity effect robustness across different measurement approaches.
+
+    Parameters
+    ----------
+    panel : pd.DataFrame
+        Panel with multiple velocity operationalizations
+    save_results : bool
+        Save results to diagnostics directory
+
+    Returns
+    -------
+    pd.DataFrame
+        Meta-analysis of velocity HRs across operationalizations
+    """
+    if not LIFELINES_AVAILABLE:
+        raise ImportError("lifelines not available")
+
+    from lifelines import CoxPHFitter
+
+    print("\n" + "=" * 80)
+    print("Analysis 1.2: Velocity Operationalization Comparison")
+    print("=" * 80)
+
+    # Prepare survival data
+    panel_surv = panel[panel['Duration'].notna() & (panel['Duration'] > 0)].copy()
+    panel_surv['Event'] = panel_surv['Completion_Pct'] >= 0.95
+
+    # Define velocity variants to test
+    velocity_variants = {
+        'Static_Mean_pp': 'Expenditure_Velocity_pp',
+        'Static_Median_pp': 'Expenditure_Velocity_median',
+        'Early_2q': 'Expenditure_Velocity_early_2q_pp',
+        'Early_3q': 'Expenditure_Velocity_early_3q_pp',
+        'Early_4q': 'Expenditure_Velocity_early_4q_pp',
+        'Early_6q': 'Expenditure_Velocity_early_6q_pp',
+        'Fixed_12m': 'Expenditure_Velocity_fixed_12m_pp',
+        'Fixed_18m': 'Expenditure_Velocity_fixed_18m_pp',
+        'Index_Mean_pp': 'Capacity_Velocity_Index_pp',
+        'Index_Median_pp': 'Capacity_Velocity_Index_median',
+        'Disbursement_Mean_pp': 'Disbursement_Velocity_pp',
+        'Disbursement_Median_pp': 'Disbursement_Velocity_median',
+    }
+
+    results = []
+
+    for variant_name, vel_col in velocity_variants.items():
+        if vel_col not in panel_surv.columns:
+            print(f"Skipping {variant_name}: column {vel_col} not found")
+            continue
+
+        subset = panel_surv[['Duration', 'Event', vel_col, 'Government_Type_State']].dropna()
+
+        if len(subset) < 20:
+            print(f"Skipping {variant_name}: insufficient sample (N={len(subset)})")
+            continue
+
+        cph = CoxPHFitter(penalizer=0.01)
+        try:
+            cph.fit(subset, duration_col='Duration_Surv', event_col='Event')
+
+            results.append({
+                'Operationalization': variant_name,
+                'Column': vel_col,
+                'N': len(subset),
+                'Events': subset['Event'].sum(),
+                'Velocity_HR': np.exp(cph.params_[vel_col]),
+                'Velocity_log_HR': cph.params_[vel_col],
+                'Velocity_SE': cph.standard_errors_[vel_col],
+                'Velocity_CI_lower': np.exp(cph.confidence_intervals_[vel_col][0]),
+                'Velocity_CI_upper': np.exp(cph.confidence_intervals_[vel_col][1]),
+                'Velocity_p': cph.summary.loc[vel_col, 'p'],
+            })
+            print(f"{variant_name:25s}: HR = {np.exp(cph.params_[vel_col]):.3f} (95% CI: {np.exp(cph.confidence_intervals_[vel_col][0]):.3f}-{np.exp(cph.confidence_intervals_[vel_col][1]):.3f}), p = {cph.summary.loc[vel_col, 'p']:.4f}, N={len(subset)}")
+        except Exception as e:
+            print(f"{variant_name:25s}: FAILED - {e}")
+
+    results_df = pd.DataFrame(results)
+
+    # Meta-analysis: average log HR with inverse-variance weighting
+    if len(results_df) > 0:
+        results_df['Weight'] = 1 / (results_df['Velocity_SE'] ** 2)
+        meta_log_HR = (results_df['Velocity_log_HR'] * results_df['Weight']).sum() / results_df['Weight'].sum()
+        meta_SE = np.sqrt(1 / results_df['Weight'].sum())
+        meta_HR = np.exp(meta_log_HR)
+        meta_CI_lower = np.exp(meta_log_HR - 1.96 * meta_SE)
+        meta_CI_upper = np.exp(meta_log_HR + 1.96 * meta_SE)
+
+        print("\n" + "-" * 80)
+        print("META-ANALYSIS (inverse-variance weighted):")
+        print(f"  Average HR = {meta_HR:.3f} (95% CI: {meta_CI_lower:.3f}-{meta_CI_upper:.3f})")
+        print(f"  Range: {results_df['Velocity_HR'].min():.3f} - {results_df['Velocity_HR'].max():.3f}")
+        print(f"  Std dev: {results_df['Velocity_HR'].std():.3f}")
+        print("-" * 80)
+
+        # Add meta-analysis row
+        results.append({
+            'Operationalization': 'META_ANALYSIS',
+            'Column': 'Weighted_Average',
+            'N': results_df['N'].max(),
+            'Events': results_df['Events'].max(),
+            'Velocity_HR': meta_HR,
+            'Velocity_log_HR': meta_log_HR,
+            'Velocity_SE': meta_SE,
+            'Velocity_CI_lower': meta_CI_lower,
+            'Velocity_CI_upper': meta_CI_upper,
+            'Velocity_p': np.nan,
+        })
+        results_df = pd.DataFrame(results)
+
+    if save_results:
+        diag_dir = ensure_diagnostics_dir()
+        output_path = diag_dir / "measurement_validation_velocity_variants.csv"
+        results_df.to_csv(output_path, index=False)
+        print(f"\n✓ Saved results to {output_path}")
+
+    return results_df
+
+
+# =============================================================================
+# Phase 2: Mechanistic Deep Dive - Multi-Stage Efficiency Analysis
+# =============================================================================
+
+def run_multistage_efficiency_analysis(
+    panel: Optional[pd.DataFrame] = None,
+    output_path: Optional[Path] = None
+) -> pd.DataFrame:
+    """
+    Competing risks survival analysis by pipeline stage.
+
+    Tests if velocity effects differ by bottleneck location:
+    - Event type 1: "Completed" (reached 95% threshold)
+    - Event type 2: "Stalled_Stage1" (low Stage1 efficiency < 0.5)
+    - Event type 3: "Stalled_Stage2" (low Stage2 efficiency < 0.5)
+
+    Parameters
+    ----------
+    panel : pd.DataFrame, optional
+        Panel with stage lag features. If None, loads from panel_features_std.parquet
+    output_path : Path, optional
+        Where to save results. Defaults to data_work/diagnostics/multistage_efficiency.csv
+
+    Returns
+    -------
+    pd.DataFrame
+        Results with HR and p-values for each event type
+    """
+    if not LIFELINES_AVAILABLE:
+        warnings.warn("lifelines not available, skipping multi-stage analysis")
+        return pd.DataFrame()
+
+    from lifelines import CoxPHFitter
+
+    print("=" * 80)
+    print("Phase 2 Analysis 2.1: Multi-Stage Efficiency & Bottleneck Identification")
+    print("=" * 80)
+    print()
+
+    # Load panel if not provided
+    if panel is None:
+        panel_path = DATA_WORK_DIR / "panel_features_std.parquet"
+        print(f"Loading panel: {panel_path}")
+        panel = safe_read_parquet(panel_path)
+        print(f"  Loaded {len(panel)} grantee-disaster pairs")
+        print()
+
+    # Check required columns
+    required_cols = ['Duration', 'Expenditure_Velocity_pp', 'Stage1_Efficiency',
+                     'Stage2_Efficiency', 'Lag_Total_Pipeline', 'Government_Type_State']
+    missing_cols = [c for c in required_cols if c not in panel.columns]
+    if missing_cols:
+        warnings.warn(f"Missing required columns: {missing_cols}. Run build_features_std first.")
+        return pd.DataFrame()
+
+    # Define competing events
+    panel = panel.copy()
+    panel['Event_Type'] = 'Censored'
+
+    # Event 1: Completed (reached 95% threshold)
+    panel.loc[(panel['Duration'].notna()) & (panel['Duration'] > 0), 'Event_Type'] = 'Completed'
+
+    # Event 2: Stalled at Stage 1 (low Stage1 efficiency, not completed)
+    panel.loc[
+        (panel['Event_Type'] == 'Censored') &
+        (panel['Stage1_Efficiency'].notna()) &
+        (panel['Stage1_Efficiency'] < 0.5),
+        'Event_Type'
+    ] = 'Stalled_Stage1'
+
+    # Event 3: Stalled at Stage 2 (low Stage2 efficiency, not completed)
+    panel.loc[
+        (panel['Event_Type'] == 'Censored') &
+        (panel['Stage2_Efficiency'].notna()) &
+        (panel['Stage2_Efficiency'] < 0.5),
+        'Event_Type'
+    ] = 'Stalled_Stage2'
+
+    print("Event type distribution:")
+    print(panel['Event_Type'].value_counts())
+    print()
+
+    # Prepare survival duration
+    panel['Duration_Surv'] = panel['Duration'].fillna(panel['N_Quarters'])
+
+    # Scale velocity by 100 for proper interpretation (pp/quarter)
+    panel['Velocity_scaled'] = panel['Expenditure_Velocity_pp'] * 100
+
+    results = []
+
+    # Fit Cox PH for each event type
+    for event_type in ['Completed', 'Stalled_Stage1', 'Stalled_Stage2']:
+        print(f"\nFitting Cox PH for event: {event_type}")
+
+        # Binary event indicator
+        panel[f'Event_{event_type}'] = (panel['Event_Type'] == event_type).astype(int)
+        n_events = panel[f'Event_{event_type}'].sum()
+
+        print(f"  Events: {n_events}")
+
+        if n_events < 5:
+            print(f"  ⚠ Too few events ({n_events}), skipping")
+            continue
+
+        # Subset to complete cases
+        subset = panel[
+            ['Duration_Surv', f'Event_{event_type}', 'Velocity_scaled',
+             'Lag_Total_Pipeline', 'Government_Type_State']
+        ].dropna()
+
+        print(f"  Sample: N={len(subset)}, Events={subset[f'Event_{event_type}'].sum()}")
+
+        # Fit Cox PH
+        cph = CoxPHFitter(penalizer=0.01)
+        try:
+            cph.fit(
+                subset,
+                duration_col='Duration_Surv',
+                event_col=f'Event_{event_type}'
+            )
+
+            # Debug: print model params
+            print(f"  Model params: {cph.params_.index.tolist()}")
+
+            # Extract results
+            results.append({
+                'Event_Type': event_type,
+                'N': len(subset),
+                'N_Events': int(subset[f'Event_{event_type}'].sum()),
+                'Velocity_HR': np.exp(cph.params_['Velocity_scaled']),
+                'Velocity_CI_lower': np.exp(cph.confidence_intervals_.loc['Velocity_scaled', '95% lower-bound']),
+                'Velocity_CI_upper': np.exp(cph.confidence_intervals_.loc['Velocity_scaled', '95% upper-bound']),
+                'Velocity_p': cph.summary.loc['Velocity_scaled', 'p'],
+                'Lag_HR': np.exp(cph.params_['Lag_Total_Pipeline']),
+                'Lag_p': cph.summary.loc['Lag_Total_Pipeline', 'p'],
+                'Government_Type_State_HR': np.exp(cph.params_['Government_Type_State']),
+                'Government_Type_State_p': cph.summary.loc['Government_Type_State', 'p'],
+            })
+
+            print(f"  Velocity HR: {np.exp(cph.params_['Velocity_scaled']):.3f} (p={cph.summary.loc['Velocity_scaled', 'p']:.4f})")
+            print(f"  Lag HR: {np.exp(cph.params_['Lag_Total_Pipeline']):.3f} (p={cph.summary.loc['Lag_Total_Pipeline', 'p']:.4f})")
+
+        except Exception as e:
+            import traceback
+            print(f"  ✗ Model failed: {e}")
+            print(f"  Full traceback:")
+            traceback.print_exc()
+            results.append({
+                'Event_Type': event_type,
+                'N': len(subset),
+                'N_Events': int(subset[f'Event_{event_type}'].sum()),
+                'Velocity_HR': np.nan,
+                'Velocity_p': np.nan,
+                'Lag_HR': np.nan,
+                'Lag_p': np.nan,
+                'Error': str(e),
+            })
+
+    results_df = pd.DataFrame(results)
+
+    # Save results
+    if output_path is None:
+        output_path = DATA_WORK_DIR / "diagnostics" / "multistage_efficiency.csv"
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    results_df.to_csv(output_path, index=False)
+    print(f"\n✓ Saved results to {output_path}")
+
+    print("\n" + "=" * 80)
+    print("Multi-Stage Efficiency Analysis Complete")
+    print("=" * 80)
+
+    return results_df
 
 
 if __name__ == "__main__":
@@ -727,6 +1705,12 @@ if __name__ == "__main__":
         action="store_true",
         help="Run only SEM alternatives (no survival)"
     )
+    parser.add_argument(
+        "--capacity-sets",
+        nargs="+",
+        default=None,
+        help="Capacity sets for survival analysis (names from config, or 'all')"
+    )
 
     args = parser.parse_args()
 
@@ -740,4 +1724,4 @@ if __name__ == "__main__":
     else:
         methods = args.methods
 
-    main(methods=methods, subset=args.subset)
+    main(methods=methods, subset=args.subset, capacity_sets=args.capacity_sets)

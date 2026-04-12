@@ -1,0 +1,29 @@
+# Appendix D: Meta-Analysis of Velocity Estimates {.unnumbered}
+
+::: {.callout-important}
+This appendix has been withdrawn from the active manuscript draft.
+
+The earlier "meta-analysis of velocity estimates" summarized invalidated
+pre-fix subgroup results and should not be used as current evidence. A
+replacement appendix will be created only if regenerated corrected
+subgroup estimates warrant synthesis.
+:::
+
+## Why This Appendix Was Removed
+
+The previous version of Appendix D aggregated estimates that were produced
+before the quarter-based duration correction. Because the underlying
+heterogeneity results were not trustworthy, any pooled summary, ranking,
+or narrative built from them was also untrustworthy.
+
+## Current Rule
+
+No meta-analytic summary should appear in the manuscript until:
+
+1. subgroup models are rerun from the cleaned standardized workflow
+2. manuscript tables match the current diagnostics
+3. the remaining signals are strong enough to justify synthesis rather
+   than being reported only as exploratory checks
+
+Until that work is complete, the authoritative project summary lives in
+`doc/PROJECT_STATUS.md`.

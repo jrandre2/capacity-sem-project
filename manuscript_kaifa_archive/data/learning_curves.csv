@@ -1,0 +1,119 @@
+Grantee,Grant_Sequence,Disaster_Type,Velocity,Duration,Completed
+Alabama,1,2011 Multiple Disasters,0.0010610735916434318,35.0,0
+Alabama,2,2011-2013 Hurricane Sandy and Other Events,0.0006851026339744994,4.0,1
+Alabama,3,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.007734047512423237,6.0,1
+Alaska,1,2018 Disasters,0.001706039892446302,13.0,0
+Alaska,2,2022 Disasters including Hurricanes Fiona and Ian,0.007250669542896784,3.0,0
+American Samoa,1,2015-2018 Mitigation,0.0,1.0,0
+American Samoa,2,2018 Disasters,0.005118119677338906,8.0,0
+California,1,2013 National Disaster Resilience,0.0010498707030438784,31.0,0
+California,2,2015-2018 Mitigation,0.0011197945239995034,18.0,0
+California,3,"2017 Hurricanes Harvey, Irma and Maria",0.0010623691637944006,11.0,1
+California,4,2018 Disasters,0.0007694588086339444,2.0,1
+California,5,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0019879683673097053,9.0,0
+California,6,"Storms, Flooding, and Other Disasters in California, Alabama, and Georgia",0.007909821319523764,2.0,0
+City of Birmingham,1,2011 Multiple Disasters,0.0019335118781058092,19.0,0
+City of Birmingham,2,2011-2013 Hurricane Sandy and Other Events,,30.0,0
+Colorado,1,2011-2013 Hurricane Sandy and Other Events,8.736360530398772e-05,39.0,0
+Colorado,2,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0,5.0,0
+"Columbia, SC",1,2015 Hurricane Joaquin and Patricia and Other Events,,28.0,0
+"Columbia, SC",2,2015-2018 Mitigation,0.0015264567458730073,11.0,0
+Connecticut - DOH,1,2011-2013 Hurricane Sandy and Other Events,0.0003796162064343866,9.0,1
+Connecticut - DOH,2,2013 National Disaster Resilience,0.0013183035532539607,26.0,0
+"Dauphin County, PA",1,2011 Multiple Disasters,0.0006073859302950185,25.0,1
+"Dauphin County, PA",2,2011-2013 Hurricane Sandy and Other Events,0.001150899927443934,1.0,1
+Florida,1,2015-2018 Mitigation,0.00027361017143006733,12.0,1
+Florida,2,2016 Louisiana Floods and Other Events,0.0006804147371633346,9.0,1
+Florida,3,"2017 Hurricanes Harvey, Irma and Maria",0.0006682644739997036,6.0,1
+Florida,4,2018 Disasters,0.0007982388487592791,2.0,1
+Florida,5,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0011601071268634855,10.0,0
+Florida,6,2022 Disasters including Hurricanes Fiona and Ian,0.004833779695264523,2.0,1
+Georgia,1,2015-2018 Mitigation,0.0029594569562844016,16.0,0
+Georgia,2,"2017 Hurricanes Harvey, Irma and Maria",0.0008093770652535945,6.0,1
+Georgia,3,2018 Disasters,0.0027105306702417883,16.0,0
+"Hawaii County, HI",1,2015-2018 Mitigation,0.0,3.0,0
+"Hawaii County, HI",2,2018 Disasters,0.005088189152910024,15.0,0
+"Houston, TX",1,2015 Hurricane Joaquin and Patricia and Other Events,0.0011373599282975349,20.0,1
+"Houston, TX",2,2015-2018 Mitigation,0.0029002678171587137,12.0,0
+Illinois,1,2008 Hurricane Ike and Other Events,8.735746437225041e-05,3.0,1
+Illinois,2,2008 Midwest Floods,,34.0,0
+Illinois,3,2011-2013 Hurricane Sandy and Other Events,0.0,12.0,0
+Iowa,1,2019 Disasters,0.0005472203428601347,3.0,1
+Iowa,2,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0013489617754226576,9.0,0
+"Jefferson County, AL",1,2011 Multiple Disasters,0.0016241499776088798,32.0,1
+"Jefferson County, AL",2,2011-2013 Hurricane Sandy and Other Events,0.0010236239354677813,5.0,1
+Kentucky,1,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.006692925731904724,5.0,0
+Kentucky,2,2022 Disasters including Hurricanes Fiona and Ian,0.0,2.0,0
+"Lexington County, SC",1,2015 Hurricane Joaquin and Patricia and Other Events,,32.0,0
+"Lexington County, SC",2,2015-2018 Mitigation,0.0016813146766137472,4.0,1
+Louisiana,1,"2005 Hurricanes Katrina, Rita, Wilma",1.526296083127415e-05,1.0,1
+Louisiana,2,2008 Hurricane Ike and Other Events,1.8978326247603152e-05,2.0,1
+Louisiana,3,2011-2013 Hurricane Sandy and Other Events,0.0001904937810941684,2.0,1
+Louisiana,4,2013 National Disaster Resilience,0.000532159232506186,32.0,0
+Louisiana,5,2015-2018 Mitigation,0.0006473812091872128,11.0,1
+Louisiana,6,2016 Louisiana Floods and Other Events,0.00018443674512932996,3.0,1
+Louisiana,7,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0003898520929229897,10.0,0
+"Luzerne County, PA",1,2011 Multiple Disasters,0.00034435897565209,50.0,0
+"Luzerne County, PA",2,2011-2013 Hurricane Sandy and Other Events,0.0010087888059682483,1.0,1
+"Minot, ND",1,2011 Multiple Disasters,0.0003949781073951556,48.0,0
+"Minot, ND",2,2011-2013 Hurricane Sandy and Other Events,0.0005577438109920604,1.0,1
+"Minot, ND",3,2013 National Disaster Resilience,0.0007865133063481258,21.0,1
+Mississippi,1,"2005 Hurricanes Katrina, Rita, Wilma",,75.0,0
+Mississippi,2,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0031354246671986092,8.0,0
+Missouri,1,2015-2018 Mitigation,0.0006744808877113288,1.0,1
+Missouri,2,"2017 Hurricanes Harvey, Irma and Maria",0.00030274194333598266,9.0,1
+Missouri,3,2019 Disasters,0.0011299744742176807,8.0,1
+"Nashville-Davidson, TN",1,2010 Severe Storms and Flooding,,48.0,0
+"Nashville-Davidson, TN",2,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.004833779695264523,4.0,0
+New Jersey,1,2011-2013 Hurricane Sandy and Other Events,2.1068340964395714e-05,2.0,1
+New Jersey,2,2013 National Disaster Resilience,0.001959640416999131,31.0,0
+New Jersey,3,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.001091763914580585,7.0,0
+"New Orleans, LA",1,2011-2013 Hurricane Sandy and Other Events,0.0012429719216394488,1.0,1
+"New Orleans, LA",2,2013 National Disaster Resilience,0.0005370866328071692,32.0,0
+New York,1,2011 Multiple Disasters,0.0001950852791810794,34.0,0
+New York,2,2011-2013 Hurricane Sandy and Other Events,1.2144158015068728e-05,2.0,1
+New York,3,2013 National Disaster Resilience,0.0013155439467429622,26.0,0
+New York,4,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0025219720149206207,1.0,1
+"New York City, NY",1,2011-2013 Hurricane Sandy and Other Events,9.519478612118316e-05,2.0,1
+"New York City, NY",2,2013 National Disaster Resilience,0.0011601071268634855,14.0,0
+"New York City, NY",3,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.001706039892446302,4.0,0
+North Carolina-NCORR,1,2015-2018 Mitigation,0.0005556068615246578,19.0,0
+North Carolina-NCORR,2,2016 Louisiana Floods and Other Events,,27.0,0
+North Carolina-NCORR,3,2018 Disasters,0.0011745632904381085,1.0,1
+North Carolina-NCORR,4,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0030002770522331522,7.0,0
+Northern Mariana Islands,1,2015-2018 Mitigation,0.003954910659761882,8.0,0
+Northern Mariana Islands,2,2018 Disasters,0.0012776510207747637,6.0,1
+Oklahoma,1,2011-2013 Hurricane Sandy and Other Events,0.00039669316648067516,43.0,0
+Oklahoma,2,2019 Disasters,0.004309758131021028,15.0,0
+Pennsylvania,1,2011 Multiple Disasters,0.0004361304988208592,10.0,1
+Pennsylvania,2,2011-2013 Hurricane Sandy and Other Events,0.0012289270411689464,9.0,1
+Pennsylvania,3,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.004833779695264523,3.0,0
+Puerto Rico,1,2008 Hurricane Ike and Other Events,,54.0,0
+Puerto Rico,2,2015-2018 Mitigation,0.001439849270929858,5.0,1
+Puerto Rico,3,"2017 Hurricanes Harvey, Irma and Maria",0.0003520810703682809,11.0,1
+Puerto Rico,4,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0018711405271991703,6.0,1
+Puerto Rico,5,Electrical Power Systems in Puerto Rico and the U.S. Virgin Islands,0.0058005356343174275,5.0,1
+"Richland County, SC",1,2015 Hurricane Joaquin and Patricia and Other Events,0.0035805775520477948,16.0,1
+"Richland County, SC",2,2015-2018 Mitigation,0.0,4.0,0
+"San Marcos, TX",1,2015 Hurricane Joaquin and Patricia and Other Events,0.000906333692862098,9.0,1
+"San Marcos, TX",2,2015-2018 Mitigation,0.002202735051006618,8.0,1
+South Carolina,1,2015-2018 Mitigation,0.0005655118306437604,6.0,1
+South Carolina,2,2018 Disasters,0.0020281593126984013,1.0,1
+"Springfield, MA",1,2011-2013 Hurricane Sandy and Other Events,0.00021888813714405385,39.0,0
+"Springfield, MA",2,2013 National Disaster Resilience,0.0006517455768895986,4.0,1
+Tennessee,1,2011-2013 Hurricane Sandy and Other Events,0.0008580674015262466,5.0,1
+Tennessee,2,2013 National Disaster Resilience,0.0009548206805460786,11.0,1
+Tennessee,3,"2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)",0.0,1.0,0
+Texas - GLO,1,2008 Hurricane Ike and Other Events,,64.0,0
+Texas - GLO,2,2011 Multiple Disasters,0.000620009747136067,1.0,1
+Texas - GLO,3,2015 Hurricane Joaquin and Patricia and Other Events,,32.0,0
+Texas - GLO,4,2015-2018 Mitigation,,17.0,0
+Texas - GLO,5,2016 Louisiana Floods and Other Events,,28.0,0
+Texas - GLO,6,"2017 Hurricanes Harvey, Irma and Maria",,27.0,0
+Texas - GLO,7,2018 Disasters,0.0008112637250793605,6.0,1
+Texas - GLO,8,2019 Disasters,0.0006935423041031707,15.0,0
+"Tuscaloosa, AL",1,2011 Multiple Disasters,0.0008447381991724408,4.0,1
+"Tuscaloosa, AL",2,2011-2013 Hurricane Sandy and Other Events,0.00043947763442377596,39.0,0
+Virgin Islands,1,2015-2018 Mitigation,0.001706039892446302,4.0,0
+Virgin Islands,2,"2017 Hurricanes Harvey, Irma and Maria",0.0008812968505178412,9.0,1
+Virgin Islands,3,Electrical Power Systems in Puerto Rico and the U.S. Virgin Islands,0.0,1.0,0

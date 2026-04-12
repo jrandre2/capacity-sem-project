@@ -2,7 +2,11 @@
 
 ## Overview
 
-This document provides a comprehensive technical guide to the time-varying survival analysis implementation for the Capacity-SEM project.
+This document provides a technical guide to the time-varying survival implementation used in the corrected standardized workflow.
+
+Historical note:
+- earlier static and pre-fix positive velocity results are not the current reference point
+- the canonical workflow is `ingest_data -> standardize_data -> build_panel -> build_features_std -> run_survival`
 
 ## The Methodological Problem
 

@@ -1,0 +1,171 @@
+---
+title: "When Velocity Doesn't Matter: Reassessing Spending Rate and CDBG-DR Program Completion"
+format:
+  html:
+    toc: true
+  pdf:
+    toc: false
+  docx:
+    toc: false
+---
+
+::: {.callout-important}
+## Draft Status: Rewrite In Progress (April 9, 2026)
+
+This manuscript now reflects the corrected quarter-based pipeline.
+
+Earlier versions of this paper relied on a duration bug in which mixed
+activity rows were treated as elapsed quarters. That bug inflated program
+duration and generated spurious velocity effects. The active analytical
+position is now:
+
+- overall time-varying velocity effects are null or near-null
+- phase-specific effects are not currently reliable main findings
+- remaining subgroup signals are exploratory and require revalidation
+
+Use `doc/PROJECT_STATUS.md` and `doc/PIPELINE.md` as the authoritative
+project references while this manuscript is being rewritten.
+:::
+
+## Abstract {.unnumbered}
+
+Administrative capacity research often assumes that faster financial
+throughput implies better implementation. This manuscript revisits that
+assumption in the Community Development Block Grant-Disaster Recovery
+(CDBG-DR) program using the corrected standardized survival pipeline.
+Once elapsed time is measured in unique reporting quarters rather than
+activity rows, spending velocity no longer shows a reliable association
+with program completion timing in the primary time-varying models.
+Most subgroup analyses are likewise null, and the few remaining signals
+are exploratory rather than confirmatory. The substantive contribution of
+the paper is therefore negative but important: administrative throughput
+should not be treated as a validated proxy for recovery effectiveness
+without careful temporal measurement and quarter-level aggregation.
+
+## Evidence for Practice {.unnumbered}
+
+- Monitoring expenditure pace alone is not a validated way to predict
+  which CDBG-DR programs will finish sooner.
+- Technical assistance should not assume that pushing grantees to spend
+  faster will shorten recovery duration.
+- Quarter-level aggregation rules matter; row-level administrative data
+  can create false performance signals.
+- Remaining subgroup signals should be treated as hypothesis-generating,
+  not operational doctrine.
+- Future management tools should focus on alternative predictors of
+  completion rather than defaulting to velocity metrics.
+
+# Introduction
+
+Federal disaster recovery programs vary enormously in how long they take
+to finish. The Community Development Block Grant-Disaster Recovery
+(CDBG-DR) program is a particularly important case because it combines
+large, flexible allocations with long administrative timelines and dense
+federal reporting requirements [@gao2019; @hudoig2021; @jaroscak2020].
+
+Administrative capacity is a plausible explanation for that variation,
+but capacity is difficult to measure directly. One tempting proxy is
+spending velocity: programs that move money faster may appear to be better
+managed, more responsive, or better positioned to reach completion. That
+logic is appealing to both researchers and practitioners because it turns
+routine financial reporting into an actionable performance metric.
+
+This draft now takes the opposite question seriously: what if throughput
+is not a valid predictor of completion once time is measured correctly?
+The corrected quarter-based pipeline suggests exactly that. Velocity no
+longer behaves as a stable explanatory variable in the primary
+time-varying models, and the strongest claims from earlier drafts do not
+survive the correction.
+
+The contribution of this paper is therefore diagnostic as much as
+substantive. It shows how easily administrative data can generate false
+signals when panel structure is mishandled, and it argues that negative
+results about capacity proxies are worth reporting because they redirect
+both theory and management practice.
+
+# Current Analytical Position
+
+The project now treats the following points as the active baseline:
+
+1. Spending velocity is not a trusted overall predictor of CDBG-DR
+   completion timing in the corrected time-varying survival models.
+2. The earlier contingent-capacity narrative was produced before the
+   quarter-based duration fix and is no longer an acceptable main result.
+3. Remaining subgroup signals should be treated as exploratory until the
+   cleaned pipeline, diagnostics, and manuscript tables are fully rerun
+   and reconciled.
+
+These claims follow the standardized workflow documented in
+`doc/PIPELINE.md`, which now defines `python src/pipeline.py run_all` as
+the canonical path for end-to-end analysis.
+
+# Data And Methods
+
+The analysis uses HUD Quarterly Performance Report data assembled into a
+quarter-level panel of grantee-disaster observations. The corrected
+workflow first standardizes QPR activity data, then collapses mixed
+activity rows to unique grantee-disaster-quarter observations before
+constructing survival features and time-varying covariates.
+
+The modeling strategy remains centered on survival analysis because the
+outcome of interest is time to completion and the sample includes ongoing,
+right-censored programs. The key methodological correction is temporal:
+duration, phase definitions, and early-window features must all be based
+on unique quarters rather than row counts from heterogeneous activity
+records.
+
+Heterogeneity analysis remains part of the research design, but it is now
+framed as exploratory. The manuscript will only promote subgroup results
+after regenerated tables, figures, and diagnostics all agree with the
+cleaned pipeline outputs.
+
+# Results Summary
+
+The current results narrative is intentionally narrow:
+
+- The corrected overall relationship between spending velocity and program
+  completion is null or near-null in the active time-varying survival
+  models.
+- Phase-specific velocity results do not currently justify a lifecycle
+  theory of "when velocity matters."
+- A small number of subgroup coefficients remain suggestive, but they are
+  not yet robust enough to anchor theory or policy recommendations.
+
+This means the main empirical contribution is negative. A widely available
+administrative throughput measure does not appear to explain completion in
+the way earlier drafts suggested once quarter-level timing is handled
+correctly.
+
+# Implications
+
+Theoretically, the revised result weakens any strong claim that financial
+throughput is a general or contingent measure of administrative capacity
+in disaster recovery. A more defensible interpretation is that velocity is
+an incomplete process indicator that may capture reporting cadence,
+program design, or accounting practices as much as implementation quality.
+
+Practically, the null result argues against treating expenditure pace as a
+standalone management target. Technical assistance and oversight should be
+more cautious about equating faster spending with faster completion until
+alternative predictors are identified and validated.
+
+Methodologically, this project demonstrates that quarter-level panel
+construction is not a minor data-engineering detail. In administrative
+datasets with multiple activity rows per reporting period, row counts can
+silently become pseudo-time and create compelling but false findings.
+
+# Revision Priorities
+
+The next substantive manuscript pass should:
+
+1. regenerate all tables and figures from the cleaned pipeline outputs
+2. rebuild the heterogeneity appendix with only corrected estimates
+3. replace the current narrative placeholders with a full null-results
+   interpretation and limitations discussion
+4. decide whether the strongest residual subgroup signals merit a brief
+   exploratory appendix or should be omitted from the main paper
+
+# References {.unnumbered}
+
+::: {#refs}
+:::

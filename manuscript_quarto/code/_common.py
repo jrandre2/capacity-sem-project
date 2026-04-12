@@ -1,6 +1,6 @@
 """
 Common utilities for manuscript table and figure rendering.
-Loads diagnostic CSVs and provides helper functions for Capacity-SEM project.
+Loads diagnostic CSVs and provides helper functions for table rendering.
 """
 
 import pandas as pd
@@ -17,23 +17,56 @@ def show_table(df: pd.DataFrame) -> None:
     display(Markdown(df.to_markdown(index=False)))
 
 
-# Paths relative to manuscript_quarto/
-DATA_DIR = Path(__file__).parent.parent / "data"
-FIG_DIR = Path(__file__).parent.parent / "figures"
+def _find_project_root() -> Path:
+    """Find project root by looking for characteristic files."""
+    current = Path(__file__).resolve()
+    for parent in current.parents:
+        if (parent / 'src').exists() and (parent / 'manuscript_quarto').exists():
+            return parent
+    # Fallback: assume manuscript_quarto is one level down from root
+    return Path(__file__).parent.parent.parent
 
 
-def load_diagnostic(name: str) -> pd.DataFrame:
-    """Load a diagnostic CSV file by name (without .csv extension)."""
+# Project paths
+PROJECT_ROOT = _find_project_root()
+DATA_DIR = PROJECT_ROOT / "data_work" / "diagnostics"
+FIG_DIR = PROJECT_ROOT / "manuscript_quarto" / "figures"
+
+
+def data_available() -> bool:
+    """Check if pipeline data is available for manuscript rendering."""
+    return DATA_DIR.exists() and any(DATA_DIR.glob("*.csv"))
+
+
+def load_diagnostic(name: str, required: bool = True) -> pd.DataFrame:
+    """Load a diagnostic CSV file by name (without .csv extension).
+
+    Parameters
+    ----------
+    name : str
+        Name of the diagnostic file (without .csv extension)
+    required : bool
+        If True, raise error when file missing. If False, return empty DataFrame.
+
+    Returns
+    -------
+    pd.DataFrame
+        Loaded data, or empty DataFrame if not required and missing
+    """
     path = DATA_DIR / f"{name}.csv"
     if not path.exists():
-        raise FileNotFoundError(f"Diagnostic file not found: {path}")
+        if required:
+            raise FileNotFoundError(
+                f"Diagnostic file not found: {path}\n"
+                f"Run the pipeline first: python src/pipeline.py ingest_data --demo && "
+                f"python src/pipeline.py run_estimation"
+            )
+        return pd.DataFrame()
     return pd.read_csv(path)
 
 
 def format_pvalue(p: float, threshold: float = 0.001) -> str:
     """Format p-value for display."""
-    if pd.isna(p):
-        return "—"
     if p < threshold:
         return f"<{threshold}"
     return f"{p:.3f}"
@@ -51,8 +84,6 @@ def format_percent(value: float, decimals: int = 1) -> str:
 
 def add_significance_stars(p: float) -> str:
     """Add significance stars based on p-value."""
-    if pd.isna(p):
-        return ""
     if p < 0.001:
         return "***"
     elif p < 0.01:
@@ -62,80 +93,12 @@ def add_significance_stars(p: float) -> str:
     return ""
 
 
-def format_coefficient(est: float, se: float, p: float, decimals: int = 3) -> str:
-    """Format coefficient with standard error and significance stars."""
-    stars = add_significance_stars(p)
-    return f"{est:.{decimals}f}{stars}\n({se:.{decimals}f})"
+# Example project-specific loaders (customize for your project)
+def load_main_results() -> pd.DataFrame:
+    """Load main estimation results."""
+    return load_diagnostic("main_results")
 
 
-def format_fit_index(value: float, threshold_good: float, threshold_acceptable: float,
-                     lower_is_better: bool = False) -> str:
-    """Format fit index with quality indicator."""
-    if pd.isna(value):
-        return "—"
-
-    if lower_is_better:
-        if value <= threshold_good:
-            quality = "✓"
-        elif value <= threshold_acceptable:
-            quality = "~"
-        else:
-            quality = "✗"
-    else:
-        if value >= threshold_good:
-            quality = "✓"
-        elif value >= threshold_acceptable:
-            quality = "~"
-        else:
-            quality = "✗"
-
-    return f"{value:.3f} {quality}"
-
-
-# Capacity-SEM specific loaders
-def load_estimation_results() -> pd.DataFrame:
-    """Load main SEM estimation results."""
-    return load_diagnostic("estimates_exp_optimal_v1_all")
-
-
-def load_fit_statistics() -> pd.DataFrame:
-    """Load model fit statistics."""
-    return load_diagnostic("fit_stats_exp_optimal_v1_all")
-
-
-def load_robustness_specs() -> pd.DataFrame:
-    """Load robustness specification comparison."""
-    return load_diagnostic("robustness_specifications")
-
-
-def load_robustness_subsets() -> pd.DataFrame:
-    """Load robustness subset comparison."""
-    return load_diagnostic("robustness_subsets")
-
-
-def load_sample_sensitivity() -> pd.DataFrame:
-    """Load sample sensitivity analysis."""
-    return load_diagnostic("robustness_sample_sensitivity")
-
-
-def create_fit_summary_table() -> pd.DataFrame:
-    """Create formatted fit summary table."""
-    try:
-        fit = load_fit_statistics()
-
-        # Format for display
-        summary = pd.DataFrame({
-            'Index': ['CFI', 'TLI', 'RMSEA', 'SRMR', 'Chi-Square', 'df'],
-            'Value': [
-                format_fit_index(fit.get('CFI', np.nan), 0.95, 0.90),
-                format_fit_index(fit.get('TLI', np.nan), 0.95, 0.90),
-                format_fit_index(fit.get('RMSEA', np.nan), 0.05, 0.08, lower_is_better=True),
-                format_fit_index(fit.get('SRMR', np.nan), 0.05, 0.08, lower_is_better=True),
-                f"{fit.get('chi2', np.nan):.2f}",
-                f"{fit.get('dof', np.nan):.0f}"
-            ],
-            'Threshold': ['≥0.95', '≥0.95', '≤0.05', '≤0.05', '—', '—']
-        })
-        return summary
-    except FileNotFoundError:
-        return pd.DataFrame({'Note': ['Results not yet available']})
+def load_robustness() -> pd.DataFrame:
+    """Load robustness check results."""
+    return load_diagnostic("robustness_results")

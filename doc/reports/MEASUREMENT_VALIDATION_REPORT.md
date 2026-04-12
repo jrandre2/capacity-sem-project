@@ -1,5 +1,7 @@
 # Measurement Validation Report: Velocity as Administrative Capacity Indicator
 
+> Historical note: this report reflects pre-fix validation work and should not be treated as the current conclusion about velocity validity.
+
 **Analysis Phase**: Phase 1, Weeks 1-2
 **Date**: December 26, 2025
 **Branch**: `analysis/alternative-capacity-measures`

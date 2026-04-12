@@ -1,0 +1,43 @@
+# Capacity-SEM core analysis stack
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=12.0.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+scipy>=1.10.0
+statsmodels>=0.14.0
+requests>=2.31.0
+lifelines>=0.27.0
+semopy>=2.3.0
+scikit-learn>=1.3.0
+PyYAML>=6.0
+
+# CENTAUR manuscript and review tooling
+python-docx>=0.8.11
+jupyter>=1.0.0
+tabulate>=0.9.0
+ipython>=8.0.0
+
+# CENTAUR GUI
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+jinja2>=3.1.0
+python-multipart>=0.0.6
+websockets>=12.0
+
+# CENTAUR spatial tooling
+geopandas>=0.14.0
+shapely>=2.0.0
+pyproj>=3.5.0
+fiona>=1.9.0
+
+# CENTAUR LLM providers
+anthropic>=0.34.0
+openai>=1.40.0
+
+# Optional advanced analysis stacks used by selected modules
+# pymc>=5.0.0
+# rpy2>=3.5.0
+
+# Quarto is an external CLI, not a pip package. Use the vendored wrapper
+# in tools/bin/quarto or install Quarto system-wide.

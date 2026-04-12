@@ -1,5 +1,7 @@
 # Standardized Pipeline Implementation Summary
 
+> Historical note: this summary documents the December 2025 rollout of the standardized stages. Use `doc/PROJECT_STATUS.md` and `doc/PIPELINE.md` for the current workflow after the April 9, 2026 quarter-based downstream cleanup.
+
 **Date Completed**: December 26, 2025
 
 **Status**: ✅ **COMPLETE** - All phases finished, production-ready

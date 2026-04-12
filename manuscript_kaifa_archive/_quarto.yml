@@ -2,7 +2,7 @@ project:
   output-dir: _output
   pre-render: ./pre_render.sh
   render:
-    - index.qmd
+    - kaifa_r3_response_2026-04-11.qmd
 
 format:
   html:

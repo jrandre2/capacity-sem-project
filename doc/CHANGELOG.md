@@ -73,6 +73,21 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+#### Ratio Aggregation Bug in Time-Varying Panel (April 12, 2026)
+- **BREAKING**: Fixed `collapse_to_quarterly_panel()` in `src/utils/quarterly_panel.py`
+  - Dollar columns (`QPR Fund Obligated $`, `QPR Fund Disbursed $`, `QPR Fund Expended $`) were aggregated with MAX instead of SUM across activities
+  - Picked one activity's value instead of grant-level total, producing ratios up to 38.8 million
+  - Cox model coefficients were driven to machine-zero (HR≈1.0000000000, concordance=0.171)
+- **Fix details**:
+  - Dollar columns now use SUM aggregation across activities
+  - Ratios recomputed from summed grant-level totals after collapse
+  - Added $1,000 minimum denominator to avoid division-by-near-zero
+  - Added [0, 2] clipping to ratio outputs in both `quarterly_panel.py` and `time_varying_survival.py`
+- **Impact**: Concordance corrected from 0.171 to 0.723; HR estimates now properly scaled (1.001 vs 1.0000000000)
+- **Substantive conclusion unchanged**: Null finding confirmed with clean data (HR=1.001, p=0.991)
+- Regenerated `panel_time_varying.parquet` and re-ran 1000-iteration bootstrap SEs
+- See `doc/ANALYSIS_JOURNEY.md` Phase 8 for complete narrative
+
 #### Critical Duration Calculation Bug (December 27, 2025)
 - **BREAKING**: Fixed Duration calculation in `s01b_features.py`
   - `compute_timeliness_features_std()` was counting activity rows (~9 per quarter) instead of unique quarters

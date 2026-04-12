@@ -26,6 +26,9 @@ from typing import Dict, List, Optional, Tuple, Any
 from pathlib import Path
 import warnings
 
+from config import TV_VELOCITY_ROLLING_WINDOWS
+from utils.quarterly_panel import collapse_to_quarterly_panel, detect_quarter_col
+
 # lifelines imports
 try:
     from lifelines import CoxPHFitter, WeibullAFTFitter, LogNormalAFTFitter, LogLogisticAFTFitter
@@ -39,8 +42,10 @@ def reshape_quarterly_to_time_varying(
     qpr_quarterly: pd.DataFrame,
     panel_features: pd.DataFrame,
     lag_quarters: int = 1,
+    extra_lags: Optional[List[int]] = None,
     min_quarters: int = 2,
-    duration_col: str = 'Duration_of_completion'
+    duration_col: str = 'Duration_of_completion',
+    use_standardized: bool = True
 ) -> pd.DataFrame:
     """
     Reshape quarterly panel to time-varying survival format.
@@ -61,6 +66,7 @@ def reshape_quarterly_to_time_varying(
         - Grantee, Disaster Type (identifiers)
         - Quarter (sequential quarter number)
         - QPR Fund Obligated $, QPR Fund Disbursed $, QPR Fund Expended $ (cumulative)
+        If use_standardized=True, should be qpr_standardized.parquet with pre-computed velocity
     panel_features : pd.DataFrame
         Static features with columns:
         - Grantee, Disaster Type (identifiers)
@@ -68,8 +74,13 @@ def reshape_quarterly_to_time_varying(
         - N_Quarters (total quarters observed)
     lag_quarters : int, default=1
         Number of quarters to lag capacity ratios
+    extra_lags : list of int, optional
+        Additional lag values to compute (e.g., [0, 2]) for robustness checks.
     min_quarters : int, default=2
         Minimum quarters required to include grantee-disaster in analysis
+    use_standardized : bool, default=True
+        If True, use pre-computed standardized velocity from s00b_standardize.
+        If False, compute velocity with dynamic denominators (legacy behavior).
 
     Returns
     -------
@@ -80,6 +91,9 @@ def reshape_quarterly_to_time_varying(
         - E (event indicator: 1 if completion occurred in this interval, else 0)
         - Ratio_disbursed_to_obligated_lag{lag_quarters}
         - Ratio_expended_to_disbursed_lag{lag_quarters}
+        - Disbursement_Velocity_pp_lag{lag_quarters}
+        - Expenditure_Velocity_pp_lag{lag_quarters}
+        - Capacity_Velocity_Index_pp_lag{lag_quarters}
         - Quarter (for reference)
 
     Notes
@@ -88,6 +102,7 @@ def reshape_quarterly_to_time_varying(
     - Event E=1 only on final interval where completion occurred
     - Censored observations have E=0 on all intervals
     - Intervals with missing/invalid ratios (division by zero) are set to NaN
+    - When use_standardized=True, uses fixed denominators and winsorized velocity
 
     Examples
     --------
@@ -126,30 +141,202 @@ def reshape_quarterly_to_time_varying(
     if lag_quarters < 0:
         raise ValueError("lag_quarters must be non-negative")
 
-    # Sort by grantee-disaster and quarter
     qpr = qpr_quarterly.copy()
-    qpr = qpr.sort_values(['Grantee', 'Disaster Type', 'QPR Actual Quarter']).reset_index(drop=True)
+    quarter_col = detect_quarter_col(qpr)
+    duplicate_quarters = qpr.groupby(['Grantee', 'Disaster Type', quarter_col]).size().gt(1)
+    if duplicate_quarters.any():
+        print("Collapsing repeated activity rows to quarter-end panel before survival reshaping")
+        qpr = collapse_to_quarterly_panel(
+            qpr,
+            rolling_windows=TV_VELOCITY_ROLLING_WINDOWS,
+        )
+        quarter_col = detect_quarter_col(qpr)
+
+    # Sort by grantee-disaster and quarter
+    qpr = qpr.sort_values(['Grantee', 'Disaster Type', quarter_col]).reset_index(drop=True)
 
     # Create quarter index within each grantee-disaster
     qpr['Quarter_Index'] = qpr.groupby(['Grantee', 'Disaster Type']).cumcount()
 
-    # Compute capacity ratios at each quarter
+    # Compute capacity ratios at each quarter.
+    # Use $1K minimum denominator to avoid extreme ratios from near-zero
+    # obligated/disbursed values (common in early quarters or adjustments).
+    _MIN_DENOM = 1000
+
     qpr['Ratio_disbursed_to_obligated'] = np.where(
-        qpr['QPR Fund Obligated $'] > 0,
+        qpr['QPR Fund Obligated $'] > _MIN_DENOM,
         qpr['QPR Fund Disbursed $'] / qpr['QPR Fund Obligated $'],
         np.nan
     )
+    qpr['Ratio_disbursed_to_obligated'] = qpr['Ratio_disbursed_to_obligated'].clip(lower=0.0, upper=2.0)
 
     qpr['Ratio_expended_to_disbursed'] = np.where(
-        qpr['QPR Fund Disbursed $'] > 0,
+        qpr['QPR Fund Disbursed $'] > _MIN_DENOM,
         qpr['QPR Fund Expended $'] / qpr['QPR Fund Disbursed $'],
         np.nan
     )
+    qpr['Ratio_expended_to_disbursed'] = qpr['Ratio_expended_to_disbursed'].clip(lower=0.0, upper=2.0)
+
+    qpr['Ratio_expended_to_obligated'] = np.where(
+        qpr['QPR Fund Obligated $'] > _MIN_DENOM,
+        qpr['QPR Fund Expended $'] / qpr['QPR Fund Obligated $'],
+        np.nan
+    )
+    qpr['Ratio_expended_to_obligated'] = qpr['Ratio_expended_to_obligated'].clip(lower=0.0, upper=2.0)
+
+    # ==========================================================================
+    # Compute velocity (quarter-to-quarter change in cumulative shares)
+    # ==========================================================================
+
+    if use_standardized and 'Velocity_Disb_Std_pp_winsor' in qpr.columns:
+        # Use pre-computed standardized velocity (fixed denominators, winsorized)
+        print("Using standardized velocity from s00b_standardize (fixed denominators)")
+
+        qpr['Disbursement_Velocity_pp'] = qpr['Velocity_Disb_Std_pp_winsor']
+        qpr['Expenditure_Velocity_pp'] = qpr['Velocity_Exp_Std_pp_winsor']
+
+        # Use pre-computed rolling windows if available
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            std_roll_col_disb = f'Velocity_Disb_Std_pp_roll{window}'
+            std_roll_col_exp = f'Velocity_Exp_Std_pp_roll{window}'
+
+            if std_roll_col_disb in qpr.columns:
+                qpr[f'Disbursement_Velocity_pp_roll{window}'] = qpr[std_roll_col_disb]
+            else:
+                # Compute if not available
+                qpr[f'Disbursement_Velocity_pp_roll{window}'] = qpr.groupby(
+                    ['Grantee', 'Disaster Type']
+                )['Disbursement_Velocity_pp'].transform(
+                    lambda s: s.rolling(window=window, min_periods=window).mean()
+                )
+
+            if std_roll_col_exp in qpr.columns:
+                qpr[f'Expenditure_Velocity_pp_roll{window}'] = qpr[std_roll_col_exp]
+            else:
+                qpr[f'Expenditure_Velocity_pp_roll{window}'] = qpr.groupby(
+                    ['Grantee', 'Disaster Type']
+                )['Expenditure_Velocity_pp'].transform(
+                    lambda s: s.rolling(window=window, min_periods=window).mean()
+                )
+
+        # Use pre-computed cumulative if available
+        if 'Velocity_Disb_Std_pp_cum' in qpr.columns:
+            qpr['Disbursement_Velocity_pp_cum'] = qpr['Velocity_Disb_Std_pp_cum']
+        else:
+            qpr['Disbursement_Velocity_pp_cum'] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )['Disbursement_Velocity_pp'].transform(lambda s: s.expanding(min_periods=2).mean())
+
+        if 'Velocity_Exp_Std_pp_cum' in qpr.columns:
+            qpr['Expenditure_Velocity_pp_cum'] = qpr['Velocity_Exp_Std_pp_cum']
+        else:
+            qpr['Expenditure_Velocity_pp_cum'] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )['Expenditure_Velocity_pp'].transform(lambda s: s.expanding(min_periods=2).mean())
+
+    else:
+        # Legacy behavior: Compute velocity with dynamic denominators
+        if use_standardized:
+            print("WARNING: use_standardized=True but standardized columns not found. Using legacy calculation.")
+
+        qpr['Disbursement_Velocity'] = qpr.groupby(['Grantee', 'Disaster Type'])['Ratio_disbursed_to_obligated'].diff()
+        qpr['Expenditure_Velocity'] = qpr.groupby(['Grantee', 'Disaster Type'])['Ratio_expended_to_obligated'].diff()
+        qpr['Disbursement_Velocity_pp'] = qpr['Disbursement_Velocity'] * 100
+        qpr['Expenditure_Velocity_pp'] = qpr['Expenditure_Velocity'] * 100
+
+        # Rolling-window and cumulative velocity (percent-per-quarter)
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            qpr[f'Disbursement_Velocity_pp_roll{window}'] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )['Disbursement_Velocity_pp'].transform(
+                lambda s: s.rolling(window=window, min_periods=window).mean()
+            )
+            qpr[f'Expenditure_Velocity_pp_roll{window}'] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )['Expenditure_Velocity_pp'].transform(
+                lambda s: s.rolling(window=window, min_periods=window).mean()
+            )
+
+        qpr['Disbursement_Velocity_pp_cum'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Disbursement_Velocity_pp'].transform(lambda s: s.expanding(min_periods=2).mean())
+        qpr['Expenditure_Velocity_pp_cum'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Expenditure_Velocity_pp'].transform(lambda s: s.expanding(min_periods=2).mean())
 
     # Apply lagging within each grantee-disaster group
-    lag_suffix = f'_lag{lag_quarters}'
-    qpr[f'Ratio_disbursed_to_obligated{lag_suffix}'] = qpr.groupby(['Grantee', 'Disaster Type'])['Ratio_disbursed_to_obligated'].shift(lag_quarters)
-    qpr[f'Ratio_expended_to_disbursed{lag_suffix}'] = qpr.groupby(['Grantee', 'Disaster Type'])['Ratio_expended_to_disbursed'].shift(lag_quarters)
+    lag_values = set([lag_quarters])
+    if extra_lags:
+        lag_values.update(extra_lags)
+    lag_values = sorted(lag_values)
+
+    for lag in lag_values:
+        lag_suffix = f'_lag{lag}'
+        qpr[f'Ratio_disbursed_to_obligated{lag_suffix}'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Ratio_disbursed_to_obligated'].shift(lag)
+        qpr[f'Ratio_expended_to_disbursed{lag_suffix}'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Ratio_expended_to_disbursed'].shift(lag)
+        qpr[f'Disbursement_Velocity_pp{lag_suffix}'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Disbursement_Velocity_pp'].shift(lag)
+        qpr[f'Expenditure_Velocity_pp{lag_suffix}'] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Expenditure_Velocity_pp'].shift(lag)
+        qpr[f'Capacity_Velocity_Index_pp{lag_suffix}'] = qpr[
+            [f'Disbursement_Velocity_pp{lag_suffix}', f'Expenditure_Velocity_pp{lag_suffix}']
+        ].mean(axis=1, skipna=True)
+
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            roll_disb_col = f'Disbursement_Velocity_pp_roll{window}{lag_suffix}'
+            roll_exp_col = f'Expenditure_Velocity_pp_roll{window}{lag_suffix}'
+            qpr[roll_disb_col] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )[f'Disbursement_Velocity_pp_roll{window}'].shift(lag)
+            qpr[roll_exp_col] = qpr.groupby(
+                ['Grantee', 'Disaster Type']
+            )[f'Expenditure_Velocity_pp_roll{window}'].shift(lag)
+            qpr[f'Capacity_Velocity_Index_pp_roll{window}{lag_suffix}'] = qpr[
+                [roll_disb_col, roll_exp_col]
+            ].mean(axis=1, skipna=True)
+
+        cum_disb_col = f'Disbursement_Velocity_pp_cum{lag_suffix}'
+        cum_exp_col = f'Expenditure_Velocity_pp_cum{lag_suffix}'
+        qpr[cum_disb_col] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Disbursement_Velocity_pp_cum'].shift(lag)
+        qpr[cum_exp_col] = qpr.groupby(
+            ['Grantee', 'Disaster Type']
+        )['Expenditure_Velocity_pp_cum'].shift(lag)
+        qpr[f'Capacity_Velocity_Index_pp_cum{lag_suffix}'] = qpr[
+            [cum_disb_col, cum_exp_col]
+        ].mean(axis=1, skipna=True)
+    def zscore_series(series: pd.Series) -> pd.Series:
+        mean = series.mean(skipna=True)
+        std = series.std(skipna=True)
+        if std == 0 or np.isnan(std):
+            return series * 0
+        return (series - mean) / std
+
+    for lag in lag_values:
+        lag_suffix = f'_lag{lag}'
+        qpr[f'Disbursement_Velocity_pp{lag_suffix}_scaled'] = zscore_series(
+            qpr[f'Disbursement_Velocity_pp{lag_suffix}']
+        )
+        qpr[f'Expenditure_Velocity_pp{lag_suffix}_scaled'] = zscore_series(
+            qpr[f'Expenditure_Velocity_pp{lag_suffix}']
+        )
+        qpr[f'Capacity_Velocity_Index_pp{lag_suffix}_scaled'] = zscore_series(
+            qpr[f'Capacity_Velocity_Index_pp{lag_suffix}']
+        )
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            roll_index_col = f'Capacity_Velocity_Index_pp_roll{window}{lag_suffix}'
+            if roll_index_col in qpr.columns:
+                qpr[f'{roll_index_col}_scaled'] = zscore_series(qpr[roll_index_col])
+        cum_index_col = f'Capacity_Velocity_Index_pp_cum{lag_suffix}'
+        if cum_index_col in qpr.columns:
+            qpr[f'{cum_index_col}_scaled'] = zscore_series(qpr[cum_index_col])
 
     # Create start/stop intervals (quarters × 3 = months)
     qpr['start'] = qpr['Quarter_Index'] * 3
@@ -183,10 +370,34 @@ def reshape_quarterly_to_time_varying(
         'start',
         'stop',
         'E',
-        f'Ratio_disbursed_to_obligated{lag_suffix}',
-        f'Ratio_expended_to_disbursed{lag_suffix}',
         'Quarter_Index'
     ]
+
+    for lag in lag_values:
+        lag_suffix = f'_lag{lag}'
+        output_cols.extend([
+            f'Ratio_disbursed_to_obligated{lag_suffix}',
+            f'Ratio_expended_to_disbursed{lag_suffix}',
+            f'Disbursement_Velocity_pp{lag_suffix}',
+            f'Expenditure_Velocity_pp{lag_suffix}',
+            f'Capacity_Velocity_Index_pp{lag_suffix}',
+            f'Disbursement_Velocity_pp{lag_suffix}_scaled',
+            f'Expenditure_Velocity_pp{lag_suffix}_scaled',
+            f'Capacity_Velocity_Index_pp{lag_suffix}_scaled',
+        ])
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            output_cols.extend([
+                f'Disbursement_Velocity_pp_roll{window}{lag_suffix}',
+                f'Expenditure_Velocity_pp_roll{window}{lag_suffix}',
+                f'Capacity_Velocity_Index_pp_roll{window}{lag_suffix}',
+                f'Capacity_Velocity_Index_pp_roll{window}{lag_suffix}_scaled',
+            ])
+        output_cols.extend([
+            f'Disbursement_Velocity_pp_cum{lag_suffix}',
+            f'Expenditure_Velocity_pp_cum{lag_suffix}',
+            f'Capacity_Velocity_Index_pp_cum{lag_suffix}',
+            f'Capacity_Velocity_Index_pp_cum{lag_suffix}_scaled',
+        ])
 
     tv_panel = qpr[output_cols].copy()
 

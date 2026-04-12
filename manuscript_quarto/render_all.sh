@@ -4,39 +4,53 @@
 # IMPORTANT: Quarto book projects overwrite _output on each render.
 # This script renders all formats sequentially and preserves outputs.
 #
-# Usage: ./render_all.sh [--profile <name>]
+# Usage: ./render_all.sh [--profile <name>] [--output-dir <path>]
 # Examples:
 #   ./render_all.sh                    # Default profile
 #   ./render_all.sh --profile jeem     # JEEM submission format
 #   ./render_all.sh --profile aer      # AER submission format
+#
+# Note: If a profile sets project.output-dir, this script will respect it.
 
 set -e  # Exit on error
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-PIPELINE_ARGS=()
-if [[ "${CAPACITY_SEM_DEMO:-}" == "1" ]]; then
-    PIPELINE_ARGS+=(--demo)
-fi
-
-if [[ -z "${CAPACITY_SEM_SKIP_PIPELINE:-}" ]]; then
-    echo ""
-    echo ">>> Running pipeline..."
-    python "$ROOT_DIR/src/pipeline.py" run_all "${PIPELINE_ARGS[@]}"
-    echo "    Pipeline complete."
-fi
 
 # Parse arguments
 PROFILE_ARG=""
+PROFILE_NAME=""
+OUTPUT_DIR=""
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --profile) PROFILE_ARG="--profile $2"; shift ;;
+        --profile) PROFILE_NAME="$2"; PROFILE_ARG="--profile $2"; shift ;;
+        --output-dir) OUTPUT_DIR="$2"; shift ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
 done
+
+get_output_dir() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    awk '
+        $1 == "project:" {inproject=1; next}
+        inproject && $1 == "output-dir:" {print $2; exit}
+        inproject && $0 ~ /^[^[:space:]]/ {inproject=0}
+    ' "$file"
+}
+
+if [ -z "$OUTPUT_DIR" ]; then
+    OUTPUT_DIR="$(get_output_dir "_quarto.yml")"
+    if [ -n "$PROFILE_NAME" ]; then
+        PROFILE_OUTPUT_DIR="$(get_output_dir "_quarto-$PROFILE_NAME.yml")"
+        if [ -n "$PROFILE_OUTPUT_DIR" ]; then
+            OUTPUT_DIR="$PROFILE_OUTPUT_DIR"
+        fi
+    fi
+fi
+
+OUTPUT_DIR="${OUTPUT_DIR:-_output}"
 
 # Ensure we have the quarto binary
 QUARTO="../tools/bin/quarto"
@@ -46,10 +60,7 @@ fi
 
 echo "=== Rendering Quarto Manuscript (All Formats) ==="
 [ -n "$PROFILE_ARG" ] && echo "    Using profile: $PROFILE_ARG"
-
-# Clear any stale outputs before rendering.
-rm -rf _output
-mkdir -p _output
+echo "    Output dir: $OUTPUT_DIR"
 
 # Create temp directory to preserve outputs
 TEMP_DIR=$(mktemp -d)
@@ -58,31 +69,32 @@ trap "rm -rf $TEMP_DIR" EXIT
 # Render HTML first
 echo ""
 echo ">>> Rendering HTML..."
-CAPACITY_SEM_SKIP_PIPELINE=1 $QUARTO render --to html $PROFILE_ARG
-cp -r _output/* "$TEMP_DIR/"
+$QUARTO render --to html $PROFILE_ARG
+cp -r "$OUTPUT_DIR"/* "$TEMP_DIR/"
 echo "    HTML saved."
 
 # Render PDF
 echo ""
 echo ">>> Rendering PDF..."
-CAPACITY_SEM_SKIP_PIPELINE=1 $QUARTO render --to pdf $PROFILE_ARG
-cp _output/*.pdf "$TEMP_DIR/" 2>/dev/null || true
-cp _output/*.tex "$TEMP_DIR/" 2>/dev/null || true
+$QUARTO render --to pdf $PROFILE_ARG
+cp "$OUTPUT_DIR"/*.pdf "$TEMP_DIR/" 2>/dev/null || true
+cp "$OUTPUT_DIR"/*.tex "$TEMP_DIR/" 2>/dev/null || true
 echo "    PDF saved."
 
 # Render DOCX
 echo ""
 echo ">>> Rendering DOCX..."
-CAPACITY_SEM_SKIP_PIPELINE=1 $QUARTO render --to docx $PROFILE_ARG
-cp _output/*.docx "$TEMP_DIR/" 2>/dev/null || true
+$QUARTO render --to docx $PROFILE_ARG
+cp "$OUTPUT_DIR"/*.docx "$TEMP_DIR/" 2>/dev/null || true
 echo "    DOCX saved."
 
-# Restore all outputs to _output
+# Restore all outputs to the active output directory
 echo ""
 echo ">>> Combining all outputs..."
-rm -rf _output/*
-cp -r "$TEMP_DIR"/* _output/
+rm -rf "$OUTPUT_DIR"/*
+mkdir -p "$OUTPUT_DIR"
+cp -r "$TEMP_DIR"/* "$OUTPUT_DIR"/
 
 echo ""
-echo "=== Done! All formats in _output/ ==="
-ls -la _output/*.html _output/*.pdf _output/*.docx 2>/dev/null || ls -la _output/
+echo "=== Done! All formats in $OUTPUT_DIR ==="
+ls -la "$OUTPUT_DIR"/*.html "$OUTPUT_DIR"/*.pdf "$OUTPUT_DIR"/*.docx 2>/dev/null || ls -la "$OUTPUT_DIR"

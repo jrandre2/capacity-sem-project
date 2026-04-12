@@ -1,13 +1,23 @@
 """
-Stage 02: Feature Engineering
+Stage 02: Feature Engineering (DEPRECATED)
 
-Compute timeliness metrics, experience indicators, and program stratification.
+⚠️  DEPRECATION WARNING ⚠️
+This stage uses dynamic denominators for velocity calculation, which creates
+computational artifacts. Use s01b_features.py instead, which uses standardized
+data with fixed denominators from s00b_standardize.py.
 
-Commands:
-    python src/pipeline.py compute_features
+Legacy Commands:
+    python src/pipeline.py compute_features  # DEPRECATED
+
+Recommended:
+    python src/pipeline.py standardize_data      # Step 1
+    python src/pipeline.py build_features_std    # Step 2 (replaces this stage)
 
 Outputs:
-    data_work/panel_features.parquet  - Panel with all computed features
+    data_work/panel_features.parquet  - Panel with features (legacy, dynamic denominators)
+
+For new analyses, use:
+    data_work/panel_features_std.parquet - Standardized features (fixed denominators)
 """
 
 from pathlib import Path
@@ -16,7 +26,14 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from config import DATA_WORK_DIR, COMPLETION_THRESHOLD, QPR_DOLLAR_FIELDS_ARE_FLOW
+from config import (
+    DATA_WORK_DIR,
+    COMPLETION_THRESHOLD,
+    QPR_DOLLAR_FIELDS_ARE_FLOW,
+    EARLY_VELOCITY_WINDOWS,
+    FIXED_VELOCITY_WINDOWS_MONTHS,
+    RATIO_INTERACTION_QUANTILES,
+)
 from stages._io_utils import safe_to_parquet, safe_read_parquet
 
 # Import from existing modules
@@ -208,6 +225,7 @@ def compute_additional_timeliness_metrics(
 
         # Completion percentage
         final_obligated = subset['QPR Fund Obligated $'].iloc[-1] if 'QPR Fund Obligated $' in subset.columns else 0
+        final_disbursed = subset['QPR Fund Disbursed $'].iloc[-1] if 'QPR Fund Disbursed $' in subset.columns else 0
         final_expended = subset['QPR Fund Expended $'].iloc[-1] if 'QPR Fund Expended $' in subset.columns else 0
 
         if final_obligated > 0:
@@ -216,6 +234,11 @@ def compute_additional_timeliness_metrics(
             completion_pct = 0
         record['Completion_Pct'] = completion_pct
         record['Ratio_obligated_funds_fully_expended'] = completion_pct
+
+        # Absolute dollars (log-transformed)
+        record['Obligated_log'] = np.log1p(max(final_obligated, 0))
+        record['Disbursed_log'] = np.log1p(max(final_disbursed, 0))
+        record['Expended_log'] = np.log1p(max(final_expended, 0))
 
         # Progress Rate = Completion % per quarter
         if n_quarters > 0:
@@ -275,9 +298,329 @@ def compute_additional_timeliness_metrics(
                 completion_velocity = diffs.mean()
         record['Completion_Velocity'] = completion_velocity
 
+        # Disbursement/expenditure velocity: mean quarterly change in share of obligated
+        disbursement_velocity = np.nan
+        if final_obligated > 0 and 'QPR Fund Disbursed $' in subset.columns and n_quarters > 1:
+            disbursed_series = subset['QPR Fund Disbursed $'] / final_obligated
+            disbursed_diffs = disbursed_series.diff().dropna()
+            if not disbursed_diffs.empty:
+                disbursement_velocity = disbursed_diffs.mean()
+        record['Disbursement_Velocity'] = disbursement_velocity
+
+        expenditure_velocity = np.nan
+        if final_obligated > 0 and 'QPR Fund Expended $' in subset.columns and n_quarters > 1:
+            expended_series = subset['QPR Fund Expended $'] / final_obligated
+            expended_diffs = expended_series.diff().dropna()
+            if not expended_diffs.empty:
+                expenditure_velocity = expended_diffs.mean()
+        record['Expenditure_Velocity'] = expenditure_velocity
+
+        # Early-window velocity (first N quarters only)
+        if final_obligated > 0 and n_quarters > 1:
+            for window in EARLY_VELOCITY_WINDOWS:
+                if n_quarters < window:
+                    record[f'Disbursement_Velocity_early_{window}q'] = np.nan
+                    record[f'Expenditure_Velocity_early_{window}q'] = np.nan
+                    continue
+
+                window_subset = subset.iloc[:window]
+                if 'QPR Fund Disbursed $' in window_subset.columns:
+                    disb_series = window_subset['QPR Fund Disbursed $'] / final_obligated
+                    disb_diffs = disb_series.diff().dropna()
+                    record[f'Disbursement_Velocity_early_{window}q'] = disb_diffs.mean() if not disb_diffs.empty else np.nan
+                else:
+                    record[f'Disbursement_Velocity_early_{window}q'] = np.nan
+
+                if 'QPR Fund Expended $' in window_subset.columns:
+                    exp_series = window_subset['QPR Fund Expended $'] / final_obligated
+                    exp_diffs = exp_series.diff().dropna()
+                    record[f'Expenditure_Velocity_early_{window}q'] = exp_diffs.mean() if not exp_diffs.empty else np.nan
+                else:
+                    record[f'Expenditure_Velocity_early_{window}q'] = np.nan
+
+        # Fixed calendar windows (first N months from start)
+        if final_obligated > 0 and n_quarters > 1 and 'QPR_Date' in subset.columns:
+            start_date = subset['QPR_Date'].min()
+            for months in FIXED_VELOCITY_WINDOWS_MONTHS:
+                end_date = start_date + pd.DateOffset(months=months)
+                window_subset = subset[subset['QPR_Date'] <= end_date]
+
+                if window_subset.empty or len(window_subset) < 2:
+                    record[f'Disbursement_Velocity_fixed_{months}m'] = np.nan
+                    record[f'Expenditure_Velocity_fixed_{months}m'] = np.nan
+                    continue
+
+                if 'QPR Fund Disbursed $' in window_subset.columns:
+                    disb_series = window_subset['QPR Fund Disbursed $'] / final_obligated
+                    disb_diffs = disb_series.diff().dropna()
+                    record[f'Disbursement_Velocity_fixed_{months}m'] = disb_diffs.mean() if not disb_diffs.empty else np.nan
+                else:
+                    record[f'Disbursement_Velocity_fixed_{months}m'] = np.nan
+
+                if 'QPR Fund Expended $' in window_subset.columns:
+                    exp_series = window_subset['QPR Fund Expended $'] / final_obligated
+                    exp_diffs = exp_series.diff().dropna()
+                    record[f'Expenditure_Velocity_fixed_{months}m'] = exp_diffs.mean() if not exp_diffs.empty else np.nan
+                else:
+                    record[f'Expenditure_Velocity_fixed_{months}m'] = np.nan
+
         results.append(record)
 
     return pd.DataFrame(results)
+
+
+def add_capacity_quartiles(
+    panel: pd.DataFrame,
+    base_col: str,
+    q: int = 4
+) -> pd.DataFrame:
+    """
+    Add quartile bins and dummy indicators for a capacity measure.
+
+    Creates a `{base_col}_Quartile` column plus Q2-Q4 dummies
+    (Q1 is the reference category).
+    """
+    if base_col not in panel.columns:
+        return panel
+
+    series = panel[base_col]
+    valid = series.dropna()
+    if valid.nunique() < 2:
+        return panel
+
+    try:
+        bins = pd.qcut(valid, q=q, labels=False, duplicates='drop') + 1
+    except ValueError:
+        return panel
+
+    quartile_col = f"{base_col}_Quartile"
+    panel[quartile_col] = np.nan
+    panel.loc[bins.index, quartile_col] = bins.astype(int)
+
+    max_bin = int(bins.max())
+    if max_bin < 2:
+        return panel
+
+    for bin_id in range(2, max_bin + 1):
+        dummy_col = f"{base_col}_Q{bin_id}"
+        panel[dummy_col] = (panel[quartile_col] == bin_id).astype(int)
+
+    return panel
+
+
+def zscore(series: pd.Series) -> pd.Series:
+    """Z-score a series, preserving NaNs."""
+    mean = series.mean(skipna=True)
+    std = series.std(skipna=True)
+    if std == 0 or np.isnan(std):
+        return series * 0
+    return (series - mean) / std
+
+
+def winsorize_series(series: pd.Series, lower: float = 0.01, upper: float = 0.99) -> pd.Series:
+    """Winsorize a series by clipping to quantile bounds, preserving NaNs."""
+    valid = series.dropna()
+    if valid.empty:
+        return series
+    lower_val = valid.quantile(lower)
+    upper_val = valid.quantile(upper)
+    return series.clip(lower=lower_val, upper=upper_val)
+
+
+def compute_capacity_pca_index(
+    panel: pd.DataFrame,
+    pca_cols: list,
+    out_col: str = 'Capacity_PCA1'
+) -> tuple[pd.DataFrame, Optional[pd.Series]]:
+    """
+    Compute a PCA-based capacity index using selected columns.
+
+    Returns updated panel and a Series of loadings for the first component.
+    """
+    available = [col for col in pca_cols if col in panel.columns]
+    if len(available) < 2:
+        panel[out_col] = np.nan
+        return panel, None
+
+    data = panel[available].replace([np.inf, -np.inf], np.nan)
+    valid = data.dropna()
+    if len(valid) < 2:
+        panel[out_col] = np.nan
+        return panel, None
+
+    std = valid.std(ddof=0)
+    nonzero_cols = std[std > 0].index.tolist()
+    if len(nonzero_cols) < 2:
+        panel[out_col] = np.nan
+        return panel, None
+
+    standardized = (valid[nonzero_cols] - valid[nonzero_cols].mean()) / std[nonzero_cols]
+    cov = np.cov(standardized.values, rowvar=False)
+    eigenvalues, eigenvectors = np.linalg.eigh(cov)
+    pc1 = eigenvectors[:, np.argmax(eigenvalues)]
+
+    # Align sign for interpretability (positive with primary ratios if present)
+    for anchor in ['Ratio_disbursed_to_obligated', 'Ratio_expended_to_disbursed', 'Disbursed_log', 'Expended_log']:
+        if anchor in nonzero_cols and pc1[nonzero_cols.index(anchor)] < 0:
+            pc1 = -pc1
+            break
+
+    scores = standardized.values @ pc1
+    panel[out_col] = np.nan
+    panel.loc[valid.index, out_col] = scores
+
+    loadings = pd.Series(pc1, index=nonzero_cols)
+    return panel, loadings
+
+
+def add_capacity_alternative_measures(panel: pd.DataFrame) -> pd.DataFrame:
+    """Add alternative capacity measures (absolute, velocity, quartiles, PCA)."""
+    panel = panel.copy()
+
+    # Absolute and velocity composites
+    if {'Disbursed_log', 'Expended_log'}.issubset(panel.columns):
+        panel['Capacity_Absolute_Index'] = panel[['Disbursed_log', 'Expended_log']].mean(axis=1, skipna=True)
+
+    if {'Disbursement_Velocity', 'Expenditure_Velocity'}.issubset(panel.columns):
+        panel['Disbursement_Velocity_pp'] = panel['Disbursement_Velocity'] * 100
+        panel['Expenditure_Velocity_pp'] = panel['Expenditure_Velocity'] * 100
+        panel['Disbursement_Velocity_winsor'] = winsorize_series(panel['Disbursement_Velocity'])
+        panel['Expenditure_Velocity_winsor'] = winsorize_series(panel['Expenditure_Velocity'])
+        panel['Capacity_Velocity_Index'] = panel[['Disbursement_Velocity', 'Expenditure_Velocity']].mean(axis=1, skipna=True)
+        panel['Capacity_Velocity_Index_pp'] = panel['Capacity_Velocity_Index'] * 100
+        panel['Capacity_Velocity_Index_winsor'] = panel[
+            ['Disbursement_Velocity_winsor', 'Expenditure_Velocity_winsor']
+        ].mean(axis=1, skipna=True)
+        panel['Disbursement_Velocity_scaled'] = zscore(panel['Disbursement_Velocity'])
+        panel['Expenditure_Velocity_scaled'] = zscore(panel['Expenditure_Velocity'])
+        panel['Capacity_Velocity_Index_scaled'] = panel[
+            ['Disbursement_Velocity_scaled', 'Expenditure_Velocity_scaled']
+        ].mean(axis=1, skipna=True)
+
+    if 'Ratio_disbursed_to_obligated' in panel.columns:
+        ratio_series = panel['Ratio_disbursed_to_obligated']
+        ratio_mean = ratio_series.mean(skipna=True)
+        ratio_median = ratio_series.median(skipna=True)
+        panel['Ratio_disbursed_to_obligated_c'] = ratio_series - ratio_mean
+        if pd.notna(ratio_median):
+            panel['Ratio_disbursed_to_obligated_high'] = np.where(
+                ratio_series.notna(), (ratio_series > ratio_median).astype(int), np.nan
+            )
+            panel['Ratio_disbursed_to_obligated_above'] = (ratio_series - ratio_median).clip(lower=0)
+        else:
+            panel['Ratio_disbursed_to_obligated_high'] = np.nan
+            panel['Ratio_disbursed_to_obligated_above'] = np.nan
+        for quantile in RATIO_INTERACTION_QUANTILES:
+            quantile_value = ratio_series.quantile(quantile)
+            label = int(round(quantile * 100))
+            high_col = f'Ratio_disbursed_to_obligated_high_q{label}'
+            above_col = f'Ratio_disbursed_to_obligated_above_q{label}'
+            if pd.notna(quantile_value):
+                panel[high_col] = np.where(
+                    ratio_series.notna(), (ratio_series > quantile_value).astype(int), np.nan
+                )
+                panel[above_col] = (ratio_series - quantile_value).clip(lower=0)
+            else:
+                panel[high_col] = np.nan
+                panel[above_col] = np.nan
+
+    if 'Disbursement_Velocity_pp' in panel.columns:
+        panel['Disbursement_Velocity_pp_c'] = (
+            panel['Disbursement_Velocity_pp'] - panel['Disbursement_Velocity_pp'].mean(skipna=True)
+        )
+
+    if 'Capacity_Velocity_Index_pp' in panel.columns:
+        panel['Capacity_Velocity_Index_pp_c'] = (
+            panel['Capacity_Velocity_Index_pp'] - panel['Capacity_Velocity_Index_pp'].mean(skipna=True)
+        )
+
+    if {'Ratio_disbursed_to_obligated_c', 'Disbursement_Velocity_pp_c'}.issubset(panel.columns):
+        panel['Ratio_disbursed_to_obligated_x_Disbursement_Velocity_pp'] = (
+            panel['Ratio_disbursed_to_obligated_c'] * panel['Disbursement_Velocity_pp_c']
+        )
+
+    if {'Ratio_disbursed_to_obligated_c', 'Capacity_Velocity_Index_pp_c'}.issubset(panel.columns):
+        panel['Ratio_disbursed_to_obligated_x_Capacity_Velocity_Index_pp'] = (
+            panel['Ratio_disbursed_to_obligated_c'] * panel['Capacity_Velocity_Index_pp_c']
+        )
+
+    quantile_suffixes = [''] + [f'_q{int(round(q * 100))}' for q in RATIO_INTERACTION_QUANTILES]
+    for suffix in quantile_suffixes:
+        high_col = f'Ratio_disbursed_to_obligated_high{suffix}'
+        above_col = f'Ratio_disbursed_to_obligated_above{suffix}'
+        if {high_col, 'Disbursement_Velocity_pp_c'}.issubset(panel.columns):
+            panel[f'{high_col}_x_Disbursement_Velocity_pp'] = (
+                panel[high_col] * panel['Disbursement_Velocity_pp_c']
+            )
+        if {high_col, 'Capacity_Velocity_Index_pp_c'}.issubset(panel.columns):
+            panel[f'{high_col}_x_Capacity_Velocity_Index_pp'] = (
+                panel[high_col] * panel['Capacity_Velocity_Index_pp_c']
+            )
+        if {above_col, 'Disbursement_Velocity_pp_c'}.issubset(panel.columns):
+            panel[f'{above_col}_x_Disbursement_Velocity_pp'] = (
+                panel[above_col] * panel['Disbursement_Velocity_pp_c']
+            )
+        if {above_col, 'Capacity_Velocity_Index_pp_c'}.issubset(panel.columns):
+            panel[f'{above_col}_x_Capacity_Velocity_Index_pp'] = (
+                panel[above_col] * panel['Capacity_Velocity_Index_pp_c']
+            )
+
+    # Early-window velocity indices
+    for window in EARLY_VELOCITY_WINDOWS:
+        disb_col = f'Disbursement_Velocity_early_{window}q'
+        exp_col = f'Expenditure_Velocity_early_{window}q'
+        if {disb_col, exp_col}.issubset(panel.columns):
+            panel[f'{disb_col}_pp'] = panel[disb_col] * 100
+            panel[f'{exp_col}_pp'] = panel[exp_col] * 100
+
+            index_col = f'Capacity_Velocity_Index_early_{window}q'
+            panel[index_col] = panel[[disb_col, exp_col]].mean(axis=1, skipna=True)
+            panel[f'{index_col}_pp'] = panel[index_col] * 100
+            panel[f'{index_col}_winsor'] = winsorize_series(panel[index_col])
+            panel[f'{index_col}_scaled'] = zscore(panel[index_col])
+
+    # Fixed calendar window velocity indices (months)
+    for months in FIXED_VELOCITY_WINDOWS_MONTHS:
+        disb_col = f'Disbursement_Velocity_fixed_{months}m'
+        exp_col = f'Expenditure_Velocity_fixed_{months}m'
+        if {disb_col, exp_col}.issubset(panel.columns):
+            panel[f'{disb_col}_pp'] = panel[disb_col] * 100
+            panel[f'{exp_col}_pp'] = panel[exp_col] * 100
+
+            index_col = f'Capacity_Velocity_Index_fixed_{months}m'
+            panel[index_col] = panel[[disb_col, exp_col]].mean(axis=1, skipna=True)
+            panel[f'{index_col}_pp'] = panel[index_col] * 100
+            panel[f'{index_col}_winsor'] = winsorize_series(panel[index_col])
+            panel[f'{index_col}_scaled'] = zscore(panel[index_col])
+
+    # PCA composite
+    pca_cols = [
+        'Ratio_disbursed_to_obligated',
+        'Ratio_expended_to_disbursed',
+        'Disbursed_log',
+        'Expended_log',
+        'Disbursement_Velocity',
+        'Expenditure_Velocity',
+    ]
+    panel, loadings = compute_capacity_pca_index(panel, pca_cols)
+    if loadings is not None:
+        print("\nCapacity PCA loadings (PC1):")
+        for col, loading in loadings.items():
+            print(f"  {col}: {loading:.3f}")
+
+    # Quartile dummies for non-parametric comparisons
+    for base_col in [
+        'Capacity_Index',
+        'Capacity_Absolute_Index',
+        'Capacity_Velocity_Index',
+        'Capacity_Velocity_Index_pp',
+        'Capacity_Velocity_Index_winsor',
+        'Capacity_Velocity_Index_scaled',
+        'Capacity_PCA1',
+    ]:
+        panel = add_capacity_quartiles(panel, base_col)
+
+    return panel
 
 
 def create_survival_covariates(panel: pd.DataFrame) -> pd.DataFrame:
@@ -503,9 +846,28 @@ def merge_features_to_panel(
 
 def main():
     """Main entry point for feature engineering stage."""
+    # Issue deprecation warning
+    warnings.warn(
+        "\n\n"
+        "="*80 + "\n"
+        "DEPRECATION WARNING: s02_features.py uses dynamic denominators\n"
+        "="*80 + "\n"
+        "This stage computes velocity with changing obligated amounts, which creates\n"
+        "computational artifacts (extreme outliers from denominator changes).\n\n"
+        "For new analyses, use the standardized pipeline instead:\n"
+        "  1. python src/pipeline.py standardize_data\n"
+        "  2. python src/pipeline.py build_features_std\n\n"
+        "Output: data_work/panel_features_std.parquet (fixed denominators)\n"
+        "="*80 + "\n",
+        DeprecationWarning,
+        stacklevel=2
+    )
+
     print("=" * 60)
-    print("Stage 02: Feature Engineering")
+    print("Stage 02: Feature Engineering (DEPRECATED)")
     print("=" * 60)
+    print("\n⚠️  WARNING: This stage uses legacy velocity calculation")
+    print("   Use 'standardize_data' + 'build_features_std' for new analyses\n")
 
     DATA_WORK_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -567,6 +929,9 @@ def main():
         panel_features['Capacity_Index'] = panel_features[
             ['Ratio_disbursed_to_obligated', 'Ratio_expended_to_disbursed']
         ].mean(axis=1, skipna=True)
+
+    # Alternative capacity measures (absolute, velocity, quartiles, PCA)
+    panel_features = add_capacity_alternative_measures(panel_features)
 
     # Add program type
     if 'Activity Type' in qpr_raw.columns:

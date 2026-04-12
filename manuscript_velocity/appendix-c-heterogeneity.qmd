@@ -1,0 +1,34 @@
+# Appendix C: Full Heterogeneity Results {.unnumbered}
+
+::: {.callout-important}
+This appendix has been reset for rewrite.
+
+The earlier heterogeneity tables in this file were based on the
+invalidated pre-fix velocity narrative and are no longer presented as
+active manuscript evidence. Regenerated subgroup tables and figures will
+be restored only after they are rerun from the cleaned quarter-based
+pipeline and reconciled with the current diagnostics.
+:::
+
+## Current Working Position
+
+The manuscript now treats heterogeneity as exploratory rather than
+confirmatory. The active documentation baseline is:
+
+- overall time-varying velocity effects are null or near-null
+- phase-specific effects are not currently trusted as main findings
+- any remaining subgroup signals require rerun tables and careful
+  uncertainty framing before they can be discussed in the paper
+
+## Planned Rebuild
+
+When this appendix is rebuilt, it should contain only corrected outputs
+for:
+
+- phase-specific models based on unique quarters
+- subgroup analyses that match the cleaned survival diagnostics
+- any trajectory or clustering analysis that survives methodological audit
+- robustness tables that correspond to the canonical standardized workflow
+
+Until then, `doc/PROJECT_STATUS.md` remains the authoritative summary of
+the project's current analytical position.

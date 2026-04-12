@@ -21,7 +21,15 @@ import pandas as pd
 import numpy as np
 import warnings
 
-from config import DATA_WORK_DIR, TV_LAG_QUARTERS, BOOTSTRAP_ITERATIONS, BOOTSTRAP_CLUSTER_COL, SURVIVAL_COVARIATE_COLS
+from config import (
+    DATA_WORK_DIR,
+    TV_LAG_QUARTERS,
+    TV_LAG_OPTIONS,
+    TV_VELOCITY_ROLLING_WINDOWS,
+    BOOTSTRAP_ITERATIONS,
+    BOOTSTRAP_CLUSTER_COL,
+    SURVIVAL_COVARIATE_COLS,
+)
 from stages._io_utils import safe_to_parquet, safe_read_parquet
 
 from capacity_sem.models.time_varying_survival import (
@@ -36,23 +44,92 @@ from capacity_sem.models.survival_diagnostics import (
 )
 
 
-def load_time_varying_panel() -> pd.DataFrame:
-    """Load or generate time-varying survival panel."""
+def load_time_varying_panel(use_standardized: bool = True) -> pd.DataFrame:
+    """Load or generate time-varying survival panel.
+
+    Parameters
+    ----------
+    use_standardized : bool, default=True
+        If True, use standardized data from s00b/s01b with fixed denominators.
+        If False, use legacy data with dynamic denominators.
+
+    Returns
+    -------
+    pd.DataFrame
+        Time-varying panel with lagged capacity measures
+    """
     path = DATA_WORK_DIR / "panel_time_varying.parquet"
-
-    if not path.exists():
-        print("\n  Time-varying panel not found, generating...")
-
-        # Load required data
+    if use_standardized:
+        qpr_path = DATA_WORK_DIR / "qpr_standardized.parquet"
+        panel_path = DATA_WORK_DIR / "panel_features_std.parquet"
+    else:
         qpr_path = DATA_WORK_DIR / "qpr_quarterly.parquet"
         panel_path = DATA_WORK_DIR / "panel_features.parquet"
 
+    required_cols = []
+    for lag in TV_LAG_OPTIONS:
+        required_cols.extend([
+            f'Ratio_disbursed_to_obligated_lag{lag}',
+            f'Ratio_expended_to_disbursed_lag{lag}',
+            f'Disbursement_Velocity_pp_lag{lag}',
+            f'Expenditure_Velocity_pp_lag{lag}',
+            f'Capacity_Velocity_Index_pp_lag{lag}',
+        ])
+        for window in TV_VELOCITY_ROLLING_WINDOWS:
+            required_cols.extend([
+                f'Disbursement_Velocity_pp_roll{window}_lag{lag}',
+                f'Expenditure_Velocity_pp_roll{window}_lag{lag}',
+                f'Capacity_Velocity_Index_pp_roll{window}_lag{lag}',
+                f'Capacity_Velocity_Index_pp_roll{window}_lag{lag}_scaled',
+            ])
+        required_cols.extend([
+            f'Disbursement_Velocity_pp_cum_lag{lag}',
+            f'Expenditure_Velocity_pp_cum_lag{lag}',
+            f'Capacity_Velocity_Index_pp_cum_lag{lag}',
+            f'Capacity_Velocity_Index_pp_cum_lag{lag}_scaled',
+        ])
+
+    needs_regen = False
+    if path.exists():
+        source_paths = [p for p in (qpr_path, panel_path) if p.exists()]
+        if source_paths and any(src.stat().st_mtime > path.stat().st_mtime for src in source_paths):
+            print("\n  Source data is newer than cached time-varying panel, regenerating...")
+            needs_regen = True
+
+        tv_panel = safe_read_parquet(path)
+        missing_cols = [col for col in required_cols if col not in tv_panel.columns]
+        if not missing_cols:
+            if not needs_regen:
+                return tv_panel
+        print("\n  Time-varying panel missing velocity columns, regenerating...")
+        needs_regen = True
+
+    if not path.exists():
+        print("\n  Time-varying panel not found, generating...")
+    elif needs_regen:
+        print("\n  Regenerating time-varying panel...")
+
+    if not path.exists() or needs_regen:
+
+        # Load required data (standardized or legacy)
+        if use_standardized:
+            print("  Using standardized data (fixed denominators)")
+        else:
+            print("  Using legacy data (dynamic denominators)")
+
         if not qpr_path.exists() or not panel_path.exists():
-            raise FileNotFoundError(
-                f"Required data not found. "
-                f"Run 'python src/pipeline.py build_panel' and "
-                f"'python src/pipeline.py compute_features' first."
-            )
+            if use_standardized:
+                raise FileNotFoundError(
+                    f"Required standardized data not found. "
+                    f"Run 'python src/pipeline.py standardize_data' and "
+                    f"'python src/pipeline.py build_features_std' first."
+                )
+            else:
+                raise FileNotFoundError(
+                    f"Required data not found. "
+                    f"Run 'python src/pipeline.py build_panel' and "
+                    f"'python src/pipeline.py compute_features' first."
+                )
 
         qpr_quarterly = safe_read_parquet(qpr_path)
         panel_features = safe_read_parquet(panel_path)
@@ -63,7 +140,9 @@ def load_time_varying_panel() -> pd.DataFrame:
         tv_panel = reshape_quarterly_to_time_varying(
             qpr_quarterly=qpr_quarterly,
             panel_features=panel_features,
-            lag_quarters=TV_LAG_QUARTERS
+            lag_quarters=TV_LAG_QUARTERS,
+            extra_lags=TV_LAG_OPTIONS,
+            use_standardized=use_standardized
         )
 
         tv_panel = add_static_covariates(tv_panel, panel_features)
@@ -210,6 +289,135 @@ def run_robustness_checks(tv_data: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
         bootstrap_se=True,  # Compute bootstrap SEs for main model
         n_bootstrap=BOOTSTRAP_ITERATIONS
     )
+
+    # 2b. Velocity measures (percent-per-quarter)
+    print("\n" + "="*60)
+    print("ROBUSTNESS CHECK 2B: Velocity (Percent-Per-Quarter)")
+    print("="*60)
+
+    velocity_lags = [TV_LAG_QUARTERS, 0, 2]
+    for lag in velocity_lags:
+        lag_suffix = f'_lag{lag}'
+        velocity_cols = [
+            f'Disbursement_Velocity_pp{lag_suffix}',
+            f'Expenditure_Velocity_pp{lag_suffix}'
+        ]
+        if all(col in tv_data.columns for col in velocity_cols):
+            robustness_results[f'velocity_pp_only_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=velocity_cols,
+                covariate_cols=None,
+                model_name=f'velocity_pp_only_lag{lag}'
+            )
+            robustness_results[f'velocity_pp_full_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=velocity_cols,
+                covariate_cols=available_covariates,
+                model_name=f'velocity_pp_full_lag{lag}'
+            )
+        else:
+            print(f"  Velocity columns not available for lag={lag}, skipping")
+
+        velocity_index_col = f'Capacity_Velocity_Index_pp{lag_suffix}_scaled'
+        if velocity_index_col in tv_data.columns:
+            robustness_results[f'velocity_index_scaled_only_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=[velocity_index_col],
+                covariate_cols=None,
+                model_name=f'velocity_index_scaled_only_lag{lag}'
+            )
+            robustness_results[f'velocity_index_scaled_full_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=[velocity_index_col],
+                covariate_cols=available_covariates,
+                model_name=f'velocity_index_scaled_full_lag{lag}'
+            )
+        else:
+            print(f"  Velocity index column not available for lag={lag}, skipping")
+
+    # 2c. Rolling and cumulative velocity measures
+    print("\n" + "="*60)
+    print("ROBUSTNESS CHECK 2C: Rolling/Cumulative Velocity")
+    print("="*60)
+
+    for window in TV_VELOCITY_ROLLING_WINDOWS:
+        for lag in velocity_lags:
+            lag_suffix = f'_lag{lag}'
+            rolling_cols = [
+                f'Disbursement_Velocity_pp_roll{window}{lag_suffix}',
+                f'Expenditure_Velocity_pp_roll{window}{lag_suffix}'
+            ]
+            if all(col in tv_data.columns for col in rolling_cols):
+                robustness_results[f'velocity_pp_roll{window}_only_lag{lag}'] = run_time_varying_cox(
+                    tv_data=tv_data,
+                    capacity_cols=rolling_cols,
+                    covariate_cols=None,
+                    model_name=f'velocity_pp_roll{window}_only_lag{lag}'
+                )
+                robustness_results[f'velocity_pp_roll{window}_full_lag{lag}'] = run_time_varying_cox(
+                    tv_data=tv_data,
+                    capacity_cols=rolling_cols,
+                    covariate_cols=available_covariates,
+                    model_name=f'velocity_pp_roll{window}_full_lag{lag}'
+                )
+            else:
+                print(f"  Rolling velocity columns not available for window={window}, lag={lag}, skipping")
+
+            rolling_index_col = f'Capacity_Velocity_Index_pp_roll{window}{lag_suffix}_scaled'
+            if rolling_index_col in tv_data.columns:
+                robustness_results[f'velocity_index_roll{window}_only_lag{lag}'] = run_time_varying_cox(
+                    tv_data=tv_data,
+                    capacity_cols=[rolling_index_col],
+                    covariate_cols=None,
+                    model_name=f'velocity_index_roll{window}_only_lag{lag}'
+                )
+                robustness_results[f'velocity_index_roll{window}_full_lag{lag}'] = run_time_varying_cox(
+                    tv_data=tv_data,
+                    capacity_cols=[rolling_index_col],
+                    covariate_cols=available_covariates,
+                    model_name=f'velocity_index_roll{window}_full_lag{lag}'
+                )
+            else:
+                print(f"  Rolling velocity index not available for window={window}, lag={lag}, skipping")
+
+    for lag in velocity_lags:
+        lag_suffix = f'_lag{lag}'
+        cumulative_cols = [
+            f'Disbursement_Velocity_pp_cum{lag_suffix}',
+            f'Expenditure_Velocity_pp_cum{lag_suffix}'
+        ]
+        if all(col in tv_data.columns for col in cumulative_cols):
+            robustness_results[f'velocity_pp_cum_only_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=cumulative_cols,
+                covariate_cols=None,
+                model_name=f'velocity_pp_cum_only_lag{lag}'
+            )
+            robustness_results[f'velocity_pp_cum_full_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=cumulative_cols,
+                covariate_cols=available_covariates,
+                model_name=f'velocity_pp_cum_full_lag{lag}'
+            )
+        else:
+            print(f"  Cumulative velocity columns not available for lag={lag}, skipping")
+
+        cumulative_index_col = f'Capacity_Velocity_Index_pp_cum{lag_suffix}_scaled'
+        if cumulative_index_col in tv_data.columns:
+            robustness_results[f'velocity_index_cum_only_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=[cumulative_index_col],
+                covariate_cols=None,
+                model_name=f'velocity_index_cum_only_lag{lag}'
+            )
+            robustness_results[f'velocity_index_cum_full_lag{lag}'] = run_time_varying_cox(
+                tv_data=tv_data,
+                capacity_cols=[cumulative_index_col],
+                covariate_cols=available_covariates,
+                model_name=f'velocity_index_cum_full_lag{lag}'
+            )
+        else:
+            print(f"  Cumulative velocity index not available for lag={lag}, skipping")
 
     # 3. Stratified by government type (if available)
     if 'Government_Type' in tv_data.columns:
@@ -419,14 +627,14 @@ def generate_time_varying_panel_for_threshold(
         Time-varying panel with start/stop intervals
     """
     # Load required data
-    qpr_path = DATA_WORK_DIR / "qpr_quarterly.parquet"
-    panel_path = DATA_WORK_DIR / "panel_features.parquet"
+    qpr_path = DATA_WORK_DIR / "qpr_standardized.parquet"
+    panel_path = DATA_WORK_DIR / "panel_features_std.parquet"
 
     if not qpr_path.exists() or not panel_path.exists():
         raise FileNotFoundError(
-            f"Required data not found. "
-            f"Run 'python src/pipeline.py build_panel' and "
-            f"'python src/pipeline.py compute_features' first."
+            "Required standardized data not found. "
+            "Run 'python src/pipeline.py standardize_data' and "
+            "'python src/pipeline.py build_features_std' first."
         )
 
     qpr_quarterly = safe_read_parquet(qpr_path)
@@ -443,7 +651,9 @@ def generate_time_varying_panel_for_threshold(
         qpr_quarterly=qpr_quarterly,
         panel_features=panel_features,
         lag_quarters=lag_quarters,
-        duration_col=duration_col
+        extra_lags=TV_LAG_OPTIONS,
+        duration_col=duration_col,
+        use_standardized=True,
     )
 
     tv_panel = add_static_covariates(tv_panel, panel_features)
@@ -494,7 +704,7 @@ def run_threshold_sensitivity_analysis(
 
     # Check which covariates are available (do this once)
     # Load panel to check columns
-    panel_path = DATA_WORK_DIR / "panel_features.parquet"
+    panel_path = DATA_WORK_DIR / "panel_features_std.parquet"
     panel_features = safe_read_parquet(panel_path)
     available_covariates = [col for col in SURVIVAL_COVARIATE_COLS if col in panel_features.columns]
 

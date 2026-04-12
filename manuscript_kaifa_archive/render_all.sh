@@ -74,6 +74,10 @@ echo "    PDF saved."
 echo ""
 echo ">>> Rendering DOCX..."
 CAPACITY_SEM_SKIP_PIPELINE=1 $QUARTO render --to docx $PROFILE_ARG
+python code/postprocess_word_format.py \
+    --source source_docs/SEM_Manuscript_2026-04-07.docx \
+    --input _output/index.docx \
+    --output _output/index.docx
 cp _output/*.docx "$TEMP_DIR/" 2>/dev/null || true
 echo "    DOCX saved."
 

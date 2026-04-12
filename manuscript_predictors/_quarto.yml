@@ -1,0 +1,42 @@
+project:
+  type: manuscript
+  output-dir: _output
+
+manuscript:
+  article: index.qmd
+
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    theme: cosmo
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+    documentclass: article
+    papersize: letter
+    geometry:
+      - margin=1in
+    fontsize: 12pt
+    linestretch: 2
+    include-in-header:
+      text: |
+        \usepackage{times}
+  docx:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    reference-doc: reference-par.docx
+
+bibliography: references.bib
+csl: csl/chicago-author-date.csl
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  freeze: auto

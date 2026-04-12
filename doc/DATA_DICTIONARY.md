@@ -163,6 +163,12 @@ The time-varying survival panel restructures data into interval format for Cox p
 - Lagged ratios avoid reverse causality
 - Static covariates repeated on every row
 
+**Ratio computation** (as of April 2026):
+- Dollar columns (`QPR Fund Obligated $`, etc.) are summed across activities to get grant-level totals
+- Ratios computed from grant-level totals with $1,000 minimum denominator
+- All ratios clipped to [0, 2] range to handle negative adjustments and supplemental allocations
+- Velocity measures use pre-computed standardized values from `s00b_standardize` (fixed denominators, winsorized)
+
 ---
 
 ## Survival Covariates
@@ -242,7 +248,7 @@ Additional covariates engineered for time-varying survival models:
 
 **Usage**: Used in `run_phase_specific_analysis.py` to test Cox PH models with phase-specific predictors.
 
-**Key Finding**: Late-phase velocity (HR=5.00, p=0.040) dominates when all phases are included simultaneously.
+**Historical note**: earlier late-phase velocity findings were part of the pre-fix analysis and should not be treated as current evidence without revalidation.
 
 ### Program Type Features (panel_program_types.parquet)
 
@@ -289,7 +295,7 @@ Additional covariates engineered for time-varying survival models:
 
 **Usage**: Merged with panel_features_std.parquet in `run_program_type_analysis.py` for stratified survival analysis.
 
-**Key Finding**: Administration programs show extreme velocity effects (HR=30.74, p=0.004), suggesting rapid spending is critical for administrative efficiency.
+**Historical note**: earlier administration-program velocity findings were generated before the duration bug fix and should be treated as exploratory/historical unless revalidated.
 
 ### Multi-Stage Lag Features (panel_features_std.parquet)
 

@@ -1,75 +1,62 @@
 project:
+  type: book
   output-dir: _output
-  pre-render: ./pre_render.sh
-  render:
-    - index.qmd
 
-# =============================================================================
-# Public Administration Review (PAR) Style Configuration
-# =============================================================================
-# Reference: https://publicadministrationreview.wordpress.com/submission-process/
-#
-# Key Requirements:
-# - Max 8,000 words (including abstract, endnotes, references)
-# - Abstract: max 150 words
-# - 12-point Times New Roman, double-spaced, 1-inch margins
-# - Chicago Manual of Style 16th ed., Author-Date method
-# - Full first names in references
-# - No author identification (blind review)
-# - Include "Evidence for Practice" (3-5 bullet points)
-# =============================================================================
+# Journal-specific profiles
+# Usage: quarto render --profile jeem
+# Profile configs are in _quarto-{profile}.yml files
+profile:
+  default: default
+  group:
+    - [default, jeem, aer, nhaz]
+
+book:
+  title: "[Your Paper Title]"
+  subtitle: "[Descriptive subtitle with methodology and study context]"
+  author:
+    - "[Author 1]"
+    - "[Author 2]"
+  downloads: [pdf, docx]
+  chapters:
+    - index.qmd
+  appendices:
+    - appendix-a-data.qmd
+    - appendix-b-methods.qmd
+    - appendix-c-robustness.qmd
 
 format:
-  # HTML for preview
   html:
     toc: true
     toc-depth: 3
-    number-sections: false
+    number-sections: true
     code-fold: true
     theme: cosmo
 
-  # PDF formatted for PAR submission
   pdf:
-    documentclass: article
+    documentclass: scrreprt
     papersize: letter
     geometry:
       - margin=1in
-    fontsize: 12pt
-    mainfont: "Times New Roman"
-    linestretch: 2
-    number-sections: false
-    toc: false
+    number-sections: true
+    toc: true
     keep-tex: true
     include-in-header:
       text: |
         \usepackage{booktabs}
         \usepackage{longtable}
         \usepackage{float}
-        \usepackage{setspace}
-        \doublespacing
-        % PAR heading styles
-        \usepackage{titlesec}
-        % Principal subheads: 14pt bold
-        \titleformat{\section}{\normalfont\fontsize{14}{16}\bfseries}{\thesection}{1em}{}
-        % Secondary subheads: 12pt bold
-        \titleformat{\subsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsection}{1em}{}
-        % Sub-subheads: 12pt bold italic, run-in
-        \titleformat{\subsubsection}[runin]{\normalfont\fontsize{12}{14}\bfseries\itshape}{\thesubsubsection}{1em}{}[.]
-        % Abstract formatting
-        \renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip\noindent}{\par\bigskip}
-        % Remove section numbers
-        \setcounter{secnumdepth}{0}
+        \usepackage{needspace}
+        \renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip}{\par\bigskip}
 
-  # DOCX for PAR submission (primary format)
   docx:
-    toc: false
-    number-sections: false
-    reference-doc: reference-par.docx
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    reference-doc: reference.docx
     highlight-style: github
 
-# Chicago Author-Date (PAR requirement)
 bibliography: references.bib
-csl: csl/chicago-author-date.csl
+csl: csl/apa.csl  # Default citation style; override per-journal in profile files
 
 execute:
   freeze: auto
@@ -78,12 +65,11 @@ execute:
   message: false
   echo: false
 
-# Cross-references (lowercase per PAR style)
 crossref:
-  fig-prefix: "figure"
-  tbl-prefix: "table"
-  eq-prefix: "equation"
-  sec-prefix: "section"
+  fig-prefix: "Figure"
+  tbl-prefix: "Table"
+  eq-prefix: "Equation"
+  sec-prefix: "Section"
 
 knitr:
   opts_chunk:

@@ -105,6 +105,36 @@ After fixing the bug and re-running all analyses:
   - Alternative velocity measures
 - **Status**: Active development
 
+### Phase 7: Pipeline And Documentation Consolidation
+- **Date**: April 9, 2026
+- **Method**:
+  - make the standardized survival workflow the default `run_all` path
+  - preserve the SEM pipeline as `run_all_legacy`
+  - fix quarter-based feature construction so early-window and phase logic use unique quarters rather than row counts
+  - vendor the deferred CENTAUR GUI, LLM, spatial, and manuscript stack
+- **Status**: Complete
+
+### Phase 8: Ratio Aggregation Bug Fix and Survival Audit
+- **Date**: April 12, 2026
+- **Discovery**: Systematic audit of survival analysis uncovered that `collapse_to_quarterly_panel()` in `src/utils/quarterly_panel.py` used MAX aggregation on per-activity dollar columns (`QPR Fund Obligated $`, `QPR Fund Disbursed $`, `QPR Fund Expended $`) instead of SUM. This produced per-activity ratios instead of grant-level ratios, with extreme values up to 38.8 million (should be 0–2).
+- **Root cause**: The standardized QPR data (`qpr_standardized.parquet`) has ~35 activity rows per quarter per grantee-disaster. Taking MAX of cumulative dollar values picked one activity's amount, not the grant total. Ratios computed from mismatched activity-level numerators and denominators had no economic meaning.
+- **Impact on prior results**:
+  - The cached `panel_time_varying.parquet` had Ratio_disbursed_to_obligated values up to 38,775,935 (mean=45,918)
+  - This drove Cox model coefficients to machine-zero (HR≈1.0000000000, concordance=0.171)
+  - Bootstrap SEs were also meaningless (SE≈8e-13)
+- **Fixes applied**:
+  1. `collapse_to_quarterly_panel()`: Dollar columns now use SUM across activities
+  2. Ratios recomputed from summed grant-level totals after collapse
+  3. $1,000 minimum denominator to avoid division-by-near-zero
+  4. Ratio clipping to [0, 2] range in both `quarterly_panel.py` and `time_varying_survival.py`
+- **Corrected results** (with properly bounded ratios):
+  - Disbursement ratio: HR=1.001 [0.821, 1.221], p=0.991
+  - Expenditure ratio: HR=0.998 [0.728, 1.367], p=0.988
+  - Concordance: 0.723 (up from 0.171)
+  - Bootstrap SEs: Disb SE=0.024, Exp SE=0.064 (properly sized)
+- **Conclusion**: Null finding confirmed — clean data with proper aggregation still shows no capacity ratio effect on completion timing
+- **Status**: Current repository baseline
+
 ## Lessons Learned
 
 ### Methodological
@@ -137,3 +167,4 @@ After fixing the bug and re-running all analyses:
 1. **Null finding paper**: Reframe velocity manuscript around the null result
 2. **Alternative measures**: Explore non-ratio operationalizations of capacity
 3. **What predicts completion?**: Investigate other factors that may matter
+4. **Documentation discipline**: Keep authoritative docs aligned with the corrected workflow

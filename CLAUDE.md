@@ -89,14 +89,17 @@ With 73.7% of CDBG-DR programs incomplete at the 95% threshold, standard regress
 
 ### Key Results
 
-- **Sample**: N=143-151 grantee-disaster pairs
-- **Events**: 71 at 95% completion threshold
+- **Sample**: N=142-151 grantee-disaster pairs (varies by model specification)
+- **Events**: 24-70 depending on threshold and lag (24-26 at 95% with lag1)
+- **Main finding**: Disbursement ratio HR=1.001 [0.821, 1.221], p=0.991 (null)
+- **Concordance**: 0.723 (full model with covariates)
+- **Bootstrap SEs** (1,000 iterations, clustered by grantee): Disb SE=0.024, Exp SE=0.064
 - See `doc/RESEARCH_SYNTHESIS_REPORT.md` for detailed findings
 
 ### Capacity Indicators
 
-- `Ratio_disbursed_to_obligated`: Cumulative mean ratio of disbursed to obligated funds
-- `Ratio_expended_to_disbursed`: Cumulative mean ratio of expended to disbursed funds
+- `Ratio_disbursed_to_obligated`: Grant-level disbursed/obligated ratio (clipped [0, 2], $1K min denominator)
+- `Ratio_expended_to_disbursed`: Grant-level expended/disbursed ratio (clipped [0, 2], $1K min denominator)
 
 ---
 

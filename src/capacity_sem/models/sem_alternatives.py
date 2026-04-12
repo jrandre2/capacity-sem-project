@@ -153,7 +153,8 @@ def fit_cox_model(
     capacity_cols: List[str],
     duration_col: str = 'T',
     event_col: str = 'E',
-    penalizer: float = 0.1
+    penalizer: float = 0.1,
+    strata_cols: Optional[List[str]] = None
 ) -> Dict[str, Any]:
     """
     Fit Cox Proportional Hazards model.
@@ -178,6 +179,8 @@ def fit_cox_model(
         Event indicator column.
     penalizer : float, default 0.1
         Ridge penalty for small samples.
+    strata_cols : list, optional
+        Columns to use for stratified baseline hazards.
 
     Returns
     -------
@@ -192,6 +195,10 @@ def fit_cox_model(
 
     # Prepare data for fitting
     fit_cols = [duration_col, event_col] + capacity_cols
+    if strata_cols:
+        for col in strata_cols:
+            if col not in fit_cols:
+                fit_cols.append(col)
     fit_data = data[fit_cols].dropna()
 
     if len(fit_data) < 10:
@@ -208,7 +215,8 @@ def fit_cox_model(
         cph.fit(
             fit_data,
             duration_col=duration_col,
-            event_col=event_col
+            event_col=event_col,
+            strata=strata_cols
         )
 
     # Extract results
@@ -234,6 +242,7 @@ def fit_cox_model(
         'n_obs': len(fit_data),
         'n_events': int(fit_data[event_col].sum()),
         'model_type': 'Cox_PH',
+        'strata_cols': strata_cols or [],
     }
 
     return results

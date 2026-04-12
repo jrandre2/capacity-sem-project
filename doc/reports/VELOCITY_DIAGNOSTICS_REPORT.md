@@ -1,5 +1,7 @@
 # Velocity Diagnostics Report
 
+> Historical note: this report predates the full quarter-count duration bug correction and is not an authoritative summary of current findings.
+
 **Date**: December 26, 2024
 **Objective**: Investigate why static velocity shows strong effects (HR=1.51, p<0.001) while time-varying velocity shows null effects (HR≈1.00, p>0.95)
 

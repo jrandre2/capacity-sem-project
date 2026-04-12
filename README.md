@@ -1,173 +1,135 @@
 # Capacity-SEM Project
 
-Structural Equation Model analysis of government capacity effects on disaster recovery outcomes.
+Analysis of administrative capacity and completion timing in HUD CDBG-DR disaster recovery programs.
 
-## Overview
+## Current Status
 
-This project analyzes how government administrative capacity affects the timeliness and effectiveness of CDBG-DR disaster recovery fund expenditure using Structural Equation Modeling.
+- Canonical workflow: standardized, quarter-corrected survival analysis
+- Legacy workflow: SEM pipeline retained for replication and comparison only
+- Main finding status: the earlier positive velocity results were invalidated by the December 27, 2025 duration bug
+- Active manuscript: `manuscript_velocity/` in major revision
+- Vendored framework: CENTAUR is available under `src/centaur/` as a separate toolchain
+
+Start with [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md). That file is the source of truth for what is currently trusted, what is historical, and what should be run next.
 
 ## Setup
 
-### Prerequisites
-
-- Python 3.10+
-- pip or conda for package management
-
-### Installation
-
 ```bash
-# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate   # Windows
-
-# Install dependencies
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### Required Packages
+Notes:
+- `requirements.txt` includes the core Capacity-SEM stack plus the optional CENTAUR GUI, spatial, and LLM dependencies.
+- Quarto is still an external CLI. Use a system install or the vendored wrapper in `tools/bin/quarto`.
 
-- pandas, numpy - Data manipulation
-- semopy - SEM estimation
-- matplotlib - Visualization
-- quarto - Manuscript rendering (HTML/PDF/DOCX article; optional)
+## Recommended Workflow
 
-## Quick Start
+Run the active pipeline:
 
 ```bash
-# Activate environment
-source .venv/bin/activate
-
-# Run complete pipeline
 python src/pipeline.py run_all
-
-# Or run individual stages
-python src/pipeline.py ingest_data
-python src/pipeline.py build_panel
-python src/pipeline.py compute_features
-python src/pipeline.py run_estimation
-python src/pipeline.py make_figures
 ```
 
-## Project Structure
-
-```
-capacity-sem-project/
-├── src/
-│   ├── pipeline.py           # Main CLI entry point
-│   ├── config.py             # Configuration constants
-│   ├── stages/               # Pipeline stages
-│   │   ├── s00_ingest.py     # Data ingestion
-│   │   ├── s01_link.py       # Panel construction
-│   │   ├── s02_features.py   # Feature engineering
-│   │   ├── s03_estimation.py # SEM estimation
-│   │   ├── s04_robustness.py # Robustness checks
-│   │   └── s05_figures.py    # Figure generation
-│   └── capacity_sem/         # Core analysis modules
-│       ├── data/             # Data loading functions
-│       ├── features/         # Feature computation
-│       ├── models/           # SEM specifications
-│       └── utils/            # Utilities
-├── manuscript_quarto/        # Quarto article manuscript (outputs to _output/)
-├── data_raw/                 # Raw data (not tracked)
-├── data_work/                # Working data
-├── figures/                  # Output figures
-├── doc/                      # Documentation
-└── tests/                    # Test suite
-```
-
-## Pipeline Commands
-
-| Command | Description |
-|---------|-------------|
-| `ingest_data` | Load QPR data, build quarterly rollups, and external covariates |
-| `build_panel` | Construct analysis panel |
-| `compute_features` | Calculate indicators |
-| `run_estimation` | Fit SEM models |
-| `run_robustness` | Run robustness checks |
-| `make_figures` | Generate figures |
-| `run_all` | Run complete pipeline |
-| `list_models` | List available SEM specifications |
-| `review_status` | Display current review cycle status |
-| `review_new` | Initialize new review cycle (--focus par_general\|methods\|policy\|clarity) |
-| `review_verify` | Run verification and PAR compliance checks |
-| `review_archive` | Archive completed review cycle |
-| `review_report` | Generate summary of all review cycles |
-
-## Manuscript Rendering
+Or run the current stages explicitly:
 
 ```bash
-cd manuscript_quarto
+python src/pipeline.py ingest_data
+python src/pipeline.py standardize_data
+python src/pipeline.py build_panel
+python src/pipeline.py build_features_std
+python src/pipeline.py aggregate_program_types
+python src/pipeline.py run_survival
+```
+
+Useful supporting commands:
+
+```bash
+python src/pipeline.py run_survival_threshold_sensitivity
+python src/pipeline.py run_alternatives
+python src/pipeline.py make_figures
+python src/pipeline.py capacity_summary
+```
+
+Legacy SEM workflow:
+
+```bash
+python src/pipeline.py run_all_legacy
+python src/pipeline.py list_models
+```
+
+## Manuscripts And Review
+
+- Active research manuscript: `manuscript_velocity/`
+- Vendored CENTAUR scaffold: `manuscript_quarto/`
+
+Review management now uses the unified CENTAUR review engine through the host CLI.
+The active rewrite lives in `manuscript_velocity/`, and the archived Kaifa SEM
+lineage can be attached to the same workflow through DOCX import.
+
+```bash
+python src/pipeline.py review_status --manuscript velocity
+python src/pipeline.py review_diff --manuscript velocity
+python src/pipeline.py review_response --manuscript velocity
+python src/pipeline.py review_verify --manuscript velocity
+python src/pipeline.py review_report
+python src/pipeline.py review_ingest_docx --manuscript kaifa
+```
+
+Render the active manuscript:
+
+```bash
+cd manuscript_velocity
 ./render_all.sh
 ```
 
-`render_all.sh` clears `_output/` before rendering to avoid stale files.
+## CENTAUR Integration
 
-## Manuscript Review
+The imported CENTAUR framework is namespaced and does not replace the Capacity-SEM workflow.
 
-The project includes a systematic peer review system for pre-submission validation:
-
-- **LLM-generated synthetic reviews** with PAR-specific prompts
-- **Structured triage workflow** (VALID/ADDRESSED/SCOPE/INVALID)
-- **Automated PAR compliance checks** (word count, style)
-- **Review cycle archival and tracking**
-
-See [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) for details.
-
-### Quick Start
+Examples:
 
 ```bash
-# Start a new comprehensive PAR review
-python src/pipeline.py review_new --focus par_general
-
-# Check review status
-python src/pipeline.py review_status
-
-# Verify compliance and progress
-python src/pipeline.py review_verify
+python src/pipeline.py centaur --help
+python src/pipeline.py centaur list_stages
+python src/pipeline.py centaur validate_submission --journal jeem
+python src/pipeline.py centaur review_status
+python src/pipeline.py centaur review_diff
+python src/pipeline.py centaur review_ingest_docx --manuscript kaifa --dry-run
+python src/pipeline.py centaur analyze_project --path /path/to/project
 ```
 
-## Data Quality Notes
+See [doc/centaur/README.md](doc/centaur/README.md).
 
-- Location coverage is limited to `Grantee State` (no county/city/FIPS/lat-lon fields in the QPR export).
-- Some records lack `QPR Actual Quarter`, so they are excluded from quarterly rollups.
-- Negative dollar values appear in the raw export (adjustments); they are flagged but not modified.
-- Cumulative totals can decrease within a grantee-disaster series (revisions); flagged in the quarterly quality report.
-- `Grantee State` is imputed from the grant code when missing; see `data_work/qpr_clean.parquet`.
+## Repository Layout
 
-Quality reports: `data_work/quality/qpr_quality_report.csv` and `data_work/quality/qpr_quarterly_quality_report.csv`.
-Re-run `python src/pipeline.py ingest_data` to refresh these summaries after updating `qpr_data.csv`.
-
-## Key Results
-
-This project analyzes how government administrative capacity affects CDBG-DR disaster recovery outcomes using Structural Equation Modeling. Key findings include:
-
-- **Capacity-Outcome Relationship**: The canonical pipeline (grantee-disaster level analysis) shows weak/non-significant capacity effects on recovery duration
-- **Methodological Sensitivity**: Results are highly sensitive to analytical choices (unit of analysis, variable construction, duration censoring)
-- **Measurement Challenges**: 73.7% of observations are right-censored at the 95% completion threshold
-- **Data Quality**: 58% of grantee-disaster pairs show cumulative decrease anomalies due to legitimate adjustments
-
-### Kaifa's Models (Experimental)
-
-An experimental replication of Kaifa's original manuscript methodology is available for verification. Key differences include grantee-level aggregation and duration right-censoring. See `CLAUDE.md` for usage.
-
-## Documentation
-
-- [CLAUDE.md](CLAUDE.md) - AI agent instructions
-- [doc/PIPELINE.md](doc/PIPELINE.md) - Pipeline documentation
-- [doc/METHODOLOGY.md](doc/METHODOLOGY.md) - SEM methodology
-- [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) - Variable definitions
-
-## Citation
-
-If you use this code or methodology, please cite:
-
-```
-Andrews, J. & Kaifa, [Year]. Modeling State and Local Governmental Capacity
-in Managing CDBG-DR Funds: A Structural Equation Modeling (SEM) Approach.
-[Journal/Conference information to be added upon publication]
+```text
+src/
+  pipeline.py                 Host CLI
+  stages/                     Capacity-SEM pipeline stages
+  capacity_sem/               Core analysis modules
+  centaur/                    Vendored CENTAUR framework
+doc/
+  PROJECT_STATUS.md           Current state and next steps
+  PIPELINE.md                 Current workflow guide
+  METHODOLOGY.md              Analysis methods
+  centaur/                    Vendored CENTAUR docs
+manuscript_velocity/          Active manuscript draft
+manuscript_quarto/            Vendored CENTAUR scaffold
+data_work/                    Derived data and diagnostics
+figures/                      Analysis figures
+tests/                        Regression tests
 ```
 
-## License
+## Documentation Map
 
-This project is provided for academic and research purposes. Please contact the authors for licensing information.
+- [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md): current analytical state
+- [doc/PIPELINE.md](doc/PIPELINE.md): current commands and outputs
+- [doc/METHODOLOGY.md](doc/METHODOLOGY.md): survival and SEM methods
+- [doc/ETL_STANDARDIZATION.md](doc/ETL_STANDARDIZATION.md): fixed-denominator standardization
+- [doc/ANALYSIS_JOURNEY.md](doc/ANALYSIS_JOURNEY.md): methodological history and bug discovery
+- [doc/MANUSCRIPT_GUIDE.md](doc/MANUSCRIPT_GUIDE.md): manuscript locations and writing rules
+- [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md): review workflow
+
+Historical reports and archived analyses remain in the repo, but many predate the duration bug fix. Treat them as historical unless [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) says otherwise.

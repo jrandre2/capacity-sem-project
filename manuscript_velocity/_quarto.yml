@@ -1,0 +1,96 @@
+project:
+  output-dir: _output
+  pre-render: ./pre_render.sh
+  render:
+    - index.qmd
+    - appendix-a-data.qmd
+    - appendix-b-methods.qmd
+    - appendix-c-heterogeneity.qmd
+    - appendix-d-meta-analysis.qmd
+
+# =============================================================================
+# Public Administration Review (PAR) Style Configuration
+# =============================================================================
+# Reference: https://publicadministrationreview.wordpress.com/submission-process/
+#
+# Key Requirements:
+# - Max 8,000 words (including abstract, endnotes, references)
+# - Abstract: max 150 words
+# - 12-point Times New Roman, double-spaced, 1-inch margins
+# - Chicago Manual of Style 16th ed., Author-Date method
+# - Full first names in references
+# - No author identification (blind review)
+# - Include "Evidence for Practice" (3-5 bullet points)
+# =============================================================================
+
+format:
+  # HTML for preview
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: false
+    code-fold: true
+    theme: cosmo
+
+  # PDF formatted for PAR submission
+  pdf:
+    documentclass: article
+    papersize: letter
+    geometry:
+      - margin=1in
+    fontsize: 12pt
+    mainfont: "Times New Roman"
+    linestretch: 2
+    number-sections: false
+    toc: false
+    keep-tex: true
+    include-in-header:
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{float}
+        \usepackage{setspace}
+        \doublespacing
+        % PAR heading styles
+        \usepackage{titlesec}
+        % Principal subheads: 14pt bold
+        \titleformat{\section}{\normalfont\fontsize{14}{16}\bfseries}{\thesection}{1em}{}
+        % Secondary subheads: 12pt bold
+        \titleformat{\subsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsection}{1em}{}
+        % Sub-subheads: 12pt bold italic, run-in
+        \titleformat{\subsubsection}[runin]{\normalfont\fontsize{12}{14}\bfseries\itshape}{\thesubsubsection}{1em}{}[.]
+        % Abstract formatting
+        \renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip\noindent}{\par\bigskip}
+        % Remove section numbers
+        \setcounter{secnumdepth}{0}
+
+  # DOCX for PAR submission (primary format)
+  docx:
+    toc: false
+    number-sections: false
+    reference-doc: reference-par.docx
+    highlight-style: github
+
+# Chicago Author-Date (PAR requirement)
+bibliography: references.bib
+csl: csl/chicago-author-date.csl
+
+execute:
+  freeze: auto
+  cache: false
+  warning: false
+  message: false
+  echo: false
+
+# Cross-references (lowercase per PAR style)
+crossref:
+  fig-prefix: "figure"
+  tbl-prefix: "table"
+  eq-prefix: "equation"
+  sec-prefix: "section"
+
+knitr:
+  opts_chunk:
+    echo: false
+    fig.align: center
+    out.width: "100%"

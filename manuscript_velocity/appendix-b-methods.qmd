@@ -1,0 +1,95 @@
+# Appendix B: Extended Methods {.unnumbered}
+
+::: {.callout-note}
+This appendix documents the corrected analytical design, not the
+invalidated pre-fix estimates. Numeric examples tied to the older
+velocity-positive narrative have been removed until all manuscript tables
+are regenerated from the cleaned pipeline.
+:::
+
+## B.1 Survival Framework
+
+The primary design remains a survival analysis of time to program
+completion. The key outcome is whether a grantee-disaster program reaches
+the completion threshold within the observed reporting window, with
+right-censoring for programs still active at the end of observation.
+
+The baseline specification is a Cox proportional hazards model:
+
+$$
+h(t \mid \mathbf{X}) = h_0(t)\exp(\mathbf{X}\boldsymbol{\beta})
+$$
+
+where $h(t \mid \mathbf{X})$ is the completion hazard at quarter $t$,
+$h_0(t)$ is the baseline hazard, and $\boldsymbol{\beta}$ captures the
+association between covariates and completion timing.
+
+Hazard ratios are interpreted conventionally:
+
+- HR > 1 implies a higher completion hazard
+- HR < 1 implies a lower completion hazard
+- HR = 1 implies no detectable association
+
+## B.2 Quarter-Based Temporal Construction
+
+The corrected workflow defines elapsed time using unique
+grantee-disaster-quarter observations rather than activity-row counts.
+This matters because the raw standardized QPR file can contain many rows
+within the same quarter. Treating row counts as duration creates
+pseudo-time and can mechanically distort:
+
+- observed duration
+- phase assignment
+- early-window feature construction
+- time-varying survival reshaping
+
+All active downstream features now depend on a quarterly panel produced
+before phase and window calculations are applied.
+
+## B.3 Time-Varying Covariates
+
+The active analysis emphasizes time-varying survival models because
+spending pace changes over a program's life. Velocity and related process
+measures are therefore allowed to vary by quarter rather than being
+collapsed immediately to one static summary.
+
+The manuscript treats these time-varying specifications as primary. Static
+summaries and alternative windows remain useful diagnostics, but they are
+secondary to the corrected quarter-based panel.
+
+## B.4 Phase And Window Features
+
+Lifecycle analyses remain part of the design, but all phase definitions
+must be quarter-based. Conceptually, the workflow partitions each program
+into early, middle, and late periods based on corrected elapsed quarters.
+Any claims about lifecycle differences are provisional until regenerated
+tables from the cleaned pipeline are inserted into the manuscript.
+
+Early-window features are also defined on unique quarters. This change
+eliminates the earlier bug in which "first N quarters" could silently mean
+"first N activity rows."
+
+## B.5 Heterogeneity Strategy
+
+Subgroup analyses are still used to examine whether capacity proxies behave
+differently across contexts such as disaster type, program type, and
+grantee experience. In the current manuscript posture, these analyses are
+exploratory rather than confirmatory.
+
+That posture reflects two practical constraints:
+
+- subgroup sample sizes are limited
+- the project is still reconciling regenerated diagnostics and manuscript
+  tables after the quarter-based correction
+
+## B.6 Sensitivity Analyses
+
+The active workflow continues to assess robustness through:
+
+- alternative completion thresholds
+- alternative feature definitions
+- diagnostic comparisons between static and time-varying specifications
+- subgroup and interaction checks
+
+Only rerun results that agree with the corrected pipeline will be promoted
+into the main text.

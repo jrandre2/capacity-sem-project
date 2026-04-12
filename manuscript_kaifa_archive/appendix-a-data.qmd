@@ -2,75 +2,80 @@
 
 ## A.1 Data Sources
 
-### Quarterly Performance Reports (QPR)
+The analysis uses three primary data sources. First, HUD Disaster Recovery Grant Reporting (DRGR) system quarterly performance reports (QPR) provide activity-level financial data on CDBG-DR programs spanning disasters from 2003 through 2023. Second, Bureau of Labor Statistics Quarterly Census of Employment and Wages (QCEW) data for NAICS 925110 (Administration of Housing Programs) provide staffing and payroll proxies for administrative capacity. Third, CDC/ATSDR Social Vulnerability Index (SVI) data provide contextual vulnerability indicators. U.S. Census Bureau geography files (2023 vintage county and state shapefiles) provide the spatial matching backbone.
 
-The QPR data is extracted from HUD's DRGR (Disaster Recovery Grant Reporting) system. This administrative data captures:
+## A.2 Data Flow
 
-- Fund allocations by appropriation
-- Obligation, disbursement, and expenditure amounts
-- Activity types (housing, infrastructure, economic development, etc.)
-- Quarterly reporting periods
+@tbl-data-flow summarizes the pipeline from raw administrative records to the 573-jurisdiction SEM sample.
 
-### Population Data
+| Stage | Count | Description |
+|---|---:|---|
+| Standardized DRGR/QPR activity-quarter rows | 130,605 | Repository-standardized administrative rows |
+| Rows with valid actual-quarter labels | 128,382 | Excludes rows with missing QPR Actual Quarter |
+| Collapsed grantee-disaster-quarter rows | 3,623 | Quarter-collapsed standardized panel |
+| Recovered archived jurisdiction profiles | 577 | Raw bundled CSV before exclusions |
+| Reference complete-case SEM sample | 573 | 30 state agencies + 543 county-linked local jurisdictions |
 
-Population figures are obtained from:
+: Data flow from raw QPR to analytic sample {#tbl-data-flow}
 
-- U.S. Census Bureau decennial census (2000, 2010, 2020)
-- American Community Survey estimates for intercensal years
+The four excluded profiles are grantees with missing values on one or more SEM indicators after z-score standardization. The 573-jurisdiction sample represents all administering jurisdictions with complete data on the 10 SEM indicator variables and 6 covariates.
 
-### Disaster Severity
+## A.3 Variable Dictionary
 
-The disaster severity index is constructed from:
+@tbl-variables defines all variables used in the SEM.
 
-- FEMA declared disaster data
-- Individual Assistance (IA) and Public Assistance (PA) obligations
-- Number of affected counties
+| Variable | Construction | Source | Direction |
+|---|---|---|---|
+| avg_employment | Mean QCEW annual employment, NAICS 925110 | BLS QCEW | Higher = more staff |
+| avg_payroll | Mean QCEW annual payroll, NAICS 925110 | BLS QCEW | Higher = more payroll |
+| programs_per_staff | Num_Program / (avg_employment $\times$ E_TOTPOP) | Derived | Higher = heavier workload |
+| disasters_per_staff | Num_Disaster / (avg_employment $\times$ E_TOTPOP) | Derived | Higher = heavier workload |
+| Ratio_disbursed_to_obligated | Cumulative disbursed / cumulative obligated | DRGR/QPR | Higher = better flow-through |
+| Ratio_expended_to_disbursed | Cumulative expended / cumulative disbursed | DRGR/QPR | Higher = better utilization |
+| Ratio_obligated_funds_fully_expended | Share of obligated funds reaching full expenditure | DRGR/QPR | Higher = more completion |
+| Ratio_Program_Completed | Share of programs reaching completion | DRGR/QPR | Higher = more completion |
+| Duration_of_completion | Months from first obligation to 95% expenditure | DRGR/QPR | Higher = slower |
+| Average_Duration_Program_Completion | Mean program-level completion duration | DRGR/QPR | Higher = slower |
+| state_level | Binary: 1 = state agency, 0 = local jurisdiction | Derived | --- |
+| E_TOTPOP | Census total population (in thousands) | Census | --- |
+| SPL_THEME1 | SVI: Socioeconomic vulnerability | CDC/ATSDR | Higher = more vulnerable |
+| SPL_THEME2 | SVI: Household composition and disability | CDC/ATSDR | Higher = more vulnerable |
+| SPL_THEME3 | SVI: Minority status and language | CDC/ATSDR | Higher = more vulnerable |
+| SPL_THEME4 | SVI: Housing type and transportation | CDC/ATSDR | Higher = more vulnerable |
 
-### Experience Indicators
+: Variable definitions {#tbl-variables}
 
-Grantee experience measures are computed from:
+All continuous variables are z-scored before SEM estimation. The burden indicators (programs_per_staff, disasters_per_staff) and duration indicators are reverse-coded so that higher values on all SEM indicators point in the conceptually positive direction (more capacity, better performance, faster timeliness).
 
-- Years since first CDBG-DR grant
-- Number of prior disaster grants managed
-- Cumulative prior obligated dollars
+## A.4 QCEW Proxy Documentation
 
-## A.2 Variable Construction
+QCEW data are extracted for NAICS 925110 ("Administration of Housing Programs, Urban Planning, and Community Development") at the county and state levels. This is an indirect proxy for CDBG-DR administrative capacity: it captures employment and payroll in the broader housing-program administration sector, not disaster-recovery staff specifically. It omits contractors, temporary teams, interagency staffing, and disaster-specific surge capacity.
 
-### Financial Ratios
+@tbl-proxy-distributions reports pre-standardization distributions by government type. The most important finding is that 85.1% of local jurisdictions report zero QCEW employment, likely reflecting BLS suppression of small-cell counts rather than a literal absence of housing-program staff. This floor-value concentration means the QCEW proxy carries meaningful variation only among the 15% of local jurisdictions with non-suppressed data and among state agencies (all of which report non-zero values).
 
-$$
-\text{Ratio\_disbursed\_to\_obligated} = \frac{\text{Total Disbursed}}{\text{Total Obligated}}
-$$
+| Variable | Group | N | Min | P25 | Median | P75 | Max | % Zero |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| avg_employment | All | 573 | 0.00 | 0.00 | 0.00 | 0.00 | 10.50 | 80.6% |
+| avg_employment | State | 30 | 0.11 | 0.40 | 1.20 | 2.27 | 5.37 | 0.0% |
+| avg_employment | Local | 543 | 0.00 | 0.00 | 0.00 | 0.00 | 10.50 | 85.1% |
+| avg_payroll | All | 573 | 0 | 0 | 0 | 0 | 129,361 | 80.6% |
+| avg_payroll | State | 30 | 2,692 | 6,591 | 21,950 | 29,861 | 112,612 | 0.0% |
+| avg_payroll | Local | 543 | 0 | 0 | 0 | 0 | 129,361 | 85.1% |
 
-$$
-\text{Ratio\_expended\_to\_disbursed} = \frac{\text{Total Expended}}{\text{Total Disbursed}}
-$$
+: QCEW proxy distributions before standardization {#tbl-proxy-distributions}
 
-### Duration Measures
+The temporal alignment of QCEW data relative to recovery outcomes is approximate: QCEW annual averages span the years in which each jurisdiction administered CDBG-DR grants, but they are not quarter-matched to the QPR reporting periods.
 
-Duration is computed as the number of months from first obligation to reaching 95% expenditure of the final obligated amount. Log-transformation is applied to address right-skewness:
+## A.5 SVI Vintage Specification
 
-$$
-\text{Duration\_log} = \ln(\text{Duration\_months})
-$$
+SVI data are drawn from the CDC/ATSDR Social Vulnerability Index. Because SVI percentile scores are not directly comparable across vintage releases (the underlying variable set and weighting scheme have changed), the analysis uses a single SVI vintage assigned to each jurisdiction based on the closest available release year to the midpoint of the jurisdiction's CDBG-DR administration period. The four theme-level summary scores (Socioeconomic, Household Composition/Disability, Minority Status/Language, Housing Type/Transportation) are used as covariates rather than the overall SVI composite.
 
-### Spending Consistency
+## A.6 Geography Matching
 
-The coefficient of variation (CV) measures spending consistency:
+Jurisdictions in the DRGR/QPR system are identified by grantee labels that do not always correspond to standard Census geographic units. The matching procedure uses a three-step hierarchy:
 
-$$
-\text{Spending\_CV} = \frac{\sigma_{\text{quarterly}}}{\mu_{\text{quarterly}}}
-$$
+1. **State agencies**: Two-letter state abbreviations matched directly to the 2023 Census state file (STUSPS field). Result: 30/30 matched (100%).
+2. **Local jurisdictions**: Organization names parsed to extract city/county identifiers, then matched to the 2023 Census county file by normalized county/parish/borough label and state. Result: 543/543 matched (100%).
+3. **Unresolved cases**: 0 jurisdiction labels could not be resolved to an official Census GEOID.
 
-## A.3 Sample Characteristics
-
-[Include sample characteristics tables]
-
-## A.4 Data Cleaning
-
-The following cleaning steps were applied:
-
-1. Removed total rows (aggregated across quarters)
-2. Filtered to grantees with at least 4 quarters of reporting
-3. Excluded records with zero obligated amounts
-4. Winsorized extreme ratio values at 1st and 99th percentiles
+County-linked local units inherit county-level GEOIDs; state-administered units inherit statewide GEOIDs. The 100% match rate reflects the relatively clean naming conventions in the DRGR system for jurisdictions with sufficient QPR data to appear in the SEM sample.

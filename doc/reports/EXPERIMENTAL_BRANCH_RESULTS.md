@@ -1,5 +1,7 @@
 # Experimental Branch Results (Alternative Capacity Measures)
 
+> Historical note: this summary captures a working branch state and includes results that should be checked against the corrected standardized pipeline before citation.
+
 This document summarizes the robustness tests and results from the
 `analysis/alternative-capacity-measures` branch. There is no manuscript
 in this branch; this is a working summary to capture methods, outputs,

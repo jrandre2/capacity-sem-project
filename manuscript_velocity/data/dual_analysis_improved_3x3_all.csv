@@ -1,0 +1,3 @@
+Analysis_Level,Model,Subset,N,Beta,SE,p_value,Significant,CFI,RMSEA,Overall_Fit
+grantee,improved_3x3,all,27,1.0960189536035183,2.237616242245771,0.62426451365341,False,1.351426767944969,0,good
+grantee_disaster,improved_3x3,all,40,0.1456830645628115,0.22969255872263328,0.5259160929770466,False,1.4856378474610281,0,good

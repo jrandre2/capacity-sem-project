@@ -1,0 +1,636 @@
+% Options for packages loaded elsewhere
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  12pt,
+  letterpaper,
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+  \setmainfont[]{Times New Roman}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage{setspace}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+% Make \paragraph and \subparagraph free-standing
+\makeatletter
+\ifx\paragraph\undefined\else
+  \let\oldparagraph\paragraph
+  \renewcommand{\paragraph}{
+    \@ifstar
+      \xxxParagraphStar
+      \xxxParagraphNoStar
+  }
+  \newcommand{\xxxParagraphStar}[1]{\oldparagraph*{#1}\mbox{}}
+  \newcommand{\xxxParagraphNoStar}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+  \let\oldsubparagraph\subparagraph
+  \renewcommand{\subparagraph}{
+    \@ifstar
+      \xxxSubParagraphStar
+      \xxxSubParagraphNoStar
+  }
+  \newcommand{\xxxSubParagraphStar}[1]{\oldsubparagraph*{#1}\mbox{}}
+  \newcommand{\xxxSubParagraphNoStar}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+\makeatother
+
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{241,243,245}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.40,0.45,0.13}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\ExtensionTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.28,0.35,0.67}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.46,0.62}{#1}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.68,0.00,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{\textcolor[rgb]{0.00,0.23,0.31}{#1}}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.07,0.07,0.07}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.13,0.47,0.30}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.37,0.37,0.37}{\textit{#1}}}
+
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+
+
+
+
+
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+
+
+ 
+
+
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{setspace}
+\doublespacing
+% PAR heading styles
+\usepackage{titlesec}
+% Principal subheads: 14pt bold
+\titleformat{\section}{\normalfont\fontsize{14}{16}\bfseries}{\thesection}{1em}{}
+% Secondary subheads: 12pt bold
+\titleformat{\subsection}{\normalfont\fontsize{12}{14}\bfseries}{\thesubsection}{1em}{}
+% Sub-subheads: 12pt bold italic, run-in
+\titleformat{\subsubsection}[runin]{\normalfont\fontsize{12}{14}\bfseries\itshape}{\thesubsubsection}{1em}{}[.]
+% Abstract formatting
+\renewenvironment{abstract}{\par\bigskip\noindent\textbf{Abstract}\par\smallskip\noindent}{\par\bigskip}
+% Remove section numbers
+\setcounter{secnumdepth}{0}
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\AtBeginDocument{%
+\ifdefined\contentsname
+  \renewcommand*\contentsname{Table of contents}
+\else
+  \newcommand\contentsname{Table of contents}
+\fi
+\ifdefined\listfigurename
+  \renewcommand*\listfigurename{List of Figures}
+\else
+  \newcommand\listfigurename{List of Figures}
+\fi
+\ifdefined\listtablename
+  \renewcommand*\listtablename{List of Tables}
+\else
+  \newcommand\listtablename{List of Tables}
+\fi
+\ifdefined\figurename
+  \renewcommand*\figurename{Figure}
+\else
+  \newcommand\figurename{Figure}
+\fi
+\ifdefined\tablename
+  \renewcommand*\tablename{Table}
+\else
+  \newcommand\tablename{Table}
+\fi
+}
+\@ifpackageloaded{float}{}{\usepackage{float}}
+\floatstyle{ruled}
+\@ifundefined{c@chapter}{\newfloat{codelisting}{h}{lop}}{\newfloat{codelisting}{h}{lop}[chapter]}
+\floatname{codelisting}{Listing}
+\newcommand*\listoflistings{\listof{codelisting}{List of Listings}}
+\makeatother
+\makeatletter
+\makeatother
+\makeatletter
+\@ifpackageloaded{caption}{}{\usepackage{caption}}
+\@ifpackageloaded{subcaption}{}{\usepackage{subcaption}}
+\makeatother
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Appendix B: Extended Methods},
+  colorlinks=true,
+  linkcolor={blue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={Blue},
+  pdfcreator={LaTeX via pandoc}}
+
+
+\title{Appendix B: Extended Methods}
+\author{}
+\date{}
+\begin{document}
+\maketitle
+
+
+\setstretch{2}
+\subsection{B.1 Cox Proportional Hazards
+Model}\label{b.1-cox-proportional-hazards-model}
+
+\subsubsection{Model Specification}\label{model-specification}
+
+The primary model is the Cox proportional hazards regression:
+
+\[
+h(t | \mathbf{X}) = h_0(t) \exp(\mathbf{X}\boldsymbol{\beta})
+\]
+
+where:
+
+\begin{itemize}
+\tightlist
+\item
+  \(h(t | \mathbf{X})\) is the hazard of completion at time \(t\) given
+  covariates \(\mathbf{X}\)
+\item
+  \(h_0(t)\) is the unspecified baseline hazard function
+\item
+  \(\boldsymbol{\beta}\) is the vector of regression coefficients
+\end{itemize}
+
+The semi-parametric nature of the Cox model allows estimation without
+specifying the baseline hazard, reducing model misspecification risk.
+
+\subsubsection{Proportional Hazards
+Assumption}\label{proportional-hazards-assumption}
+
+The Cox model assumes that hazard ratios are constant over time:
+
+\[
+\frac{h(t | X_1)}{h(t | X_2)} = \exp(\boldsymbol{\beta}(X_1 - X_2)) \quad \forall t
+\]
+
+We test this assumption using Schoenfeld residuals. For each covariate,
+we regress scaled Schoenfeld residuals on time functions and test for
+non-zero slopes. Non-significant tests (p \textgreater{} 0.05) support
+the proportional hazards assumption.
+
+\subsubsection{Partial Likelihood
+Estimation}\label{partial-likelihood-estimation}
+
+Parameters are estimated by maximizing the partial likelihood:
+
+\[
+L(\boldsymbol{\beta}) = \prod_{i: \delta_i = 1} \frac{\exp(\mathbf{X}_i \boldsymbol{\beta})}{\sum_{j \in R(t_i)} \exp(\mathbf{X}_j \boldsymbol{\beta})}
+\]
+
+where:
+
+\begin{itemize}
+\tightlist
+\item
+  \(\delta_i = 1\) indicates an observed event (completion)
+\item
+  \(R(t_i)\) is the risk set at time \(t_i\) (all subjects still at
+  risk)
+\end{itemize}
+
+Standard errors are computed from the observed information matrix.
+
+\subsubsection{Hazard Ratio
+Interpretation}\label{hazard-ratio-interpretation}
+
+Hazard ratios (HR) quantify the multiplicative change in completion
+hazard per unit change in the covariate:
+
+\begin{itemize}
+\tightlist
+\item
+  HR \textgreater{} 1: Higher velocity associated with faster completion
+\item
+  HR \textless{} 1: Higher velocity associated with slower completion
+\item
+  HR = 1: No association
+\end{itemize}
+
+For velocity measured in percentage points per quarter, HR = 4.60 means
+each additional percentage point of quarterly velocity is associated
+with a 4.60-fold increase in the instantaneous completion hazard.
+
+\subsection{B.2 Stratified Analysis}\label{b.2-stratified-analysis}
+
+\subsubsection{Approach}\label{approach}
+
+Context-specific effects are estimated by fitting separate Cox models
+within subgroups:
+
+\[
+h_k(t | \mathbf{X}) = h_{0k}(t) \exp(\mathbf{X}\boldsymbol{\beta}_k) \quad \text{for } k = 1, \ldots, K
+\]
+
+where \(k\) indexes strata (disaster types, program types, experience
+levels).
+
+\subsubsection{Stratification Variables}\label{stratification-variables}
+
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Variable & Categories \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Disaster Type & Hurricane, Wildfire, Flood, Other \\
+Program Type & Housing, Infrastructure, Administration \\
+Experience & Novice, Experienced \\
+Program Phase & Early, Middle, Late \\
+\end{longtable}
+
+\subsubsection{Small Sample
+Considerations}\label{small-sample-considerations}
+
+Stratified analyses reduce sample sizes, potentially compromising
+statistical power. We report confidence intervals alongside p-values to
+convey uncertainty. Wide confidence intervals (e.g., HR=51.09, 95\% CI:
+4.01-650.90 for wildfire) indicate effect magnitude is estimated
+imprecisely even when the direction is statistically significant.
+
+\subsection{B.3 Interaction Models}\label{b.3-interaction-models}
+
+\subsubsection{Specification}\label{specification}
+
+Formal tests of heterogeneity use interaction terms:
+
+\[
+\log h(t) = \log h_0(t) + \beta_1 \text{Velocity} + \beta_2 \text{Context} + \beta_3 (\text{Velocity} \times \text{Context})
+\]
+
+The interaction coefficient \(\beta_3\) tests whether velocity effects
+differ significantly across contexts. Wald tests assess
+\(H_0: \beta_3 = 0\).
+
+\subsubsection{Power Considerations}\label{power-considerations}
+
+Interaction tests require larger samples than main effect tests. With
+N=152 and substantial censoring, power to detect interaction effects is
+limited. Non-significant interactions should be interpreted cautiously;
+they may reflect insufficient power rather than true homogeneity.
+
+\subsection{B.4 Trajectory Clustering}\label{b.4-trajectory-clustering}
+
+\subsubsection{K-Means Algorithm}\label{k-means-algorithm}
+
+Velocity trajectories are clustered using K-means on standardized
+quarterly velocity profiles:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Standardization}: Each grantee's velocity time series is
+  z-scored to remove scale differences
+\item
+  \textbf{Alignment}: Series are interpolated to equal lengths (20 time
+  points)
+\item
+  \textbf{Clustering}: K-means minimizes within-cluster sum of squared
+  distances:
+\end{enumerate}
+
+\[
+\min_{\mathbf{C}} \sum_{k=1}^{K} \sum_{i \in C_k} \| \mathbf{v}_i - \boldsymbol{\mu}_k \|^2
+\]
+
+where \(\mathbf{v}_i\) is grantee \(i\)'s velocity trajectory and
+\(\boldsymbol{\mu}_k\) is cluster \(k\)'s centroid.
+
+\subsubsection{Cluster Selection}\label{cluster-selection}
+
+The number of clusters (K=3) is selected using:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{Elbow method}: Plotting within-cluster sum of squares against
+  K
+\item
+  \textbf{Silhouette scores}: Measuring cluster separation
+\item
+  \textbf{Interpretability}: Ensuring clusters have substantive meaning
+\end{enumerate}
+
+\subsubsection{Cluster Characterization}\label{cluster-characterization}
+
+Clusters are characterized by:
+
+\begin{itemize}
+\tightlist
+\item
+  Mean velocity level (fast, moderate, slow)
+\item
+  Velocity variance (consistent vs.~variable)
+\item
+  Trajectory shape (accelerating, decelerating, flat)
+\item
+  Completion outcomes (median completion time, completion rate)
+\end{itemize}
+
+\subsection{B.5 Phase-Specific Velocity
+Models}\label{b.5-phase-specific-velocity-models}
+
+\subsubsection{Phase Definition}\label{phase-definition}
+
+Programs are divided into terciles based on observed duration:
+
+\[
+\text{Phase}_t = \begin{cases}
+\text{Early} & \text{if } t \leq T/3 \\
+\text{Middle} & \text{if } T/3 < t \leq 2T/3 \\
+\text{Late} & \text{if } t > 2T/3
+\end{cases}
+\]
+
+\subsubsection{Multivariate Model}\label{multivariate-model}
+
+Phase-specific effects are estimated by including all three phase
+velocities simultaneously:
+
+\[
+\log h(t) = \log h_0(t) + \beta_E \text{Velocity}_{\text{Early}} + \beta_M \text{Velocity}_{\text{Mid}} + \beta_L \text{Velocity}_{\text{Late}}
+\]
+
+This specification identifies the independent contribution of each
+phase, controlling for the others.
+
+\subsubsection{Sensitivity Analysis}\label{sensitivity-analysis}
+
+Alternative phase definitions are tested:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Quartiles}: Four equal phases
+\item
+  \textbf{Fixed intervals}: Years 1-3, 4-7, 8+
+\item
+  \textbf{Milestone-based}: Pre-50\%, 50-80\%, 80-95\%
+\end{itemize}
+
+Results are qualitatively similar across specifications.
+
+\subsection{B.6 Meta-Analysis of Velocity
+Estimates}\label{b.6-meta-analysis-of-velocity-estimates}
+
+\subsubsection{Estimate Extraction}\label{estimate-extraction}
+
+From each stratified model, we extract:
+
+\begin{itemize}
+\tightlist
+\item
+  Point estimate: \(\hat{\beta}\) (log hazard ratio)
+\item
+  Standard error: \(\text{SE}(\hat{\beta})\)
+\item
+  Sample size: \(n_k\)
+\item
+  Number of events: \(d_k\)
+\end{itemize}
+
+\subsubsection{Summary Statistics}\label{summary-statistics}
+
+Rather than pooled estimation (which would require independence
+assumptions), we compute:
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Median HR}: Central tendency of effect estimates
+\item
+  \textbf{Range}: Minimum to maximum HR
+\item
+  \textbf{Interquartile range}: Middle 50\% of estimates
+\item
+  \textbf{Percent significant}: Proportion with p \textless{} 0.05
+\item
+  \textbf{Percent accelerating}: Proportion with HR \textgreater{} 1
+\end{itemize}
+
+\subsubsection{Forest Plot}\label{forest-plot}
+
+Visual display shows each estimate with 95\% confidence intervals on a
+log scale, organized by analysis type. Reference line at HR=1 indicates
+null effect.
+
+\subsection{B.7 Sensitivity Analyses}\label{b.7-sensitivity-analyses}
+
+\subsubsection{Threshold Sensitivity}\label{threshold-sensitivity}
+
+Completion thresholds other than 95\% are tested:
+
+\begin{longtable}[]{@{}llll@{}}
+\toprule\noalign{}
+Threshold & N Events & Median HR & p-value Range \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+90\% & 58 & 4.21 & 0.008-0.156 \\
+95\% & 40 & 4.60 & 0.002-0.891 \\
+99\% & 25 & 5.12 & 0.001-0.743 \\
+\end{longtable}
+
+Results are robust to threshold choice.
+
+\subsubsection{QA Flag Exclusion}\label{qa-flag-exclusion}
+
+Sensitivity analyses excluding observations flagged for data quality
+issues:
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Exclusion Criterion & N Excluded & HR Change \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Extreme velocity & 3 & +4.2\% \\
+Large obligation adjustment & 12 & -6.1\% \\
+Negative expenditure & 8 & +2.8\% \\
+Any flag & 18 & -3.4\% \\
+\end{longtable}
+
+Results are substantively unchanged by exclusions.
+
+\subsubsection{Winsorization Thresholds}\label{winsorization-thresholds}
+
+Alternative winsorization cutoffs:
+
+\begin{longtable}[]{@{}lll@{}}
+\toprule\noalign{}
+Cutoff & Median HR & 95\% CI \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+1\%/99\% (baseline) & 4.60 & 1.42-14.89 \\
+2.5\%/97.5\% & 4.43 & 1.38-14.21 \\
+5\%/95\% & 4.28 & 1.31-13.98 \\
+\end{longtable}
+
+Effects are modestly attenuated with stricter winsorization but remain
+statistically significant.
+
+\subsection{B.8 Software and
+Reproducibility}\label{b.8-software-and-reproducibility}
+
+\subsubsection{Computational
+Environment}\label{computational-environment}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Python 3.11} with lifelines package for survival analysis
+\item
+  \textbf{scikit-learn} for K-means clustering
+\item
+  \textbf{pandas/numpy} for data manipulation
+\item
+  \textbf{matplotlib/seaborn} for visualization
+\end{itemize}
+
+\subsubsection{Code Availability}\label{code-availability}
+
+Analysis scripts are available in the project repository:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{run\_phase\_specific\_analysis.py}: Phase velocity models
+\item
+  \texttt{run\_trajectory\_clustering.py}: K-means clustering
+\item
+  \texttt{run\_learning\_curves.py}: Experience stratification
+\item
+  \texttt{run\_program\_type\_analysis.py}: Program type heterogeneity
+\item
+  \texttt{run\_disaster\_context\_analysis.py}: Disaster context
+  heterogeneity
+\item
+  \texttt{run\_meta\_analysis.py}: Summary statistics and forest plots
+\end{itemize}
+
+\subsubsection{Reproducibility}\label{reproducibility}
+
+All analyses are reproducible from the standardized panel data:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{python}\NormalTok{ src/pipeline.py ingest\_data}
+\ExtensionTok{python}\NormalTok{ src/pipeline.py standardize\_data}
+\ExtensionTok{python}\NormalTok{ src/pipeline.py build\_panel}
+\ExtensionTok{python}\NormalTok{ src/pipeline.py build\_features\_std}
+\ExtensionTok{python}\NormalTok{ run\_meta\_analysis.py}
+\end{Highlighting}
+\end{Shaded}
+
+
+
+
+
+\end{document}

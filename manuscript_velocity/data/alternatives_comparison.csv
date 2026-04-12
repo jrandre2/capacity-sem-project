@@ -1,0 +1,5 @@
+Method,Model,N,Effect_Estimate,Effect_SE,p_value,Interpretation,Significant
+Survival,Cox_PH,,4.367096047559034,0.5358879743150226,0.005945750391258549,Hazard Ratio (>1 = faster completion),True
+Survival,Cox_PH,,0.9578229050386031,0.08842893532663926,0.6260380798912495,Hazard Ratio (>1 = faster completion),False
+Survival,AFT_lognormal,,0.1566567052005032,0.4884146597745218,0.00014744276135825903,Time Ratio (<1 = faster completion),True
+Survival,AFT_lognormal,,1.0077185538730837,0.13390837604692918,0.9542112307217355,Time Ratio (<1 = faster completion),False

@@ -420,6 +420,7 @@ DRGR_DISASTER_YEARS: Dict[str, int] = {
     "2018 Disasters": 2018,
     "2019 Disasters": 2019,
     "2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida": 2020,
+    "2020 Hurricanes Laura, Delta and Zeta (LDZ)/2021 Hurricane Ida and Wildfires (IDF)": 2020,
     "2022 Disasters including Hurricanes Fiona and Ian": 2022,
     "Electrical Power Systems in Puerto Rico and the U.S. Virgin Islands": 2017,
     "Storms, Flooding, and Other Disasters in California, Alabama, and Georgia": 2023,

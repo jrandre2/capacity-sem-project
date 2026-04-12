@@ -1,0 +1,5 @@
+Model,N,N_Events,Overall_Velocity_HR,Overall_Velocity_p,Early_Velocity_HR,Early_Velocity_p,Mid_Velocity_HR,Mid_Velocity_p,Late_Velocity_HR,Late_Velocity_p,Acceleration_HR,Acceleration_p
+Overall_Velocity,143,106,4.437804758432355,0.012391136240198396,,,,,,,,
+Early_Velocity_Only,138,106,,,2.5094351612095718,0.00816754427216976,,,,,,
+Three_Phase,138,106,,,2.0372066398697166,0.15719829718213316,0.3690839970607531,0.1839444253216412,5.001476282669603,0.039698547842472266,,
+Acceleration,138,106,,,,,,,,,0.5947056434040274,0.2621357611602977

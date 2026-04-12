@@ -1,0 +1,4 @@
+Trajectory_Label,N,N_Events,Median_Duration,Median_Survival_Time,Completion_Rate
+Moderate,115,92,39.0,68.0,0.8
+Fast-Consistent,15,13,45.0,45.0,0.8666666666666667
+Accelerating,1,0,148.0,,0.0
