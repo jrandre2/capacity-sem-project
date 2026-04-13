@@ -73,8 +73,8 @@ Remaining limitations are operational rather than structural:
   - `figures/centaur/`
   - `doc/centaur/`
 - CENTAUR tooling is exposed through the host CLI as a separate command group.
-- The vendored manuscript scaffold lives in `manuscript_quarto/`.
-- The active Capacity-SEM paper remains in `manuscript_velocity/`.
+- The primary Capacity-SEM manuscript lives in `manuscript_quarto/`.
+- The archived velocity draft remains in `manuscript_velocity/`.
 
 ## CLI Usage
 

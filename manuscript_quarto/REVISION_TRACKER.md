@@ -1,9 +1,11 @@
 # Revision Tracker: Response to Synthetic Review
 
-**Document**: [Project Name] manuscript
-**Review**: #[N]
-**Discipline**: [economics | engineering | social_sciences | general]
-**Last Updated**: [Date]
+**Document**: Administrative Throughput in Disaster Recovery
+**Review**: #1
+**Discipline**: social_sciences
+**Last Updated**: 2026-04-13
+**Status**: Pre-submission
+**Target**: Public Administration Review (PAR)
 
 ---
 

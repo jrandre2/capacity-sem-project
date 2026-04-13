@@ -1,8 +1,12 @@
 # Methodology
 
-## Primary Methodology: Survival Analysis
+## Primary Methodology: Cross-Sectional SEM
 
-The manuscript uses survival analysis to examine how government administrative capacity affects disaster recovery program completion timing.
+The primary manuscript uses structural equation modeling to examine how government administrative capacity (specifically, administrative burden) affects disaster recovery timeliness across N=573 jurisdictions. The main finding is beta=0.266 for the burden-to-timeliness path.
+
+## Complementary Methodology: Survival Analysis
+
+A complementary survival analysis examines time-varying capacity effects on program completion timing.
 
 ### Why Survival Analysis?
 
@@ -170,19 +174,19 @@ The time-varying survival pipeline includes comprehensive diagnostic checks:
 
 ---
 
-## SEM Framework (Sensitivity Analysis)
+## SEM Framework (Primary Analysis)
 
-The SEM codebase is retained for robustness checks in Appendix C. This section documents the SEM methodology for reference.
+The cross-sectional SEM is the primary analytical framework for the manuscript (`manuscript_quarto/index.qmd`). It operates on N=573 jurisdictions, avoiding the censoring limitations that affect the survival sample.
 
-### Why SEM Is Not the Primary Methodology
+### Why SEM as Primary
 
-Standard SEM approaches face challenges with CDBG-DR data:
+The cross-sectional SEM approach addresses the key limitations of the survival sample:
 
-1. **Sample size after listwise deletion**: Only N=40 observations at 95% threshold
-2. **Right-censoring**: Cannot properly handle incomplete programs
-3. **Power limitations**: ~55% power for medium effects vs. ~95% with survival analysis
+1. **Larger sample**: N=573 jurisdictions vs. N=142-151 grantee-disaster pairs
+2. **No censoring**: Uses cross-sectional capacity and outcome measures
+3. **Latent constructs**: Models administrative burden as a latent variable with multiple indicators
 
-SEM results are reported in appendix-c-robustness.qmd as sensitivity analysis.
+The survival analysis (Cox PH with time-varying covariates) serves as a complementary longitudinal comparison and is reported in the manuscript appendices.
 
 ---
 

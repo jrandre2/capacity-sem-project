@@ -2,10 +2,10 @@
 
 ## Which Manuscript Is Active
 
-- Active research manuscript: `manuscript_velocity/`
-- Vendored CENTAUR scaffold: `manuscript_quarto/`
+- Primary research manuscript: `manuscript_quarto/` (cross-sectional SEM, N=573)
+- Archived survival draft: `manuscript_velocity/` (superseded)
 
-The active Capacity-SEM paper is still in `manuscript_velocity/`. The CENTAUR scaffold is available for validation, drafting, and future migration work, but it is not yet the authoritative paper.
+The active Capacity-SEM paper is `manuscript_quarto/index.qmd`. The velocity manuscript in `manuscript_velocity/` documents the complementary survival analysis but is no longer the primary manuscript.
 
 ## Current Writing Rule
 
@@ -18,63 +18,52 @@ Do not treat the following as current findings unless you are explicitly discuss
 - meta-analytic summaries built from pre-fix heterogeneity estimates
 
 Current framing should align with [PROJECT_STATUS.md](PROJECT_STATUS.md):
-- overall velocity effects are null or near-null in corrected models
+- primary SEM finding: burden->timeliness beta=0.266 (N=573)
+- complementary survival finding: velocity effects are null or near-null
 - subgroup signals are exploratory
-- the manuscript is not submission-ready
 
 ## File Map
 
 | Path | Purpose |
 |------|---------|
-| `manuscript_velocity/index.qmd` | Main paper draft |
-| `manuscript_velocity/appendix-a-data.qmd` | Data and sample appendix |
-| `manuscript_velocity/appendix-b-methods.qmd` | Methods appendix |
-| `manuscript_velocity/appendix-c-heterogeneity.qmd` | Heterogeneity appendix |
-| `manuscript_velocity/appendix-d-meta-analysis.qmd` | Historical meta-analysis appendix; needs caution |
-| `manuscript_velocity/REVISION_TRACKER.md` | Review and verification tracker |
-| `manuscript_velocity/render_all.sh` | Multi-format render script |
+| `manuscript_quarto/index.qmd` | Main paper (cross-sectional SEM) |
+| `manuscript_quarto/appendix-a-data.qmd` | Data appendix |
+| `manuscript_quarto/appendix-b-methods.qmd` | Methods appendix |
+| `manuscript_quarto/appendix-c-robustness.qmd` | Robustness appendix |
+| `manuscript_quarto/REVISION_TRACKER.md` | Review and verification tracker |
+| `manuscript_quarto/render_all.sh` | Multi-format render script |
+| `manuscript_velocity/index.qmd` | Archived survival draft |
 
 ## Rendering
 
 ```bash
-cd manuscript_velocity
+cd manuscript_quarto
 ./render_all.sh
 ```
 
 Re-render without changing upstream analysis inputs:
 
 ```bash
-cd manuscript_velocity
+cd manuscript_quarto
 CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh
 ```
 
 ## Review Commands
 
 ```bash
-python src/pipeline.py review_status --manuscript velocity
-python src/pipeline.py review_verify --manuscript velocity
-python src/pipeline.py review_new --manuscript velocity --focus par_general
+python src/pipeline.py review_status --manuscript quarto
+python src/pipeline.py review_verify --manuscript quarto
+python src/pipeline.py review_new --manuscript quarto --focus par_general
 ```
 
 Current tracker status should be read from:
-- `manuscript_velocity/REVISION_TRACKER.md`
+- `manuscript_quarto/REVISION_TRACKER.md`
 - `doc/MANUSCRIPT_REVISION_CHECKLIST.md`
 
 ## Writing Guardrails
 
 - Present corrected findings directly.
 - Keep legacy positive results explicitly labeled as invalidated when mentioned.
-- Avoid internal “SEM vs survival” victory framing; describe the bug and correction plainly.
+- Avoid internal “SEM vs survival” victory framing; present each method on its own merits.
 - Separate confirmed results from exploratory subgroup patterns.
-- Treat `manuscript_quarto/` as a separate scaffold unless the project intentionally migrates the live paper.
-
-## If You Need The CENTAUR Scaffold
-
-Use `manuscript_quarto/` for:
-- journal profile validation
-- AI-assisted draft generation
-- review-cycle experiments in the vendored framework
-
-See:
-- [manuscript_quarto/README.md](../manuscript_quarto/README.md)
-- [centaur/README.md](centaur/README.md)
+- `manuscript_quarto/` is the primary manuscript; `manuscript_velocity/` is archived.

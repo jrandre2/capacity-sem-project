@@ -4,7 +4,7 @@ This document describes the workflows that are actually current in this reposito
 
 ## Canonical Workflow
 
-The active analysis path is the standardized survival pipeline:
+The active data pipeline feeds both the primary SEM analysis (`manuscript_quarto/`) and the complementary survival analysis:
 
 ```bash
 python src/pipeline.py run_all
@@ -105,19 +105,23 @@ Use these after the canonical pipeline when you need:
 - publication figures
 - multiple-testing corrected summary outputs
 
-## Legacy SEM Workflow
+## SEM Workflow (Primary Analysis)
 
-The SEM path is retained for replication, sensitivity checks, and historical comparison.
+The cross-sectional SEM is the primary methodology for the manuscript (`manuscript_quarto/`). The SEM estimation commands use the same data pipeline outputs.
 
 ```bash
-python src/pipeline.py run_all_legacy
 python src/pipeline.py run_estimation --model exp_optimal_v1 --subset all
 python src/pipeline.py run_robustness
 python src/pipeline.py list_models
 ```
 
-Important:
-- legacy SEM outputs should not be treated as the primary analysis
+The legacy end-to-end flow is also available for replication:
+
+```bash
+python src/pipeline.py run_all_legacy
+```
+
+Note:
 - `compute_features` belongs to the legacy path
 - many historical SEM interpretations predate the corrected duration logic
 
@@ -125,21 +129,21 @@ Important:
 
 Review management now runs on the unified CENTAUR review engine. The host
 `review_*` commands are the project-facing entrypoint; they default to the
-velocity manuscript and also support Kaifa's archived DOCX workflow.
+quarto manuscript and also support Kaifa's archived DOCX workflow.
 
 ```bash
-python src/pipeline.py review_status --manuscript velocity
-python src/pipeline.py review_new --manuscript velocity --focus par_general
-python src/pipeline.py review_diff --manuscript velocity
-python src/pipeline.py review_response --manuscript velocity
-python src/pipeline.py review_verify --manuscript velocity
-python src/pipeline.py review_archive --manuscript velocity
+python src/pipeline.py review_status --manuscript quarto
+python src/pipeline.py review_new --manuscript quarto --focus par_general
+python src/pipeline.py review_diff --manuscript quarto
+python src/pipeline.py review_response --manuscript quarto
+python src/pipeline.py review_verify --manuscript quarto
+python src/pipeline.py review_archive --manuscript quarto
 python src/pipeline.py review_report
 python src/pipeline.py review_ingest_docx --manuscript kaifa
 ```
 
 Current status is tracked in:
-- `manuscript_velocity/REVISION_TRACKER.md`
+- `manuscript_quarto/REVISION_TRACKER.md`
 - `manuscript_kaifa_archive/REVISION_TRACKER.md`
 - `doc/MANUSCRIPT_REVISION_CHECKLIST.md`
 - `doc/reviews/`
@@ -157,7 +161,7 @@ python src/pipeline.py centaur review_status
 
 Use CENTAUR for:
 - project analysis and migration planning
-- the vendored manuscript scaffold in `manuscript_quarto/`
+- the manuscript scaffold and CENTAUR tooling in `manuscript_quarto/`
 - journal validation, review tooling, and draft-generation experiments
 
 Do not confuse this with the active Capacity-SEM pipeline in `src/stages/`.
@@ -166,7 +170,7 @@ Do not confuse this with the active Capacity-SEM pipeline in `src/stages/`.
 
 For current analysis and documentation:
 - canonical data path: `qpr_quarterly.parquet` → `qpr_standardized.parquet` → `panel_features_std.parquet`
-- canonical manuscript: `manuscript_velocity/`
+- canonical manuscript: `manuscript_quarto/`
 - canonical findings status: see [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
 Anything that still depends on pre-fix positive velocity claims should be treated as historical until updated.

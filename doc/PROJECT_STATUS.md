@@ -1,25 +1,26 @@
 # Project Status
 
-Last updated: 2026-04-12
+Last updated: 2026-04-13
 
 ## Current Position
 
-This repository has undergone two critical bug fixes (December 2025 duration calculation, April 2026 ratio aggregation) that independently invalidated prior positive velocity findings. Both fixes confirmed the same null result.
+The project now centers on a cross-sectional SEM manuscript (`manuscript_quarto/index.qmd`) analyzing administrative capacity across N=573 jurisdictions, with a complementary time-varying survival analysis (N=142-151 grantee-disaster pairs) providing a longitudinal comparison.
 
 - Active branch: `analysis/alternative-capacity-measures`
-- Active analytical baseline: standardized, fixed-denominator survival workflow with ratio clipping
+- Primary methodology: cross-sectional SEM (N=573, primary finding: burden->timeliness beta=0.266)
+- Complementary analysis: time-varying survival (HR~1.0, null finding)
+- Primary manuscript: `manuscript_quarto/`
+- Archived velocity manuscript: `manuscript_velocity/` (survival-only draft, superseded)
 - Legacy workflow status: preserved for replication only
-- Manuscript status: `manuscript_velocity/` remains in major revision and should not be treated as publication-ready
 
 ## Trusted Findings
 
 These are the findings that should guide new analysis unless superseded by later verified runs:
 
+- **Primary (SEM)**: Cross-sectional SEM finds burden->timeliness beta=0.266 (N=573 jurisdictions). Administrative burden is a significant predictor of recovery timeliness.
+- **Complementary (Survival)**: Time-varying survival analysis finds null velocity effects: Disb HR=1.001 [0.821, 1.221], p=0.991 (N=142-151). Concordance is 0.723 (model discriminates via covariates, not capacity ratios).
 - The original positive velocity results are not reliable (invalidated by two independent bugs).
-- The standardized time-varying survival workflow is the current reference path.
-- Overall velocity effects are null in the corrected time-varying models: Disb HR=1.001 [0.821, 1.221], p=0.991.
-- Concordance is 0.723 (model discriminates via covariates, not capacity ratios).
-- Bootstrap clustered SEs (1,000 iterations) confirm null finding with properly sized uncertainty.
+- Bootstrap clustered SEs (1,000 iterations) confirm null survival finding with properly sized uncertainty.
 - All ratio variables now use SUM aggregation across activities, $1K minimum denominator, and [0, 2] clipping.
 - Any remaining subgroup effects should be treated as exploratory until revalidated on the cleaned pipeline.
 
@@ -83,10 +84,10 @@ These items still need cleanup after this pass:
 
 - Active documentation is now aligned around the corrected null-finding story, but historical reports remain in the repo for provenance and should continue to be clearly labeled when cited.
 - `run_alternatives`, figures, and manuscript render paths still need a full audit to ensure they all follow the active standardized workflow.
-- The velocity manuscript is now a rewrite draft, not a stale results narrative, but it still needs a full substantive rewrite before submission.
+- The velocity manuscript (`manuscript_velocity/`) is archived; the primary manuscript is now `manuscript_quarto/`.
 - Output management is still analysis-workspace style rather than run-manifest style.
 - The new combined `requirements.txt` is not yet CI-tested as a fresh environment build for the full optional CENTAUR stack.
 
 ## Working Rule
 
-For new analysis, treat the standardized survival path as canonical and the SEM path as historical/replication infrastructure.
+For new analysis, treat the cross-sectional SEM as the primary methodology and the survival analysis as a complementary longitudinal comparison. The standardized data pipeline supports both.

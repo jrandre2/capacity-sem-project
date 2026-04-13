@@ -1,10 +1,12 @@
-# Velocity Manuscript
+# Velocity Manuscript (Archived)
+
+> **Note**: This manuscript has been superseded by `manuscript_quarto/`, which presents the primary cross-sectional SEM analysis. This directory is retained as documentation of the complementary survival analysis (time-varying Cox PH, N=142-151, null findings).
 
 ## Status
 
-Major revision. Not submission-ready.
+Archived. Superseded by `manuscript_quarto/`.
 
-This directory contains the active Capacity-SEM manuscript draft, but it should not be treated as the authoritative summary of findings until the rewrite is complete.
+This directory contains the survival-analysis-focused manuscript draft. It documents the complementary longitudinal analysis but is not the primary research manuscript.
 
 ## Current Position
 
@@ -44,8 +46,8 @@ python ../src/pipeline.py review_verify --manuscript velocity
 
 ## Rule
 
-If you need the current trusted analytical position, use:
+The primary manuscript is in `../manuscript_quarto/`. For the current trusted analytical position, use:
 - `../doc/PROJECT_STATUS.md`
 - `../doc/PIPELINE.md`
 
-Do not rely on this manuscript alone until the rewrite removes the stale pre-fix narrative.
+Do not treat this manuscript as the primary analysis; it documents the complementary survival findings only.

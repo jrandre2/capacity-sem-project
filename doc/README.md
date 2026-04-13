@@ -15,7 +15,7 @@ That file is the current source of truth for:
 |----------|---------|
 | [PROJECT_STATUS.md](PROJECT_STATUS.md) | Current state, trusted findings, next steps |
 | [PIPELINE.md](PIPELINE.md) | Active pipeline commands and outputs |
-| [METHODOLOGY.md](METHODOLOGY.md) | Survival analysis as primary method; SEM as legacy sensitivity infrastructure |
+| [METHODOLOGY.md](METHODOLOGY.md) | Cross-sectional SEM as primary method; survival analysis as complementary comparison |
 | [TIME_VARYING_SURVIVAL.md](TIME_VARYING_SURVIVAL.md) | Technical details for the time-varying survival implementation |
 | [ETL_STANDARDIZATION.md](ETL_STANDARDIZATION.md) | Fixed-denominator standardization and quarter-level cleanup |
 | [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | Variable and output definitions |
@@ -27,7 +27,7 @@ That file is the current source of truth for:
 |----------|---------|
 | [MANUSCRIPT_GUIDE.md](MANUSCRIPT_GUIDE.md) | Active manuscript locations, render commands, writing guardrails |
 | [MANUSCRIPT_REVISION_CHECKLIST.md](MANUSCRIPT_REVISION_CHECKLIST.md) | Current manuscript rewrite checklist |
-| [SYNTHETIC_REVIEW_PROCESS.md](SYNTHETIC_REVIEW_PROCESS.md) | Review workflow for `manuscript_velocity/` |
+| [SYNTHETIC_REVIEW_PROCESS.md](SYNTHETIC_REVIEW_PROCESS.md) | Review workflow for `manuscript_quarto/` |
 | [reviews/README.md](reviews/README.md) | Review index and current manuscript coverage |
 | [PROJECT_SKILLS.md](PROJECT_SKILLS.md) | Project-local Codex skills for review triage, SEM audits, provenance appendices, and DOCX/Quarto manuscript conversion |
 | [reviews/kaifa/README.md](reviews/kaifa/README.md) | Kaifa DOCX import and archived-manuscript review workspace |
@@ -61,7 +61,7 @@ These files are useful for provenance, but they are not authoritative for curren
 
 ```bash
 python src/pipeline.py run_all
-python src/pipeline.py review_status --manuscript velocity
+python src/pipeline.py review_status --manuscript quarto
 python src/pipeline.py review_ingest_docx --manuscript kaifa
 python src/pipeline.py run_kaifa_recovered_analysis
 python src/pipeline.py centaur list_stages
