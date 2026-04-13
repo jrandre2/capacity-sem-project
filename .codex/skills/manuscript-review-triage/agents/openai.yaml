@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Triage"
+  short_description: "Triage manuscript reviews into tracker-ready actions"
+  default_prompt: "Use $manuscript-review-triage to classify reviewer comments, update the revision tracker, and produce a prioritized revision plan."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data Provenance"
+  short_description: "Draft and audit data provenance and appendix text"
+  default_prompt: "Use $data-provenance-appendix to document data sources, linkage logic, harmonization, and public-versus-restricted materials."

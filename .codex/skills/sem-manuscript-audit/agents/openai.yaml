@@ -1,0 +1,4 @@
+interface:
+  display_name: "SEM Audit"
+  short_description: "Audit SEM manuscripts for design and reporting flaws"
+  default_prompt: "Use $sem-manuscript-audit to review an SEM manuscript for model-reporting, measurement, timing, and causal-language issues."
