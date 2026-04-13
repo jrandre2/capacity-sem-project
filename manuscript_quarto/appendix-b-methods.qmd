@@ -1,80 +1,156 @@
----
-title: "Identification and Methods"
----
+# Appendix B: Methodological Details {.unnumbered}
 
-```{python}
-#| label: setup-b
-#| include: false
+## B.1 Model Specifications
 
-import pandas as pd
-import numpy as np
-import sys
-from pathlib import Path
-from IPython.display import Markdown, display
+Two SEM specifications are compared, both estimated on the 573-jurisdiction complete-case sample.
 
-def find_manuscript_root(start: Path) -> Path:
-    for parent in [start] + list(start.parents):
-        if (parent / "_quarto.yml").exists() and (parent / "code" / "_common.py").exists():
-            return parent
-    raise FileNotFoundError("Could not locate manuscript root from current working directory.")
+**One-factor model.** A single latent capacity factor loads on all four capacity-related indicators:
 
-MANUSCRIPT_ROOT = find_manuscript_root(Path.cwd())
-sys.path.insert(0, str(MANUSCRIPT_ROOT / "code"))
-from _common import load_diagnostic, show_table, format_pvalue
+$$
+\text{GovCapacity} =\!\sim \text{z\_avg\_employment} + \text{z\_avg\_payroll} + \text{z\_rev\_programs\_per\_staff} + \text{z\_rev\_disasters\_per\_staff}
+$$
 
-DATA_DIR = MANUSCRIPT_ROOT / "data"
-```
+$$
+\text{RecoveryPerformance} =\!\sim \text{z\_Ratio\_disbursed} + \text{z\_Ratio\_expended} + \text{z\_Ratio\_fully\_expended} + \text{z\_Ratio\_Program\_Completed}
+$$
 
-This appendix provides additional details on the identification strategy and estimation methods.
+$$
+\text{RecoveryTimeliness} =\!\sim \text{z\_rev\_Duration} + \text{z\_rev\_Average\_Duration}
+$$
 
-## B.1 Identification Assumptions {#sec-id-assumptions}
+$$
+\text{RecoveryPerformance} \sim \text{GovCapacity} + \text{covariates}
+$$
 
-[Detail the key identification assumptions and provide evidence supporting them]
+$$
+\text{RecoveryTimeliness} \sim \text{GovCapacity} + \text{covariates}
+$$
 
-### Assumption 1: [Name]
+**Two-factor model (preferred).** The four capacity indicators are split into two latent factors:
 
-[Explanation and evidence]
+$$
+\text{AdminResources} =\!\sim \text{z\_avg\_employment} + \text{z\_avg\_payroll}
+$$
 
-### Assumption 2: [Name]
+$$
+\text{AdminBurdenCapacity} =\!\sim \text{z\_rev\_programs\_per\_staff} + \text{z\_rev\_disasters\_per\_staff}
+$$
 
-[Explanation and evidence]
+The outcome measurement model and structural regressions are the same as the one-factor model, except that both AdminResources and AdminBurdenCapacity enter as predictors. The two capacity factors are allowed to covary freely. The two outcome factors (RecoveryPerformance and RecoveryTimeliness) are also allowed to covary.
 
-## B.2 Pre-Trend Tests {#sec-pretrends}
+Covariates in both models: state_level (binary), z_E_TOTPOP, z_SPL_THEME1 through z_SPL_THEME4.
 
-[Present pre-trend analysis if applicable]
+## B.2 Estimation Details
 
-```{python}
-#| label: tbl-pretrends
-#| tbl-cap: "Pre-Trend Tests"
-#| echo: false
-#| eval: false
+Both models are estimated via maximum likelihood using the semopy library in Python. All continuous variables are z-scored prior to estimation. The binary state_level indicator is retained in its original 0/1 coding. Complete-case listwise deletion is used: only the 573 jurisdictions with non-missing values on all 10 indicators and 6 covariates are included.
 
-# df = load_diagnostic("pretrends_ftest")
-# show_table(df)
-```
+Standard errors are conventional ML standard errors. Cluster-robust standard errors (clustered by state) are not computed in the current analysis. Because many local jurisdictions within a state may share correlated unobservables, the reported standard errors likely understate uncertainty. The direction of bias is toward narrower confidence intervals and smaller p-values than a clustered specification would produce.
 
-## B.3 Balance Tests {#sec-balance}
+## B.3 Full Parameter Tables
 
-[Present balance tests if applicable]
+### Measurement Loadings
 
-```{python}
-#| label: tbl-balance
-#| tbl-cap: "Covariate Balance"
-#| echo: false
-#| eval: false
+@tbl-measurement reports standardized factor loadings for the two-factor model.
 
-# df = load_diagnostic("balance_table")
-# show_table(df)
-```
+| Latent Construct | Indicator | Std. Loading | Std. Residual Var. | Note |
+|---|---|---:|---:|---|
+| Admin. Resources | Employment proxy | 0.953 | 0.093 | |
+| Admin. Resources | Payroll proxy | 0.992 | 0.016 | |
+| Admin. Burden Capacity | Rev. programs per staff | 0.577 | 0.667 | |
+| Admin. Burden Capacity | Rev. disasters per staff | 1.000 | 0.000 | |
+| Recovery Performance | Disbursed/obligated ratio | 0.785 | 0.383 | |
+| Recovery Performance | Expended/disbursed ratio | $-$0.131 | 0.983 | Weak negative loading |
+| Recovery Performance | Fully expended share | 0.988 | 0.024 | |
+| Recovery Performance | Program completion share | 0.477 | 0.773 | |
+| Recovery Timeliness | Rev. duration of completion | 0.545 | 0.703 | |
+| Recovery Timeliness | Rev. avg. program duration | 1.000 | 0.000 | |
 
-## B.4 Estimation Details {#sec-estimation-details}
+: Two-factor model measurement loadings (N = 573) {#tbl-measurement}
 
-[Provide additional technical details on estimation]
+The expended-to-disbursed ratio loads negatively ($-$0.131) on Recovery Performance, indicating it does not cohere with the other three performance indicators. Sensitivity analysis dropping this indicator is reported in Appendix C.
 
-### Standard Errors
+### Complete Structural Paths
 
-[Describe standard error computation]
+@tbl-structural-full reports all structural regression coefficients for the two-factor model.
 
-### Bandwidth Selection
+| Outcome | Predictor | Unstd. Est. | Std. Beta | SE | p-value |
+|---|---|---:|---:|---:|---:|
+| Rec. Performance | Admin. Resources | $-$0.139 | $-$0.170 | 0.037 | < 0.001 |
+| Rec. Performance | Admin. Burden Cap. | 0.104 | 0.077 | 0.060 | 0.086 |
+| Rec. Performance | state_level | $-$0.133 | $-$0.038 | 0.200 | 0.505 |
+| Rec. Performance | Population | $-$0.015 | $-$0.020 | 0.045 | 0.731 |
+| Rec. Performance | SVI Theme 1 | 0.008 | 0.010 | 0.053 | 0.879 |
+| Rec. Performance | SVI Theme 2 | 0.041 | 0.053 | 0.044 | 0.353 |
+| Rec. Performance | SVI Theme 3 | $-$0.177 | $-$0.226 | 0.041 | < 0.001 |
+| Rec. Performance | SVI Theme 4 | $-$0.022 | $-$0.028 | 0.049 | 0.658 |
+| Rec. Timeliness | Admin. Resources | 0.046 | 0.080 | 0.025 | 0.072 |
+| Rec. Timeliness | Admin. Burden Cap. | 0.251 | 0.266 | 0.051 | < 0.001 |
+| Rec. Timeliness | state_level | $-$0.260 | $-$0.106 | 0.133 | 0.050 |
+| Rec. Timeliness | Population | 0.009 | 0.016 | 0.029 | 0.760 |
+| Rec. Timeliness | SVI Theme 1 | $-$0.106 | $-$0.194 | 0.036 | 0.004 |
+| Rec. Timeliness | SVI Theme 2 | $-$0.087 | $-$0.159 | 0.030 | 0.004 |
+| Rec. Timeliness | SVI Theme 3 | $-$0.014 | $-$0.026 | 0.026 | 0.591 |
+| Rec. Timeliness | SVI Theme 4 | 0.006 | 0.011 | 0.031 | 0.846 |
 
-[Describe bandwidth selection if applicable]
+: Two-factor model complete structural paths (N = 573) {#tbl-structural-full}
+
+### Latent Covariances and Residual Variances
+
+| Term | Estimate | Std. Est. | p-value |
+|---|---:|---:|---:|
+| Admin. Resources variance | 0.907 | 1.000 | --- |
+| Admin. Burden Cap. variance | 0.333 | 1.000 | < 0.001 |
+| Rec. Performance residual var. | 0.557 | 0.912 | --- |
+| Rec. Timeliness residual var. | 0.238 | 0.801 | < 0.001 |
+| Rec. Performance $\leftrightarrow$ Rec. Timeliness | $-$0.130 | $-$0.306 | < 0.001 |
+
+: Latent covariances and residual variances {#tbl-covariances}
+
+R-squared values: Recovery Performance = 0.088, Recovery Timeliness = 0.199.
+
+## B.4 Measurement Discussion
+
+Several measurement features warrant explicit discussion.
+
+**Two-indicator factors.** AdminResources (employment, payroll) and RecoveryTimeliness (duration, average program duration) each have only two indicators. With two indicators per factor, reflective and formative specifications are empirically indistinguishable: the model is locally just-identified for the measurement component of each factor. The SEM is therefore best understood as a structured data-reduction and association-testing tool, not as a confirmatory latent-variable test.
+
+**Weak performance indicator.** The expended-to-disbursed ratio loads at $-$0.131 on Recovery Performance, indicating it does not share the common variance captured by the other three indicators. This may reflect accounting artifacts (expenditure timing relative to disbursement cycles) rather than substantive performance variation. A sensitivity check dropping this indicator is reported in @tbl-sensitivity.
+
+**Reflective versus formative tension.** The indicators may function as formative components (determinants of throughput capacity) rather than reflective manifestations (effects of a latent capacity trait). The reflective specification is adopted here because it enables conventional SEM estimation, but it is not independently validated. A rigorous validation would require confirmatory factor analysis on a hold-out sample with adequate power (conventionally N > 200 per group), comparison of reflective versus formative specifications using MIMIC or PLS-SEM, and convergent and discriminant validity testing. None of these steps were feasible given the current sample structure.
+
+## B.5 Fit Verification
+
+@tbl-fit-verification confirms that re-running both models on the archived 573-row dataset reproduces the reported fit statistics to machine precision.
+
+| Statistic | One-Factor | Two-Factor |
+|---|---:|---:|
+| $\chi^2$ | 741.72 | 469.82 |
+| $\chi^2$ p-value | < 0.001 | < 0.001 |
+| CFI | 0.854 | 0.915 |
+| TLI | 0.818 | 0.891 |
+| RMSEA | 0.105 | 0.081 |
+| AIC | 67.41 | 74.36 |
+| BIC | 219.69 | 239.69 |
+| DoF | 101 | 98 |
+
+: Fit statistics for one-factor and two-factor models (N = 573) {#tbl-fit-verification}
+
+The one-factor model has lower AIC and BIC despite worse incremental fit (CFI, TLI). This reflects the parsimony penalty: the two-factor model uses three additional parameters (the second factor loading, the factor covariance, and the second structural path set) that do not sufficiently reduce the log-likelihood to offset the information-criterion penalty. The two-factor model is retained as preferred because it captures the conceptually important distinction between resource levels and workload manageability, even though the information criteria do not favor it over the simpler specification.
+
+## B.6 Survival Analysis Specification
+
+As a complementary analytical framework, a Cox proportional hazards model with time-varying covariates is estimated on the same QPR data system but at the grantee-disaster level rather than the jurisdiction-profile level. The key specification differences are:
+
+**Unit of analysis.** N = 142--151 grantee-disaster pairs (depending on covariate availability), compared with 573 administering-jurisdiction profiles in the SEM.
+
+**Outcome.** Time to 95% expenditure completion, measured in quarters. Programs that have not reached 95% expenditure are right-censored. Of the 152 grantee-disaster observations, 40 (26.3%) are completed events and 112 (73.7%) are right-censored.
+
+**Capacity covariates.** Two financial flow ratios serve as time-varying capacity indicators: (1) the ratio of cumulative disbursed to cumulative obligated funds and (2) the ratio of cumulative expended to cumulative disbursed funds. Both ratios are clipped to [0, 2] with a $1,000 minimum denominator threshold. A one-quarter lag is applied to prevent reverse causality.
+
+**Static covariates.** Government type, grant size (log), prior CDBG-DR experience, disaster year, population (log), disaster severity index, and baseline employment.
+
+**Standard errors.** Bootstrap clustered standard errors are computed using 1,000 iterations with clustering at the grantee level to account for repeated observations within grantees.
+
+**Threshold sensitivity.** The model is estimated across completion thresholds from 20% to 100% in 5% increments to assess whether results are threshold-dependent.
+
+This specification differs from the SEM in three fundamental ways: it preserves within-grantee temporal variation rather than aggregating to a cross-sectional profile; it properly handles right-censoring through the survival framework rather than using observed duration as a latent indicator; and it uses financial flow ratios rather than staffing-scaled workload ratios as capacity measures.

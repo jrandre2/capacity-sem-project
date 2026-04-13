@@ -1,72 +1,125 @@
----
-title: "Robustness Checks"
----
+# Appendix C: Robustness and Sensitivity {.unnumbered}
 
-```{python}
-#| label: setup-c
-#| include: false
+## C.1 Sensitivity Across Specifications
 
-import pandas as pd
-import numpy as np
-import sys
-from pathlib import Path
-from IPython.display import Markdown, display
+@tbl-sensitivity reports the key structural beta (Admin. Burden Capacity $\rightarrow$ Recovery Timeliness) across six specifications of the two-factor SEM, all estimated on the 573-jurisdiction sample unless otherwise noted.
 
-def find_manuscript_root(start: Path) -> Path:
-    for parent in [start] + list(start.parents):
-        if (parent / "_quarto.yml").exists() and (parent / "code" / "_common.py").exists():
-            return parent
-    raise FileNotFoundError("Could not locate manuscript root from current working directory.")
+| Specification | CFI | RMSEA | Burden $\rightarrow$ Timeliness $\beta$ | Resources $\rightarrow$ Performance $\beta$ | Note |
+|---|---:|---:|---:|---:|---|
+| Primary two-factor | 0.915 | 0.081 | 0.266 | $-$0.170 | Main manuscript specification |
+| Drop weak indicator | 0.919 | 0.085 | 0.266 | $-$0.168 | Removes expended/disbursed from Performance |
+| Employment-only denominator | 0.908 | 0.085 | 0.266 | $-$0.183 | Workload = programs/employment, not programs/(employment $\times$ population) |
+| Maturity-band controls | 0.915 | 0.080 | 0.105 | $-$0.159 | Adds mid- and long-duration band dummies |
+| Portfolio-scale controls | 0.783 | 0.131 | 0.127 | $-$0.109 | Adds log(programs) and log(disasters) as covariates |
+| Residualized burden | 0.918 | 0.079 | 0.297 | $-$0.140 | Burden indicators residualized on employment, payroll, population |
 
-MANUSCRIPT_ROOT = find_manuscript_root(Path.cwd())
-sys.path.insert(0, str(MANUSCRIPT_ROOT / "code"))
-from _common import load_diagnostic, show_table
+: Sensitivity across SEM specifications (N = 573) {#tbl-sensitivity}
 
-DATA_DIR = MANUSCRIPT_ROOT / "data"
-```
+Key findings:
 
-This appendix presents robustness checks for the main results. {#sec-robustness-appendix}
+- Dropping the weak expended-to-disbursed indicator leaves results unchanged.
+- The employment-only workload denominator leaves results unchanged, suggesting the population interaction is not driving the main result.
+- Adding maturity-band controls attenuates the burden-timeliness beta from 0.266 to 0.105 --- a meaningful reduction indicating that portfolio maturity partially explains the association.
+- Adding portfolio-scale controls (log program and disaster counts) further attenuates the beta to 0.127 and degrades model fit (CFI = 0.783), consistent with confounding between workload density and portfolio scale.
+- Residualizing burden indicators on employment, payroll, and population preserves the positive association (0.297), suggesting the main finding is not purely a shared-denominator artifact.
 
-## C.1 Alternative Specifications {#sec-alt-specs}
+## C.2 Proxy Validation
 
-[Present results from alternative model specifications]
+@tbl-proxy-validation reports correlations between proxy variables to assess whether the QCEW staffing measures capture meaningful administrative variation or primarily reflect jurisdiction size.
 
-```{python}
-#| label: tbl-robustness-specs
-#| tbl-cap: "Robustness to Alternative Specifications"
-#| echo: false
-#| eval: false
+| Check | Sample | Estimate | Interpretation |
+|---|---|---:|---|
+| Employment vs. payroll | Full (n=573) | 0.945 | High covariation as expected for co-scaled administrative inputs |
+| Employment vs. population | Full (n=573) | 0.169 | Weak: staffing proxy does not collapse to jurisdiction size |
+| Payroll vs. population | Full (n=573) | 0.255 | Moderate: some size-scaling in payroll |
+| Employment vs. program count | Full (n=573) | 0.170 | Weak: staffing is not simply a function of portfolio volume |
+| Employment vs. disaster count | Full (n=573) | 0.036 | Near zero: staffing is not proxying disaster exposure |
+| External employment cross-check | States (n=27) | 0.225 | Weak: NAICS 925110 correlates modestly with total gov. employment |
+| External payroll cross-check | States (n=27) | 0.324 | Moderate: payroll proxy is somewhat better validated externally |
+| Residualized burden $\rightarrow$ timeliness | Coupling test | 0.297 | Positive: main finding survives arithmetic-coupling removal |
 
-# df = load_diagnostic("robustness_specifications")
-# show_table(df)
-```
+: Proxy validation summary {#tbl-proxy-validation}
 
-## C.2 Sample Restrictions {#sec-sample-restrictions}
+The low correlations between QCEW employment and both population (0.169) and disaster count (0.036) are reassuring: the staffing proxy is not simply measuring jurisdiction size or disaster exposure. However, the modest external validation correlations (0.225 and 0.324) confirm that NAICS 925110 is an indirect proxy with substantial noise.
 
-[Present results from alternative sample restrictions]
+## C.3 Portfolio Maturity Composition
 
-## C.3 Placebo Tests {#sec-placebo}
+@tbl-maturity describes the composition of the 573-jurisdiction sample by portfolio maturity.
 
-[Present placebo test results]
+| Maturity Band | N | State | Local | Median Programs | Median Disasters | Median Duration (months) |
+|---|---:|---:|---:|---:|---:|---:|
+| $\leq$ 24 months | 110 | 2 | 108 | 3 | 1 | 15.0 |
+| 24--60 months | 257 | 13 | 244 | 7 | 1 | 39.0 |
+| > 60 months | 206 | 15 | 191 | 10 | 1 | 84.1 |
 
-```{python}
-#| label: tbl-placebo
-#| tbl-cap: "Placebo Test Results"
-#| echo: false
-#| eval: false
+: Portfolio maturity composition (N = 573) {#tbl-maturity}
 
-# df = load_diagnostic("placebo_tests")
-# show_table(df)
-```
+Young portfolios ($\leq$ 24 months) are overwhelmingly local and have smaller programs. The attenuation of the burden-timeliness beta when maturity-band controls are added (@tbl-sensitivity) likely reflects this composition pattern: younger portfolios have had less time to demonstrate either throughput efficiency or completion, creating a mechanical correlation between maturity and observed timeliness.
 
-## C.4 Sensitivity Analysis {#sec-sensitivity}
+## C.4 Cohort-Restricted Sensitivity
 
-[Present sensitivity analysis results]
+@tbl-cohort reports the two-factor SEM estimated on subsets restricted by portfolio maturity and disaster experience.
 
-### Parameter Sensitivity
+| Subset | N | Burden $\rightarrow$ Timeliness $\beta$ | p-value | CFI | RMSEA |
+|---|---:|---:|---:|---:|---:|
+| Full sample (baseline) | 573 | 0.266 | < 0.001 | 0.915 | 0.081 |
+| Duration > 24 months | 463 | 0.236 | < 0.001 | 0.899 | 0.089 |
+| Duration > 48 months | 275 | $-$0.244 | < 0.001 | 0.829 | 0.118 |
+| Num. Disaster $\geq$ 2 | 222 | 0.526 | < 0.001 | 0.907 | 0.085 |
 
-[Results for different parameter choices]
+: Cohort-restricted SEM results {#tbl-cohort}
 
-### Measurement Sensitivity
+The results reveal important instability:
 
-[Results for alternative variable definitions]
+- Excluding the youngest portfolios (Duration > 24 months) modestly attenuates the beta from 0.266 to 0.236.
+- Restricting to mature portfolios only (Duration > 48 months) **reverses the sign** to $-$0.244, indicating that the positive association is driven largely by younger, less-complete portfolios. Among mature portfolios, more manageable workloads are associated with *slower* timeliness --- the opposite of the main-text finding.
+- Restricting to jurisdictions with two or more disaster experiences strengthens the beta to 0.526, suggesting the association is stronger among more-experienced jurisdictions.
+
+These results confirm the reviewer's concern that the main finding is partially confounded by portfolio maturity. The positive burden-timeliness association is not robust to restricting the sample to mature portfolios.
+
+## C.5 Stratified State/Local Results
+
+@tbl-stratified reports the two-factor SEM estimated separately by government type.
+
+| Stratum | N | Burden $\rightarrow$ Timeliness $\beta$ | p-value | CFI | RMSEA |
+|---|---:|---:|---:|---:|---:|
+| All (pooled) | 573 | 0.266 | < 0.001 | 0.915 | 0.081 |
+| State agencies only | 30 | 0.000 | 1.000 | 0.724 | 0.669 |
+| Local jurisdictions only | 543 | 0.257 | < 0.001 | 0.902 | 0.092 |
+
+: Stratified SEM results by government type {#tbl-stratified}
+
+The state-only model is degenerate (all structural betas = 0, RMSEA = 0.669), confirming that N = 30 is insufficient for meaningful SEM estimation with this specification. The local-only model reproduces the pooled result closely ($\beta$ = 0.257 vs. 0.266), indicating that the main finding is driven entirely by the local jurisdiction sample. The pooled estimate is best understood as primarily reflecting local administrative variation with state agencies contributing only to the capacity-indicator measurement, not to the structural relationship.
+
+## C.6 Alternative Burden Indicators
+
+@tbl-raw-workload tests whether the staffing-denominator coupling in the burden indicators drives the main result by replacing programs_per_staff and disasters_per_staff with raw log-transformed portfolio counts.
+
+| Specification | N | Burden Indicators | Burden $\rightarrow$ Timeliness $\beta$ | p-value | CFI | RMSEA |
+|---|---:|---|---:|---:|---:|---:|
+| Primary (staffing ratios) | 573 | programs/staff, disasters/staff | 0.266 | < 0.001 | 0.915 | 0.081 |
+| Raw portfolio counts | 573 | log(programs), log(disasters) | $-$0.443 | < 0.001 | 0.854 | 0.110 |
+
+: Alternative burden indicator specification {#tbl-raw-workload}
+
+Replacing the staffing-denominator ratios with raw portfolio counts reverses the sign of the burden-timeliness association from +0.266 to $-$0.443. This indicates that the staffing denominator is not merely scaling the burden indicators; it is creating the positive association. Jurisdictions with more programs and more disasters take *longer* to complete recovery --- a straightforward workload effect. The positive finding in the primary specification arises because the staffing denominator transforms raw workload into a *ratio* where higher-staffed jurisdictions appear less burdened, and those same jurisdictions tend to be associated with faster completion through other channels (larger administrative infrastructure, more federal attention, earlier disaster cohorts).
+
+This is a significant qualification of the main finding. The positive burden-timeliness association should be interpreted as a staffing-ratio association rather than a pure workload-manageability effect.
+
+## C.7 Ratio Artifact Summary
+
+@tbl-ratio-artifacts reports the frequency of ratio values exceeding 1.0 and a capped-ratio sensitivity check.
+
+| Element | Value |
+|---|---:|
+| Disbursed/obligated > 1.0 | 0 of 573 |
+| Expended/disbursed > 1.0 | 163 of 573 (28.4%) |
+| Fully expended share > 1.0 | 52 of 573 (9.1%) |
+| Program completion > 1.0 | 0 of 573 |
+| Capped-ratio SEM: CFI | 0.886 |
+| Capped-ratio SEM: burden $\rightarrow$ timeliness $\beta$ | 0.266 |
+| Capped-ratio SEM: resources $\rightarrow$ performance $\beta$ | $-$0.188 |
+
+: Ratio artifact summary {#tbl-ratio-artifacts}
+
+Expended-to-disbursed ratios above 1.0 occur in 28.4% of jurisdictions, likely reflecting timing mismatches between expenditure and disbursement reporting. Truncating all ratio indicators at 1.0 leaves the primary structural paths unchanged, indicating the main results are not driven by ratio exceedances.

@@ -11,11 +11,11 @@ profile:
     - [default, jeem, aer, nhaz]
 
 book:
-  title: "[Your Paper Title]"
-  subtitle: "[Descriptive subtitle with methodology and study context]"
+  title: "Administrative Throughput in Disaster Recovery: Evidence from Cross-Sectional SEM of CDBG-DR Fund Management"
   author:
-    - "[Author 1]"
-    - "[Author 2]"
+    - "Kai-Fa Lu"
+    - "Jesse Andrews"
+    - "Ali Nejat"
   downloads: [pdf, docx]
   chapters:
     - index.qmd

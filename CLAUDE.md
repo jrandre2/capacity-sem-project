@@ -38,12 +38,25 @@ python src/pipeline.py run_all
 cd manuscript_quarto && ./render_all.sh
 
 # Synthetic Peer Review (Multi-Manuscript)
-python src/pipeline.py review_status --manuscript velocity   # Check review status
-python src/pipeline.py review_new --manuscript velocity --focus par_general  # New review
-python src/pipeline.py review_verify --manuscript velocity   # PAR compliance checks
-python src/pipeline.py review_archive --manuscript velocity  # Archive completed review
+python src/pipeline.py review_status --manuscript quarto     # Check review status (primary)
+python src/pipeline.py review_new --manuscript quarto --focus par_general  # New review
+python src/pipeline.py review_verify --manuscript quarto     # PAR compliance checks
+python src/pipeline.py review_archive --manuscript quarto    # Archive completed review
 python src/pipeline.py review_report        # Summary across all manuscripts
 ```
+
+### Manuscript Slash Commands
+
+General-purpose commands available in `~/.claude/commands/`:
+
+| Command | When to use |
+|---------|-------------|
+| `/manuscript-audit` | Before submission: audit tables vs. prose, check writing rules, verify robustness honesty |
+| `/review-triage` | After receiving reviews: classify comments, update REVISION_TRACKER.md, prioritize revisions |
+| `/manuscript-convert` | When converting between DOCX and Quarto or rendering output |
+| `/data-provenance` | When writing or updating data appendix descriptions |
+
+These commands read CLAUDE.md for project-specific context (target journal, writing rules, file locations). Project-specific Codex skills with reference checklists are also in `.codex/skills/`.
 
 ## Project Branching Strategy
 
@@ -53,7 +66,7 @@ This project uses **git branches** to manage alternative analytical approaches w
 
 | Branch | Purpose | Status | Key Files |
 |--------|---------|--------|-----------|
-| `main` | Time-varying survival with capacity ratios | Complete (null findings) | manuscript_quarto/ |
+| `main` | Cross-sectional SEM with survival comparison | Active (PAR submission target) | manuscript_quarto/ |
 | `analysis/alternative-capacity-measures` | Explore non-ratio capacity operationalizations | Active | src/stages/s01b_features.py, scripts/ |
 
 ### Branch Workflow
@@ -68,8 +81,10 @@ This project uses **git branches** to manage alternative analytical approaches w
 
 | Directory | Method | Finding | Date Archived |
 |-----------|--------|---------|---------------|
-| `manuscript_kaifa_archive/` | SEM with latent constructs | β=71.02, p=0.01 (N=36-40) | Dec 2024 |
-| TBD | Time-varying with ratios | HR=1.10, p>0.05 (null) | TBD |
+| `manuscript_kaifa_archive/` | Cross-sectional SEM (N=573 jurisdictions) | Burden→Timeliness β=0.266, p<0.001 | Apr 2026 |
+| `manuscript_velocity/` | Time-varying survival (null-results draft) | HR≈1.0, p≈0.99 (null) | Apr 2026 |
+
+**Note**: `manuscript_kaifa_archive/` preserves Kaifa's polished SEM draft that served as the basis for the current `manuscript_quarto/` rewrite. The rewrite retains Kaifa's core SEM framing, adds robustness caveats and a survival analysis comparison.
 
 ### Tags for Milestone Tracking
 
@@ -79,27 +94,29 @@ This project uses **git branches** to manage alternative analytical approaches w
 
 ---
 
-## Current Methodology: Survival Analysis
+## Current Methodology: Dual-Framework (SEM + Survival Comparison)
 
-The manuscript uses **survival analysis** (Cox Proportional Hazards, Accelerated Failure Time models) to analyze disaster recovery completion timing. SEM infrastructure remains for sensitivity analysis but is not the primary methodology.
+The primary manuscript (`manuscript_quarto/`) uses **cross-sectional SEM** (N=573 administering jurisdictions) as the core methodology, with a **complementary Cox survival analysis** (N=142-151 grantee-disaster pairs) for cross-framework comparison.
 
-### Why Survival Analysis?
+### SEM Results (Primary)
 
-With 73.7% of CDBG-DR programs incomplete at the 95% threshold, standard regression approaches face a censoring problem. Survival analysis properly handles right-censored observations while utilizing the full sample.
+- **Sample**: N=573 administering-jurisdiction profiles (30 state, 543 local)
+- **Main finding**: Administrative Burden Capacity → Recovery Timeliness (β=0.266, p<0.001)
+- **Key caveat**: Finding reverses with mature portfolios (β=-0.244) and raw counts (β=-0.443); see Appendix C
+- **Secondary finding**: Social vulnerability dimensions relate to different recovery outcomes through distinct channels
+- **Model fit**: Two-factor preferred (CFI=0.915, RMSEA=0.081)
 
-### Key Results
+### Survival Analysis Results (Complementary)
 
-- **Sample**: N=142-151 grantee-disaster pairs (varies by model specification)
-- **Events**: 24-70 depending on threshold and lag (24-26 at 95% with lag1)
+- **Sample**: N=142-151 grantee-disaster pairs
 - **Main finding**: Disbursement ratio HR=1.001 [0.821, 1.221], p=0.991 (null)
-- **Concordance**: 0.723 (full model with covariates)
-- **Bootstrap SEs** (1,000 iterations, clustered by grantee): Disb SE=0.024, Exp SE=0.064
-- See `doc/RESEARCH_SYNTHESIS_REPORT.md` for detailed findings
+- **Concordance**: 0.723 (covariates discriminate via other channels, not capacity ratios)
+- **Interpretation**: Divergence from SEM demonstrates sensitivity of capacity-outcome associations to analytical framework
 
 ### Capacity Indicators
 
-- `Ratio_disbursed_to_obligated`: Grant-level disbursed/obligated ratio (clipped [0, 2], $1K min denominator)
-- `Ratio_expended_to_disbursed`: Grant-level expended/disbursed ratio (clipped [0, 2], $1K min denominator)
+- SEM: staffing-scaled workload ratios (programs/staff, disasters/staff) + QCEW employment/payroll proxies
+- Survival: financial flow ratios (`Ratio_disbursed_to_obligated`, `Ratio_expended_to_disbursed`; clipped [0, 2], $1K min denominator)
 
 ---
 
@@ -231,6 +248,19 @@ cd manuscript_quarto
 CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Skip pipeline re-run
 ```
 
+**Worktree warning**: When rendering inside a git worktree (`.claude/worktrees/*/`), Quarto writes output relative to the worktree copy, not the main repo. After rendering in a worktree, copy the output to the main repo:
+
+```bash
+# After rendering in a worktree, copy output to main repo
+cp manuscript_quarto/_output/*.docx /Volumes/T9/Projects/capacity-sem-project/manuscript_quarto/_output/
+```
+
+Or use absolute paths to render directly into the main repo:
+
+```bash
+quarto render /Volumes/T9/Projects/capacity-sem-project/manuscript_quarto/ --to docx
+```
+
 ### Target Journal: Public Administration Review (PAR)
 
 | Requirement | Value |
@@ -250,18 +280,18 @@ CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Skip pipeline re-run
 #### DO NOT
 
 - Use "this study" self-references — present findings directly
-- Compare to internal prior work (Kaifa SEM manuscript)
+- Compare to internal prior work or pit the SEM against the survival analysis
 - Use metacommentary ("advances the literature", "first application", "most robust estimates")
-- Reference "latent constructs" or "complex measures" comparatively
-- Include "why survival analysis succeeds where SEM fails" framing
-- Add comparisons to "prior approaches" when meaning internal work
+- Frame one method as superior to the other — present divergence as informative, not as one method "winning"
+- Add comparisons to "prior approaches" when meaning internal archived work
 
 #### DO
 
 - Present findings directly without self-referential framing
 - Reference legitimate external literature appropriately (GAO, HUD, academic publications)
 - Let the methodology speak for itself
-- Keep robustness comparisons in appendices (appendix-c)
+- Present a robustness summary table in the main text (key results from Appendix C)
+- Present the SEM–survival divergence as evidence of framework sensitivity, not as invalidation
 
 #### Examples
 
@@ -269,38 +299,50 @@ CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh  # Skip pipeline re-run
 |-------|-------------|
 | "This study examines..." | "Government administrative capacity affects..." |
 | "This approach advances the literature..." | [Simply present the analysis] |
-| "Prior latent variable approaches may overcomplicate..." | [Remove or cite external literature] |
-| "Unlike traditional SEM approaches..." | [Present survival analysis on its own merits] |
+| "The survival analysis proves the SEM wrong..." | "The divergence demonstrates sensitivity to analytical framework" |
+| "Our novel contribution..." | [State the contribution without metacommentary] |
 
 ### Legitimate External References
 
 Citing published research is appropriate:
 - GAO reports: `[@gao2019]`
-- HUD evaluations: `[@hud2020]`
-- Academic literature: `[@gerber2022; @peacock2022]`
+- HUD evaluations: `[@hud2026]`
+- Academic literature: `[@peacock2014; @miao2025; @martin2022]`
 
-**What to avoid**: References to "prior SEM approaches" when meaning our internal Kaifa manuscript (now archived).
+**What to avoid**: References to "prior approaches" when meaning internal archived work. The Kaifa archive is a source document, not a comparison target.
 
 ---
 
 ## Data Pipeline
 
+### Standardized Pipeline (Current)
+
 ```
 data_raw/qpr_data.csv
     ↓
-data_work/qpr_raw.parquet        (s00_ingest)
+data_work/qpr_raw.parquet              (s00_ingest)
     ↓
-data_work/qpr_clean.parquet      (s00_ingest)
+data_work/qpr_clean.parquet            (s00_ingest)
     ↓
-data_work/qpr_quarterly.parquet  (s00_ingest)
+data_work/qpr_quarterly.parquet        (s00_ingest)
     ↓
-data_work/panel.parquet          (s01_link)
+data_work/qpr_standardized.parquet     (s01a_standardize)
     ↓
-data_work/panel_features.parquet (s02_features)
+data_work/panel.parquet                (s01_link)
     ↓
-data_work/diagnostics/           (s03_estimation)
+data_work/panel_features_std.parquet   (s01b_features_std)
     ↓
-figures/*.png                    (s05_figures)
+data_work/panel_program_types.parquet  (s01c_program_types)
+    ↓
+data_work/diagnostics/                 (s03_survival / SEM)
+    ↓
+figures/*.png                          (s05_figures)
+```
+
+### Legacy Pipeline (Deprecated)
+
+```
+data_work/panel_features.parquet       (s02_features — dynamic denominators, for replication only)
 ```
 
 ## Critical Constraints
@@ -320,9 +362,9 @@ figures/*.png                    (s05_figures)
 
 ---
 
-## SEM Infrastructure (Sensitivity Analysis Only)
+## SEM Infrastructure
 
-The SEM codebase remains for robustness checks in appendix-c. For primary analysis, use survival analysis.
+The SEM codebase provides the primary analysis for `manuscript_quarto/`. The two-factor model (Administrative Resources vs. Administrative Burden Capacity) is estimated on 573 administering-jurisdiction profiles with robustness checks reported in Appendix C.
 
 ### Available SEM Models
 
@@ -347,20 +389,23 @@ Run `python src/pipeline.py list_models` for complete list (51+ specifications).
 
 **Location**: `manuscript_kaifa_archive/`
 
-This contains the original SEM-based manuscript with known methodological issues:
+This contains Kaifa's polished SEM draft (`kaifa_r3_response_2026-04-11.qmd`) which served as the source for ~70% of the current `manuscript_quarto/` rewrite. The archived version includes:
 
-1. **Right-censoring**: 73.7% of observations lack valid Duration at 95% threshold
-2. **Mathematical circularity**: Timeliness = 1/Duration as capacity indicator
-3. **Grantee-level aggregation**: Averaging across disasters reduces variance
+- Two-factor SEM (Administrative Resources vs. Administrative Burden Capacity, N=573)
+- Main finding: Burden Capacity → Recovery Timeliness (β=0.266, p<0.001)
+- Comprehensive appendices (data, methods, 7 robustness checks)
+- Spatial analysis sections (removed in the rewrite)
 
-See `doc/archive/ANALYSIS_COMPARISON_REPORT.md` for detailed comparison of methodologies.
+**Known limitations acknowledged in appendices**: maturity confounding (C.4 sign reversal), staffing-ratio artifact (C.6 sign reversal), QCEW proxy noise (85.1% zero-value rate for local jurisdictions).
+
+See `doc/archive/ANALYSIS_COMPARISON_REPORT.md` for historical comparison of methodologies.
 
 ---
 
 ## Velocity Manuscript (manuscript_velocity/)
 
 **Location**: `manuscript_velocity/`
-**Status**: Development
+**Status**: Archived — superseded by `manuscript_quarto/` rewrite. Retained as reference for the null survival-analysis findings incorporated into the primary manuscript's cross-framework comparison.
 
 ### Structure
 
@@ -411,7 +456,8 @@ The review system supports multiple manuscript approaches:
 
 | Manuscript | Directory | Reviews | Status |
 |------------|-----------|---------|--------|
-| `velocity` | `manuscript_velocity/` | `doc/reviews/velocity/` | Active |
+| `quarto` | `manuscript_quarto/` | `doc/reviews/quarto/` | Primary |
+| `velocity` | `manuscript_velocity/` | `doc/reviews/velocity/` | Archived |
 
 Each manuscript has its own:
 - `REVISION_TRACKER.md` - Current review tracking

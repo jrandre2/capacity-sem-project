@@ -1,157 +1,339 @@
 ---
+title: "Administrative Throughput in Disaster Recovery: Evidence from Cross-Sectional SEM of CDBG-DR Fund Management"
 author:
-  - name: "[Author 1]"
+  - name: Kai-Fa Lu
     affiliations:
-      - name: "[University Name]"
-        department: "[Department]"
-    email: "[email@example.com]"
-  - name: "[Author 2]"
+      - name: Texas Tech University
+        department: Department of Construction Engineering and Engineering Technology
+        city: Lubbock
+        state: TX
+        country: USA
+  - name: Jesse Andrews
     affiliations:
-      - name: "[University Name]"
-        department: "[Department]"
+      - name: Texas Tech University
+        department: Department of Construction Engineering and Engineering Technology
+        city: Lubbock
+        state: TX
+        country: USA
+  - name: Ali Nejat
+    affiliations:
+      - name: Texas Tech University
+        department: Department of Construction Engineering and Engineering Technology
+        city: Lubbock
+        state: TX
+        country: USA
+    corresponding: true
+    email: ali.nejat@ttu.edu
 abstract: |
-  [Your abstract here. 150-250 words describing the research question,
-  methods, key findings, and contribution to the literature.]
-
-  Keywords: [Keyword 1]; [Keyword 2]; [Keyword 3]; [Keyword 4]
+  Administering-jurisdiction profiles (30 state agencies and 543 county-linked local jurisdictions) are constructed from HUD DRGR/QPR disaster-recovery records spanning 2003--2023 and linked to QCEW staffing proxies and CDC/ATSDR social vulnerability indicators. One-factor and two-factor structural equation models distinguish administrative resources from workload manageability. The most consistent pattern in the preferred two-factor model is that more manageable workload conditions are associated with faster Recovery Timeliness (standardized beta = 0.266, p < 0.001), although this association attenuates with maturity controls and reverses when restricted to mature portfolios or when raw portfolio counts replace staffing-denominator ratios. Minority/language vulnerability is negatively associated with Recovery Performance, while socioeconomic and household composition vulnerability are negatively associated with Recovery Timeliness. A complementary survival analysis on the same data system at the grantee-disaster level finds null capacity-outcome associations, suggesting that findings depend on analytical framework. The results should be interpreted as exploratory cross-sectional associations, not causal effects.
 keywords:
-  - "[Keyword 1]"
-  - "[Keyword 2]"
-  - "[Keyword 3]"
-jel-codes:
-  - "[JEL1]"
-  - "[JEL2]"
-date: last-modified
+  - disaster recovery
+  - administrative throughput
+  - administrative burden
+  - social vulnerability
+  - structural equation modeling
+  - CDBG-DR
 format:
-  html: default
-  pdf: default
-  docx: default
+  html:
+    toc: true
+  pdf:
+    toc: false
+  docx:
+    toc: false
+bibliography: references.bib
+csl: csl/apa.csl
 ---
 
-```{python}
-#| label: setup
-#| include: false
+## Evidence for Practice {.unnumbered}
 
-import pandas as pd
-import numpy as np
-import sys
-from pathlib import Path
-from IPython.display import Markdown, display
+- Administrative throughput in CDBG-DR is not well captured by a single resource proxy; workload manageability relative to staffing appears to be the more consistent correlate of recovery timeliness, though this association is sensitive to how capacity is operationalized.
+- Different dimensions of social vulnerability relate to different recovery outcomes: minority/language vulnerability is associated with weaker financial performance, while socioeconomic and household composition vulnerability are associated with slower implementation.
+- The positive workload-timeliness association depends on the staffing denominator used to construct burden ratios; replacing staffing ratios with raw workload counts reverses the sign, cautioning against treating any single operationalization as definitive.
+- A complementary survival analysis using the same data system but a different unit of analysis and outcome specification finds null capacity-outcome associations, reinforcing the need for multi-method validation before using throughput metrics as performance benchmarks.
 
-def find_manuscript_root(start: Path) -> Path:
-    for parent in [start] + list(start.parents):
-        if (parent / "_quarto.yml").exists() and (parent / "code" / "_common.py").exists():
-            return parent
-    raise FileNotFoundError("Could not locate manuscript root from current working directory.")
+# Introduction
 
-MANUSCRIPT_ROOT = find_manuscript_root(Path.cwd())
-sys.path.insert(0, str(MANUSCRIPT_ROOT / "code"))
-from _common import (
-    load_diagnostic, show_table, format_pvalue, format_ci,
-    add_significance_stars, data_available, DATA_DIR, FIG_DIR
-)
+The effective administration of disaster recovery funds across affected jurisdictions is central to advancing equitable and timely community recovery. In the United States, the Community Development Block Grant-Disaster Recovery (CDBG-DR) program has become one of the largest and most flexible sources of long-term recovery assistance following major disaster declarations [@costa2026]. Yet despite its national importance, the pace at which grantees---states, counties, cities, and territories---obligate, disburse, and expend CDBG-DR funds varies markedly across jurisdictions and disaster events. Slow or inconsistent financial performance has been repeatedly linked to delayed housing reconstruction, prolonged displacement, uneven economic recovery, and persistent inequities for low-income households and historically marginalized communities [@rouhanizadeh2020; @rouhanizadeh2022].
 
-# Check if pipeline data is available
-PIPELINE_DATA_READY = data_available()
-if not PIPELINE_DATA_READY:
-    print("Note: Pipeline data not yet available. Run the pipeline to generate results.")
-```
+A key factor influencing financial performance and program outcomes is the administrative throughput of grantees---their institutional ability to move funds efficiently through the federal pipeline [@miao2025]. However, throughput in disaster recovery is inherently difficult to measure directly. Prior studies have often relied on single-period financial indicators [@cevik2018; @dzigbede2020; @lindsay2014] or case-based assessments [@hamideh2015; @rosas2021], which limit the ability to compare throughput across time, jurisdictions, and disaster contexts. The Quarterly Performance Reports (QPRs) submitted through HUD's Disaster Recovery Grant Reporting (DRGR) system provide a valuable opportunity to develop comprehensive and comparable indicators. These reports consistently record quarterly obligated, disbursed, and expended amounts for each grantee and activity, generating rich panel data that enable systematic evaluation of financial performance and program timeliness. Nevertheless, raw financial measures alone cannot fully capture the multidimensional nature of administrative throughput in disaster recovery, which reflects the combined effects of administrative resources, workload manageability, and recovery outcomes [@kusumasari2010].
 
-# Introduction {#sec-introduction}
+Therefore, we address the following research questions:
 
-[Introduce your research question and motivation. 3-5 paragraphs establishing:]
+1. How can state and local administrative throughput for CDBG-DR funds be conceptualized, operationalized, and empirically measured?
+2. How is variation in throughput associated with disaster recovery program outcomes, and which institutional, socioeconomic, and programmatic conditions covary with recovery performance and timeliness?
+3. How do results compare across analytical frameworks---specifically, between cross-sectional SEM at the jurisdiction level and time-varying survival analysis at the grantee-disaster level?
 
-- The empirical puzzle or policy question
-- Why existing approaches are insufficient
-- Your contribution and approach
-- Preview of findings
+To address these questions, we develop a cross-sectional Structural Equation Modeling (SEM) framework to conceptualize, measure, and compare administrative throughput in CDBG-DR fund management and disaster recovery program implementation. Administering-jurisdiction profiles constructed from quarterly QPR records and linked contextual covariates serve as the SEM inputs, with the framework operating as an exploratory latent-summary tool rather than as confirmation that every indicator is a fully validated reflective manifestation of a single underlying trait. The design does not estimate causal effects or formal moderation. Instead, state-versus-local status, jurisdiction size, and social vulnerability enter the SEM as observed covariates. As a complementary check, a Cox proportional hazards model with time-varying covariates is estimated on the same data system at the grantee-disaster level to assess whether capacity-outcome associations are robust to analytical framework.
 
-> **Research Questions:**
->
-> **RQ1:** [First research question]
->
-> **RQ2:** [Second research question]
+The analysis makes three contributions. First, it operationalizes throughput in CDBG-DR administration using both resource indicators and workload-manageability indicators rather than a single ratio. Second, it compares a one-factor and a two-factor SEM so that the measurement tradeoffs are visible instead of being hidden behind a single preferred specification. Third, it compares findings across two analytical frameworks---cross-sectional SEM and time-varying survival analysis---to assess the sensitivity of capacity-outcome associations to methodological choices.
 
-# Related Literature {#sec-literature}
+# Literature Review
 
-[Review relevant literature in 2-3 subsections organized by theme.]
+## Institutional Context of CDBG-DR Administration and Implementation Performance
 
-## [Theme 1] {#sec-lit-theme1}
+CDBG-DR funding has expanded substantially over the past two decades, allocating billions of dollars in response to major hurricanes, floods, wildfires, and other disasters [@costa2026]. As a block-grant program, CDBG-DR provides grantees with considerable flexibility in designing and implementing recovery programs. However, this flexibility also introduces significant administrative burden, particularly in ensuring that funds are obligated, disbursed, and expended efficiently and in compliance with federal requirements. Numerous evaluations have documented persistent delays in grant implementation, including challenges related to procurement processes, environmental reviews, and program start-up activities [@costa2026; @martin2018; @miao2025; @hud2026]. Additionally, grantees vary substantially in their prior experience with disaster recovery programs, staffing levels, and administrative procedures---factors that can significantly influence the timeliness and effectiveness of fund deployment and program implementation [@martin2022; @melendez2020; @vanniekerk2018].
 
-[First body of literature]
+Despite the growing scale and importance of CDBG-DR funding, relatively limited research has systematically measured grantees' administrative throughput or examined its role in shaping fund administration and program implementation. Although HUD requires quarterly reporting through the DRGR system via QPRs---which document obligated, disbursed, and expended amounts by grantee, activity, and reporting period---these data have not yet been widely leveraged by auditors, HUD practitioners, or researchers to model the latent dimensions or underlying determinants of throughput. Instead, prior studies have generally relied on descriptive summaries or aggregate comparisons to evaluate financial performance [@costa2026; @martin2018].
 
-## [Theme 2] {#sec-lit-theme2}
+## Methodological Approaches for Disaster Recovery Administration Assessments
 
-[Second body of literature]
+Four broad approaches have been used to evaluate fund administration performance in disaster recovery. The first consists of descriptive and programmatic assessments. HUD and the Government Accountability Office, for example, document variation in fund utilization rates and administrative monitoring across grantees [@gao2019; @hud2026]. While these studies reveal substantial variation in performance, they generally do not examine the institutional mechanisms that drive differences in disaster recovery outcomes. The second approach involves regression-based and panel-data analyses. Many studies in public administration and planning apply regression or longitudinal panel models to examine how staffing levels, administrative experience, governance structure, or disaster severity influence the pace of fund implementation, recovery outcomes, and broader disaster resilience [@cutter2016; @lee2019; @nor2025]. These approaches provide useful empirical insight, but they typically treat financial indicators as directly observed outcomes and do not model throughput as a latent construct reflected through multiple interrelated indicators.
 
-# Data and Empirical Strategy {#sec-methods}
+The third approach consists of case studies and qualitative evaluations. Qualitative research provides an in-depth understanding of administrative processes and identifies recurring implementation barriers, including procurement requirements, environmental review procedures, and coordination challenges across agencies [@jordan2014; @ospina2018; @rouhanizadeh2020]. The fourth approach involves latent-variable methods, particularly SEM. In the broader disaster research literature, SEM has been used to study multidimensional concepts such as preparedness, perceived risk, institutional resilience, and adaptive capacity [@geddam2024; @gendeshmin2025]. Applications of SEM to federal disaster-recovery finance remain limited, however, and few studies have used QPR data to construct latent measures of throughput for CDBG-DR administration.
 
-## Study Context {#sec-context}
+## Administrative Throughput in Disaster Recovery: Patterns, Gaps, and Research Needs
 
-[Describe your empirical setting]
+Building on the four approaches discussed above, two consistent patterns emerge. First, there is substantial variation across grantees in how disaster recovery funds are administered [@costa2026]. Grantees differ widely in their pace of obligations, disbursements, and expenditures, as well as in the implementation and outcomes of disaster recovery programs [@martin2018]. Second, administrative processes strongly influence recovery timelines [@martin2019; @safapour2021]. Delays often arise from procurement rules, environmental reviews, inconsistent staffing, and challenges in inter-agency coordination. Moreover, institutional capacity and social vulnerability---not merely disaster severity---play a critical role in shaping the speed and effectiveness of recovery efforts [@miao2025; @peacock2014].
 
-## Data Sources {#sec-data}
+Despite progress in understanding disaster recovery administration, several gaps remain. First, few studies develop multidimensional measures of throughput that combine staffing, payroll, and workload-density indicators into one transparent framework. Second, cross-jurisdictional comparisons rarely distinguish resource intensity from workload manageability, even though those dimensions may behave differently. Third, the relationship between throughput and recovery outcomes is often examined without enough attention to maturity, right-censoring, and cross-cohort comparability. Fourth, studies of administrative capacity in disaster recovery rarely compare findings across fundamentally different analytical frameworks, making it difficult to assess whether conclusions are robust to methodological choices or are artifacts of a particular modeling approach.
 
-[Describe data sources with proper citations]
+In response, we develop a cross-sectional SEM of administering-jurisdiction throughput and recovery outcomes using linked QPR, QCEW, population, and SVI indicators. We focus on the distinction between Administrative Resources and workload manageability and evaluate how those dimensions covary with Recovery Timeliness, while treating Recovery Performance as a broader and less settled secondary construct. A complementary survival analysis provides an additional test of whether capacity-outcome associations hold across analytical frameworks.
 
-## Sample Construction {#sec-sample}
+# Data
 
-[Document sample construction with observation counts]
+## Data Description and Sources
 
-## Identification Strategy {#sec-identification}
+The QPR dataset was obtained from the U.S. Department of Housing and Urban Development's DRGR reporting system and contains quarterly information on obligated, disbursed, and expended CDBG-DR funds for grants and reporting activities. The records span 18 disaster contexts from 2003 through 2023 and include thousands of organization labels that appear in grantee and activity fields [@hud2026]. Quarterly records were used to construct study-window outcome indicators for each administering jurisdiction, including the disbursed-to-obligated ratio, the expended-to-disbursed ratio, the share of obligated funds fully expended, the proportion of programs completed, the duration of grant completion, and the average duration of program completion. Three terminology distinctions are important: *grantee* refers to HUD's DRGR administrative label, *activity responsible organization* refers to the raw quarterly reporting name, and *administering jurisdiction* refers to the analytic SEM unit after those reporting entities are linked to a common state-agency or county-linked local-government profile. *Grant* denotes the disaster-specific CDBG-DR allocation, whereas *activity* denotes the underlying DRGR/QPR reporting unit nested within a grantee's disaster portfolio. The quarter-varying spending indicators therefore summarize the observed reporting history of each administering jurisdiction rather than a single quarter snapshot.
 
-[Describe your identification strategy with estimating equations]
+Administrative resource data were drawn from the U.S. Bureau of Labor Statistics Quarterly Census of Employment and Wages (QCEW). Employment and payroll measures tied to NAICS 925110 (Administration of Housing Programs) are used as indirect proxies for disaster-recovery administrative resources [@bls2026]. These measures provide a standardized national frame, but they should not be interpreted as direct counts of staff assigned specifically to CDBG-DR. Disaster recovery administration may be distributed across agencies, temporary teams, contract support, and cross-departmental arrangements that are only partially captured by this industry code. Notably, 85.1% of local jurisdictions report zero QCEW employment for this industry code, likely reflecting BLS suppression of small-cell counts rather than a literal absence of housing-program staff (see Appendix A.4 for distributions). The QCEW proxy therefore carries meaningful variation only among the 15% of local jurisdictions with non-suppressed data and among state agencies (all of which report non-zero values).
 
-$$
-Y_{it} = \beta X_{it} + \gamma Z_i + \varepsilon_{it}
-$$ {#eq-main}
+Contextual measures of social vulnerability were derived from the CDC/ATSDR Social Vulnerability Index (SVI) at the state and county levels. The analysis uses the four standard SVI themes---socioeconomic status, household composition and disability, minority status and language, and housing type and transportation---as broad contextual covariates, not as precise longitudinal trend measures [@cdcatsdr2026]. Because CDC warns against literal cross-vintage comparison of SVI percentiles without careful harmonization, these variables are interpreted as standardized contextual descriptors in the final SEM-ready dataset, not as year-by-year measures of change.
 
-where $Y_{it}$ is the outcome for unit $i$ at time $t$, $X_{it}$ is the treatment variable, and $Z_i$ are controls.
+The same QPR data system also provides the foundation for the complementary survival analysis, which constructs a grantee-disaster-quarter panel (N = 142--151 grantee-disaster pairs) using standardized financial flow ratios as time-varying capacity indicators. This alternative analytic sample preserves within-grantee temporal variation instead of aggregating to a cross-sectional jurisdiction profile.
 
-# Results {#sec-results}
+## Data Cleaning and Preprocessing
 
-## Main Results {#sec-main-results}
+Preparing the QPR dataset for modeling required systematic cleaning of geographic and organizational variables. The "Grantee State" variable was standardized for consistent formatting, and the "Activity Responsible Org" field was normalized by trimming whitespace, removing special characters, and standardizing common abbreviations. A geographic identifier was then constructed for each Activity Responsible Org using a hierarchical matching approach: explicit county or parish names embedded in organization titles were matched first, and remaining records were linked through city-to-county lookup tables [@gigasheet2026] and manual review of unresolved cases. City-level entities were aggregated to counties, while statewide departments, agencies, authorities, and similar organizations were aggregated to state-agency profiles. This procedure provided a workable geography layer for the SEM, but it should not be treated as a fully audited Census relationship-file reconstruction. Geography-dependent findings are therefore interpreted as informative cross-sectional summaries, not as exact administrative-boundary measures.
 
-[Present main results with tables and figures]
+Each record was categorized by match type (explicit county match, city-to-county match, or unresolved) and flagged for manual review when automated inference was uncertain. Records with fewer than four quarterly observations were excluded from the cross-sectional SEM input because such short reporting histories do not provide enough information to summarize recovery performance or timeliness reliably. Appendix Table A1 reports the data flow: 130,605 standardized QPR rows, 128,382 rows with valid quarter labels, 3,623 collapsed grantee-disaster-quarter records, and finally 573 administering-jurisdiction profiles---30 state agencies and 543 local governments---for the complete-case SEM sample.
 
-```{python}
-#| label: tbl-main-results
-#| tbl-cap: "Main Estimation Results"
-#| echo: false
-#| eval: false
+# Methods
 
-# Example: Load and display main results
-# df = load_diagnostic("main_results")
-# show_table(df)
-```
+## Structural Equation Modeling
 
-## Heterogeneity {#sec-heterogeneity}
+### Model Selection and Unit of Analysis
 
-[Present heterogeneity analysis if applicable]
+Structural equation modeling (SEM) is employed to develop latent constructs representing administrative throughput and disaster recovery outcomes and to evaluate the cross-sectional associations among them. The design does not estimate moderation effects. Instead, the state-versus-local indicator, jurisdiction size, and social vulnerability measures enter the SEM as observed covariates, and any state/local contrasts discussed later are treated as descriptive subset comparisons rather than as formal interaction tests. SEM remains useful in this setting as a structured way to summarize multiple indicators measured on different scales, but the pooled measurement model should be read as an exploratory approximation rather than as a demonstrated invariance result across state and local cases.
 
-# Discussion {#sec-discussion}
+The analysis uses a cross-sectional dataset of 573 administering-jurisdiction profiles, including 30 state agencies and 543 local jurisdictions. Each observation summarizes an administering jurisdiction's resource and recovery profile across the study window rather than representing a single quarter or a single disaster episode. This aggregation permits a national SEM, but it is also a strong modeling assumption because it compresses variation across disaster cohorts, federal policy periods, staffing arrangements, and portfolio complexity into one cross-sectional profile.
 
-## Interpretation {#sec-interpretation}
+### Conceptualization of Administrative Throughput
 
-[Interpret findings in context of theory and prior work]
+Administrative throughput is conceptualized as the institutional ability of public agencies to administer CDBG-DR funds under differing levels of workload and contextual constraint [@khalid2024]. The two-factor specification separates Administrative Resources from workload manageability, which is labeled Administrative Burden Capacity in the SEM output. Administrative Resources are represented by staffing and payroll intensity proxies derived from QCEW-based employment and payroll measures, while Workload Manageability is represented by staff-scaled workload indicators that relate the number of disaster programs and disaster events to available staffing. This two-part conceptualization is used as an exploratory latent summary of administrative infrastructure and workload pressure rather than as definitive proof that the indicators are interchangeable reflective manifestations of a single throughput trait.
 
-## Robustness and Limitations {#sec-robustness}
+A specification tension is worth noting explicitly: the indicators may be better understood as formative components that jointly constitute throughput rather than as reflective manifestations of a single latent trait. In a reflective specification, each indicator is caused by an underlying administrative dimension; in a formative specification, the indicators are determinants of a composite. The models reported here adopt a reflective specification for estimation convenience, but this choice is not validated. The factor loadings should therefore be read as exploratory summaries of covariation, not as evidence that a single latent trait generates the observed indicators.
 
-[Discuss robustness checks and limitations]
+The administrative resource indicators are operationalized as population-scaled QCEW measures:
 
-See @sec-robustness-appendix for detailed robustness results.
+$$\text{avg\_employment} = \frac{\text{total\_employments}}{\text{total\_population}}$$
 
-## Policy Implications {#sec-policy}
+$$\text{avg\_payroll} = \frac{\text{quarter\_total\_payroll}}{\text{total\_population}}$$
 
-[Discuss policy implications]
+Two additional indicators reflect administrative workload intensity relative to staffing levels:
 
-# Conclusion {#sec-conclusion}
+$$\text{programs\_per\_staff} = \frac{\text{Num\_Program}}{\text{total\_employments}}$$
 
-[Summarize findings, contribution, and directions for future research. 2-3 paragraphs covering:]
+$$\text{disasters\_per\_staff} = \frac{\text{Num\_Disaster}}{\text{total\_employments}}$$
 
-- Main findings and their significance
-- Contribution to the literature
-- Limitations and future research directions
+Higher workload per staff implies greater administrative strain, not greater throughput. To keep coefficient signs interpretable, both workload measures are reverse-coded so that higher values on the SEM input correspond to lower relative burden and, therefore, more favorable workload conditions.
+
+### Conceptualization of Disaster Recovery Outcomes
+
+Disaster recovery outcomes are modeled as two latent constructs: Recovery Performance and Recovery Timeliness. Recovery Performance captures the effectiveness of financial management and program implementation and is measured using four indicators: the disbursed-to-obligated ratio, the expended-to-disbursed ratio, the share of obligated funds fully expended, and the proportion of programs completed. Together, these measures summarize how effectively jurisdictions move funds through the recovery pipeline and convert those funds into completed programs. These are cumulative administrative summary measures, not event-history outcomes. Because DRGR portfolios are updated through corrections, reimbursements, and accounting adjustments, some observed cumulative ratios can exceed 1.0 in the raw administrative file, especially for expended-to-disbursed and fully-expended measures. The main SEM retains those observed values rather than mechanically truncating them; Appendix Table C.7 reports a capped-ratio sensitivity check.
+
+Recovery Timeliness represents the speed and consistency of program and grant implementation. It is measured using the duration of grant completion and the average duration of program completion, both reverse-coded so that higher values indicate faster implementation:
+
+$$\text{rev\_duration\_of\_grant\_completion} = -\text{duration\_of\_grant\_completion}$$
+
+$$\text{rev\_average\_duration\_program\_completion} = -\text{average\_duration\_program\_completion}$$
+
+These are useful summary indicators, but they are also sensitive to maturity and right-censoring. Newer grants and ongoing portfolios have had less time to close out, so timeliness is treated as a cross-sectional summary of observed completion pace, not as a fully uncensored event-history outcome. The implications of this sensitivity are examined in the Robustness section and the Limitations.
+
+### Control Variables
+
+To account for contextual differences across jurisdictions, the SEM includes governmental level, jurisdiction size, and social vulnerability covariates [@peacock2014; @cdcatsdr2026]. Governmental level is represented by a binary indicator coded 1 for state agencies and 0 for local governments. This variable is modeled as a direct predictor and later used to organize descriptive subset comparisons; it is not a moderation term. Jurisdiction size is captured through total population, and the four SVI themes are included as broad contextual controls. Because the final SEM-ready dataset stores these covariates in standardized form, coefficients reflect cross-sectional associations within the aggregated administering-jurisdiction sample, not temporal effects of changing population or SVI conditions.
+
+### SEM Modeling Framework
+
+The primary SEM specification decomposes administrative throughput into two related latent dimensions---Administrative Resources and Administrative Burden Capacity---while representing disaster recovery outcomes as two related latent constructs---Recovery Performance and Recovery Timeliness.
+
+![Structural equation model of administrative throughput and disaster recovery outcomes.](figures/fig_01_cross_sectional_sem.png){#fig-sem-conceptual}
+
+Both latent throughput dimensions are specified as predictors of Recovery Performance and Recovery Timeliness while controlling for governmental level, jurisdiction size, and the four SVI dimensions. The two throughput dimensions are allowed to covary, as are the two outcome constructs. All continuous indicators were standardized as z-scores prior to estimation, and the models were estimated with conventional maximum likelihood estimation [@leezhu2002].
+
+An alternative one-factor SEM combining all four capacity indicators into a single factor (GovCapacity) was also estimated for comparison. Model evaluation relies on a combination of fit statistics---chi-square, CFI, TLI, RMSEA, AIC, and BIC---rather than on a single threshold. Model comparison is therefore treated as a tradeoff exercise: the two-factor model is substantively more informative and fits better on the main incremental and absolute fit measures, while the one-factor model remains more parsimonious by information criteria.
+
+A series of robustness checks vary the specification (dropping weak indicators, residualizing burden indicators), add controls (maturity bands, portfolio scale), restrict the sample (cohort-restricted and stratified models), and test alternative burden indicators (raw portfolio counts instead of staffing-denominator ratios). These sensitivity analyses are reported in Appendix C and summarized in the main-text Robustness section. The complete-case SEM input contains 573 jurisdictions and 17 variables with no remaining missing values. Full model specifications are reported in Appendix B.
+
+## Complementary Survival Analysis
+
+As a robustness check on the SEM findings, a Cox proportional hazards model with time-varying covariates was estimated on the same QPR data system at the grantee-disaster level [@cox1972]. This alternative framework differs from the SEM in three fundamental ways.
+
+First, the unit of analysis is the grantee-disaster pair (N = 142--151) rather than the administering-jurisdiction profile (N = 573). Second, the outcome is time to 95% expenditure completion, with right-censored observations properly handled through the survival framework rather than incorporated as a duration indicator in a cross-sectional model. Of the 152 grantee-disaster observations, 40 (26.3%) reached completion while 112 (73.7%) are right-censored. Third, capacity is measured through financial flow ratios (disbursed-to-obligated and expended-to-disbursed) as time-varying covariates with a one-quarter lag, rather than through staffing-scaled workload ratios in a cross-sectional profile.
+
+Bootstrap clustered standard errors (1,000 iterations, grantee-level clustering) account for within-grantee correlation. The model includes static covariates for government type, grant size, prior CDBG-DR experience, disaster year, population, severity, and employment. Threshold sensitivity was assessed across completion thresholds from 20% to 100%. Full specification details are reported in Appendix B.6.
+
+The comparison between frameworks is informative because the SEM and survival analysis differ simultaneously in unit of analysis, outcome specification, capacity operationalization, and temporal handling. If results converge, this would strengthen confidence in the capacity-outcome association. If they diverge, the divergence itself reveals the sensitivity of conclusions to analytical choices.
+
+# Results
+
+## SEM Model Comparison
+
+Both SEM specifications were estimated on the 573-jurisdiction complete-case sample. @tbl-model-comparison reports the comparison.
+
+| Metric | One-Factor | Two-Factor |
+|--------|----------:|----------:|
+| Chi-square (df) | 741.72 (101) | 469.82 (98) |
+| Chi-square p-value | < 0.001 | < 0.001 |
+| CFI | 0.854 | 0.915 |
+| TLI | 0.818 | 0.891 |
+| RMSEA | 0.105 | 0.081 |
+| AIC | 67.41 | 74.36 |
+| BIC | 219.69 | 239.69 |
+
+: SEM model fit comparison (N = 573). {#tbl-model-comparison}
+
+The model comparison reveals a genuine tradeoff rather than an unambiguous winner. The one-factor model has lower information criteria (AIC = 67.41; BIC = 219.69), but the two-factor model fits the covariance structure more convincingly on the conventional SEM diagnostics (CFI = 0.915 versus 0.854; TLI = 0.891 versus 0.818; RMSEA = 0.081 versus 0.105). Because the two-factor model aligns more closely with the distinction between resources and workload as separate dimensions of administrative throughput, and because it improves the main fit indices materially, it is used as the primary substantive model.
+
+The measurement parameters of the two-factor model motivate a cautious but interpretable reading. Within Administrative Resources, standardized loadings are strong for employment (0.953) and payroll (0.992). Within Administrative Burden Capacity, the reverse-coded programs-per-staff indicator loads at 0.577 and disasters-per-staff loads at approximately 1.000. Recovery Performance is less coherent: disbursed-to-obligated loads at 0.785, obligated funds fully expended at 0.988, programs completed at 0.477, and expended-to-disbursed at $-$0.131. Recovery Timeliness is identified by reverse-coded duration of completion (0.545) and reverse-coded average program duration (1.000). The two latent throughput dimensions are positively correlated (standardized covariance = 0.402), and the structural part of the model explains more variance in Recovery Timeliness than in Recovery Performance (approximate latent $R^2$ = 0.20 versus 0.09). Full measurement parameters are reported in Appendix Tables B1--B3.
+
+## Structural Relationships Between Throughput and Recovery Outcomes
+
+@tbl-structural reports a highlighted subset of the standardized structural path coefficients from the two-factor SEM.
+
+| Path | Std. Beta | Unstd. b | 95% CI | p-value |
+|------|----------:|---------:|-------:|--------:|
+| AdminResources $\to$ RecoveryPerformance | $-$0.170 | $-$0.139 | [$-$0.212, $-$0.066] | < 0.001 |
+| AdminBurdenCapacity $\to$ RecoveryPerformance | 0.077 | 0.104 | [$-$0.015, 0.222] | 0.086 |
+| AdminResources $\to$ RecoveryTimeliness | 0.080 | 0.046 | [$-$0.004, 0.095] | 0.072 |
+| AdminBurdenCapacity $\to$ RecoveryTimeliness | 0.266 | 0.251 | [0.151, 0.352] | < 0.001 |
+| SVI Theme 3 (Minority/Language) $\to$ RecoveryPerformance | $-$0.226 | -- | -- | < 0.001 |
+| SVI Theme 1 (Socioeconomic) $\to$ RecoveryTimeliness | $-$0.194 | -- | -- | 0.004 |
+| SVI Theme 2 (HH Comp./Disability) $\to$ RecoveryTimeliness | $-$0.159 | -- | -- | 0.004 |
+| State-vs-Local $\to$ RecoveryPerformance | $-$0.038 | $-$0.133 | [$-$0.526, 0.259] | 0.505 |
+| State-vs-Local $\to$ RecoveryTimeliness | $-$0.106 | $-$0.260 | [$-$0.520, 0.000] | 0.050 |
+
+: Structural path estimates in the two-factor SEM (N = 573). Appendix Table B2 reports the complete modeled coefficient set. {#tbl-structural}
+
+### Relationships with Recovery Performance
+
+Administrative Resources exhibit a negative association with Recovery Performance ($\beta$ = $-$0.170; p < 0.001), indicating that jurisdictions with higher staffing and payroll intensity do not necessarily display stronger financial execution or program completion once workload pressure and contextual conditions are taken into account. This coefficient should not be read as evidence that more resources worsen recovery; at most it suggests that resource intensity may proxy for more complex portfolios or administrative settings that the pooled cross-sectional model does not fully observe. Administrative Burden Capacity is positive but only marginally associated with Recovery Performance ($\beta$ = 0.077; p = 0.086).
+
+Among the covariates, SVI Theme 3 (minority status and language vulnerability) shows the clearest association with Recovery Performance ($\beta$ = $-$0.226, p < 0.001). This pattern should be read as contextual rather than causal: jurisdictions serving more linguistically diverse or historically marginalized communities may face greater outreach, translation, verification, and service-delivery demands, not because those communities cause weaker recovery, but because administrative barriers and structural inequities can be harder to overcome in those settings.
+
+### Relationships with Recovery Timeliness
+
+For Recovery Timeliness, Administrative Burden Capacity plays the clearest role. Lower workload pressure relative to available staffing is associated with faster and more consistent recovery implementation ($\beta$ = 0.266; $b$ = 0.251, 95% CI [0.151, 0.352]; p < 0.001). Administrative Resources are positively associated with Recovery Timeliness as well, but only marginally ($\beta$ = 0.080; p = 0.072). This contrast reinforces the main substantive message: resource levels matter, but workload manageability appears to be the more consistent cross-sectional correlate of timely recovery administration.
+
+Two dimensions of social vulnerability are also significantly associated with Recovery Timeliness. Higher values of SVI Theme 1 (socioeconomic vulnerability) and SVI Theme 2 (household composition and disability) are associated with slower implementation ($\beta$ = $-$0.194, p = 0.004; $\beta$ = $-$0.159, p = 0.004). The results suggest that jurisdictions serving more socioeconomically vulnerable and demographically constrained populations may face additional administrative frictions that slow recovery even after throughput proxies are taken into account.
+
+The state-versus-local indicator is not statistically meaningful for Recovery Performance ($\beta$ = $-$0.038; p = 0.505) and is only borderline negative for Recovery Timeliness ($\beta$ = $-$0.106; p = 0.050). Governmental level is therefore treated as a control variable, not as a moderator of throughput effects. The negative sign for timeliness suggests that local governments may, on average, move somewhat faster than state agencies once other covariates are controlled, but the evidence is too modest and the institutional tasks too heterogeneous to support strong claims about institutional superiority.
+
+## Robustness and Sensitivity
+
+The burden-timeliness association ($\beta$ = 0.266) is stable under some perturbations but not all. @tbl-robustness-summary presents the key robustness results; full details appear in Appendix C.
+
+| Specification | Burden $\rightarrow$ Timeliness $\beta$ | Note |
+|---|---:|---|
+| Primary two-factor | 0.266 | Main specification |
+| Drop weak indicator | 0.266 | Stable |
+| Residualized burden | 0.297 | Survives arithmetic-coupling removal |
+| Maturity-band controls | 0.105 | Attenuated by maturity composition |
+| Portfolio-scale controls | 0.127 | Attenuated; poor fit (CFI = 0.783) |
+| Mature portfolios only (>48 mo.) | $-$0.244 | **Sign reversal** |
+| Raw portfolio counts | $-$0.443 | **Sign reversal** |
+| Local jurisdictions only | 0.257 | Driven by local sample |
+
+: Robustness summary for the burden-timeliness path {#tbl-robustness-summary}
+
+Three patterns are noteworthy. First, dropping the weak expended-to-disbursed indicator and residualizing burden indicators on staffing and population both leave the result unchanged, suggesting it is not purely a shared-denominator artifact. Second, adding maturity-band or portfolio-scale controls attenuates the beta substantially (to 0.105 and 0.127), indicating that portfolio maturity partially explains the association. Third, and most importantly, restricting to mature portfolios (Duration > 48 months) reverses the sign to $-$0.244, and replacing staffing-denominator ratios with raw log-transformed portfolio counts reverses the sign to $-$0.443. These reversals indicate that the positive association in the full sample is driven partly by younger portfolios and partly by the staffing denominator itself. The positive finding should therefore be interpreted as a conditional staffing-ratio association and not as a universally robust workload-manageability effect.
+
+## Survival Analysis Comparison
+
+The Cox proportional hazards model with time-varying covariates at the grantee-disaster level yields substantively different conclusions from the cross-sectional SEM. @tbl-survival reports the key results.
+
+| Capacity Measure | Hazard Ratio | 95% CI | p-value |
+|---|---:|---:|---:|
+| Disbursement ratio (lagged) | 1.001 | [0.821, 1.221] | 0.991 |
+| Expenditure ratio (lagged) | 0.998 | [0.728, 1.367] | 0.990 |
+
+: Cox proportional hazards model with time-varying covariates (N = 142--151 grantee-disaster pairs). Bootstrap clustered standard errors (1,000 iterations, grantee-level clustering). Model concordance = 0.723. {#tbl-survival}
+
+Neither financial flow ratio is associated with program completion timing. The hazard ratios are effectively 1.0, indicating no detectable relationship between capacity ratios and the probability of reaching 95% expenditure completion in any given quarter. The model concordance of 0.723 suggests that the included covariates (government type, grant size, experience, disaster year, population, severity, employment) discriminate completion timing through channels other than the capacity ratios. This null result is robust across completion thresholds from 20% to 100%.
+
+The divergence between the SEM and survival analysis findings can be attributed to several sources. The SEM uses staffing-scaled workload ratios at the jurisdiction level, while the survival analysis uses financial flow ratios at the grantee-disaster level---these are different constructs measured at different units of analysis. The SEM treats duration as an indicator of a latent timeliness construct, while the survival analysis models it as a censored event-time outcome. The SEM aggregates across disaster cohorts and policy periods into a single cross-sectional profile, while the survival analysis preserves within-grantee temporal variation through quarterly observation windows with lagged covariates. These differences mean that the two frameworks answer related but distinct questions: the SEM asks whether staffing-workload configurations covary with aggregated outcome profiles, while the survival analysis asks whether financial flow ratios predict the timing of completion events.
+
+The divergence does not invalidate either framework. Rather, it demonstrates that capacity-outcome associations in CDBG-DR are sensitive to analytical choices---including the unit of analysis, the operationalization of capacity, and the treatment of time and censoring---and that single-method studies should be interpreted with appropriate caution.
+
+# Discussion
+
+## Rethinking Throughput: A Multi-Dimensional Perspective
+
+The results advance a more differentiated understanding of administrative throughput in disaster recovery by showing that throughput is not well captured by a single resource proxy. The most consistent pattern in the SEM is that recovery outcomes are more closely aligned with workload manageability than with staffing and payroll intensity alone. That does not mean resources are irrelevant; rather, it suggests that resources must be interpreted relative to the disaster and program burdens they are expected to absorb.
+
+Consistent with @annanprah2023, throughput is conceptualized as a joint reflection of resources and performance. The two-factor model further refines this perspective by introducing Administrative Burden Capacity, defined as the effective throughput remaining after accounting for workload pressures. This conceptualization highlights that throughput is inherently relational: administrative resources only translate into effective recovery outcomes when workload demands remain within manageable levels.
+
+The negative association between Administrative Resources and Recovery Performance further supports this interpretation. Rather than implying that additional staff or payroll harms recovery, the coefficient likely reflects portfolio complexity, organizational layering, or the fact that more administratively intensive jurisdictions often manage more demanding recovery contexts. Once workload is modeled explicitly, pure resource intensity ceases to function as a simple proxy for effectiveness.
+
+Most state agencies and local governments maintained relatively limited staffing resources dedicated to administering CDBG-DR housing recovery programs. As a result, the standardized values of both Administrative Resources and Administrative Burden Capacity were concentrated near zero for many jurisdictions, leading to more modest and sometimes less stable marginal effects across recovery outcomes. This suggests that improving recovery outcomes requires not only reducing administrative workload pressures but also strengthening staffing and fiscal resources. However, increasing administrative resources alone is insufficient to ensure effective recovery implementation. Rather, enhancing throughput requires a balanced combination of adequate resources and manageable program demands.
+
+The robustness results temper the strength of these conclusions. The burden-timeliness association reverses when restricted to mature portfolios and when raw workload counts replace staffing ratios, indicating that the main finding is conditional on both the sample composition and the operationalization of workload manageability. The positive association should be interpreted as reflecting the staffing-denominator construction as much as a substantive workload effect [@kronmal1993].
+
+## Social Vulnerability and Recovery Outcomes
+
+The results also show that different dimensions of social vulnerability relate to recovery outcomes through distinct channels. Minority status and language vulnerability are most clearly associated with weaker Recovery Performance, whereas socioeconomic vulnerability and household composition/disability are more strongly associated with slower Recovery Timeliness. One plausible interpretation is that vulnerability marks contexts in which outreach, verification, coordination, and service delivery barriers are harder to overcome. The SEM does not identify those mechanisms directly, but the differentiated theme coefficients are consistent with the idea that recovery governance becomes more difficult when administrative burden and structural vulnerability overlap.
+
+This pattern has practical implications for how jurisdictions target recovery assistance. If minority/language barriers primarily affect financial execution and program completion (Recovery Performance), then interventions focused on language access, culturally responsive outreach, and simplified application procedures may be most relevant. If socioeconomic and household composition constraints primarily affect implementation speed (Recovery Timeliness), then interventions focused on case management, eligibility streamlining, and community-based coordination may be more appropriate. Notably, these social vulnerability associations are more stable across specifications than the throughput-timeliness association.
+
+## Comparing Analytical Frameworks
+
+The divergence between the SEM and survival analysis results raises important questions about how capacity-outcome associations should be interpreted in disaster recovery research. The SEM finds a statistically significant positive association between workload manageability and Recovery Timeliness ($\beta$ = 0.266, p < 0.001), while the survival analysis finds no association between financial flow ratios and completion timing (HR $\approx$ 1.0, p $\approx$ 0.99).
+
+This divergence reflects fundamental differences in how the two frameworks handle three key methodological challenges. First, unit of analysis: the SEM aggregates across disaster cohorts, policy periods, and portfolio maturities into a single jurisdiction profile, while the survival analysis preserves within-grantee-disaster temporal variation. Second, censoring: the SEM incorporates duration as an observed indicator of a latent timeliness construct, while the survival analysis properly handles the 73.7% right-censoring rate through the hazard function. Third, capacity operationalization: the SEM uses staffing-denominator ratios that transform raw workload into a measure where the staffing denominator itself contributes to the association, while the survival analysis uses financial flow ratios that are mechanically independent of staffing.
+
+These differences mean that the two approaches answer related but distinct questions. Neither framework is inherently superior, but the divergence cautions against treating any single capacity-outcome association as definitive. Future research on administrative capacity in disaster recovery would benefit from multi-method designs that compare findings across analytical frameworks instead of relying on a single approach.
+
+## Practical Implications
+
+The findings provide decision-makers and practitioners with a more nuanced understanding of throughput by distinguishing resource levels from workload strain. For practice, the key implication is diagnostic: when recovery performance is weak or implementation is slow, the problem may not be simple resource scarcity. It may instead reflect the way staffing, portfolio complexity, disaster exposure, and community vulnerability interact. This perspective can help practitioners diagnose whether recovery challenges stem from insufficient resources, excessive administrative burden, or a broader misalignment between institutional throughput and local recovery needs.
+
+From a policy perspective, the results suggest that improving disaster recovery outcomes requires moving beyond resource-centric approaches toward workload-sensitive and context-aware interventions. Simply increasing funding or staffing may have limited effect if administrative systems remain overextended or if program complexity continues to impose substantial procedural burden. More promising strategies may include simplifying program rules, standardizing reporting and eligibility workflows, deploying temporary surge-capacity teams during high-demand periods [@khorrammanesh2020], improving intergovernmental coordination, and prioritizing high-risk jurisdictions for language access, community outreach, and implementation support.
+
+However, the robustness qualifications and the survival analysis null result caution against using throughput ratios as standalone performance benchmarks. The sign reversals documented in the robustness section (Appendix C.4 and C.6) demonstrate that the same data can support opposite conclusions depending on how capacity is operationalized and which jurisdictions are included. Oversight agencies should therefore exercise caution when using spending-rate metrics to evaluate grantee performance; measurement artifacts can create apparent performance signals that do not reflect genuine administrative differences. Although the real-world effectiveness of these strategies requires additional evaluation, the findings suggest that successful disaster recovery depends not only on the amount of resources available but also on whether those resources are adequate for the complexity, scale, and vulnerability of the recovery environment in which they are deployed.
+
+# Limitations
+
+Several limitations should be acknowledged. First, the SEM relies on a cross-sectional administering-jurisdiction dataset, so the results are associational, not causal. The aggregation from quarterly QPR activity data to one profile per administering jurisdiction discards within-jurisdiction variation across disasters, policy regimes, staffing arrangements, and maturation windows.
+
+Second, the timeliness construct remains duration-based and therefore sensitive to right-censoring and disaster maturity. Appendix Table C.4 makes this concrete: restricting the sample to mature portfolios (Duration > 48 months) reverses the sign of the burden-timeliness coefficient, indicating that the positive association in the full sample is driven largely by younger, less-complete portfolios. Additionally, Appendix Table C.6 shows that replacing the staffing-denominator ratios with raw log-transformed portfolio counts also reverses the sign, suggesting the positive finding is partially a staffing-ratio artifact rather than a pure workload-manageability effect. These reversals are not merely sensitivity footnotes; they represent substantive qualifications of the main finding that constrain the conclusions that can be drawn about workload manageability and recovery timeliness.
+
+Third, the measurement of throughput remains indirect. QCEW NAICS 925110 employment and payroll are useful national proxies but do not directly measure CDBG-DR administrative teams, contractors, or interagency support structures. The 85.1% zero-value rate among local jurisdictions means the proxy carries meaningful variation for only a subset of the sample.
+
+Fourth, the complementary survival analysis finds null capacity-outcome associations at the grantee-disaster level, suggesting that the positive SEM result may not generalize across analytical frameworks. While the two methods answer different questions, the divergence reinforces the need for cautious interpretation.
+
+Fifth, the geography layer is derived from hierarchical name matching and county aggregation rather than from official Census relationship files alone. Standard errors are conventional ML and likely understate uncertainty because cluster-robust standard errors (by state) are not computed.
+
+These limitations point to a clear future research agenda. Longitudinal or event-history designs would address maturity and censoring more directly. More detailed administrative-process data---such as staffing assignments, contractor use, application processing times, and intergovernmental coordination mechanisms---would make it possible to move from proxy throughput measures toward more direct operational indicators of recovery governance.
+
+# Conclusion
+
+We develop an explicitly exploratory framework for examining administrative throughput and disaster recovery outcomes across the United States. Using pooled cross-sectional administering-jurisdiction profiles and a complementary survival analysis, we evaluate how staffing proxies, workload pressure, and contextual vulnerability co-occur with Recovery Timeliness and, more tentatively, Recovery Performance.
+
+Several key insights emerge. First, administrative throughput is not well captured as a unidimensional construct. The two-factor model shows that Administrative Resources and Administrative Burden Capacity behave differently and should not be collapsed without checking the measurement tradeoff. Second, the strongest throughput-outcome association in the SEM is between lower workload pressure and faster Recovery Timeliness, although this association is sensitive to sample composition and capacity operationalization. Third, social vulnerability matters, and different SVI themes relate to different parts of the recovery process, reinforcing the view that throughput is embedded in broader institutional and community contexts. Fourth, a complementary survival analysis at the grantee-disaster level finds null capacity-outcome associations, demonstrating that conclusions about administrative capacity and disaster recovery depend on analytical framework and cautioning against reliance on any single methodological approach.
+
+Improving disaster recovery governance [@tierney2012] will require more than funding alone. It will require institutions whose staffing, workload, and social context are better aligned with the scale and complexity of recovery needs. The results provide an empirical starting point for that discussion, while the robustness results and cross-method comparison underscore how much work remains in developing stable, validated measures of administrative capacity.
+
+# Acknowledgements {.unnumbered}
+
+Partially supported by the U.S. Department of Housing and Urban Development (Award# H21749CA). The findings and conclusions are those of the authors and do not represent the official position or views of the U.S. Department of Housing and Urban Development.
+
+# Disclosure Statement {.unnumbered}
+
+The authors declared no potential conflicts of interest with respect to the research, authorship, and/or publication of this article. Generative AI tools were used only for limited language editing. All analytic decisions, interpretation, and manuscript content were reviewed and approved by the authors.
+
+# Data Availability Statement {.unnumbered}
+
+The public source datasets used are HUD CDBG-DR DRGR/QPR reports, U.S. Bureau of Labor Statistics QCEW files, and CDC/ATSDR SVI data. The replication package will include the code, SEM-ready analytic data, derived geography linkage files, and nonrestricted outputs needed to reproduce the reported models, tables, and maps.
 
 # References {.unnumbered}
 
@@ -159,3 +341,13 @@ See @sec-robustness-appendix for detailed robustness results.
 :::
 
 {{< pagebreak >}}
+
+{{< include appendix-a-data.qmd >}}
+
+{{< pagebreak >}}
+
+{{< include appendix-b-methods.qmd >}}
+
+{{< pagebreak >}}
+
+{{< include appendix-c-robustness.qmd >}}
