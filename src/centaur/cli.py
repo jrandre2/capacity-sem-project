@@ -13,7 +13,7 @@ from .config import DEFAULT_MANUSCRIPT, MANUSCRIPTS, ensure_directories
 
 def register_centaur_parser(subparsers) -> None:
     """Register the `centaur` command group on the host CLI."""
-    review_default = "velocity" if "velocity" in MANUSCRIPTS else DEFAULT_MANUSCRIPT
+    review_default = "quarto" if "quarto" in MANUSCRIPTS else DEFAULT_MANUSCRIPT
 
     p_centaur = subparsers.add_parser(
         "centaur",

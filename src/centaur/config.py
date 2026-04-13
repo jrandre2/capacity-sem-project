@@ -131,12 +131,12 @@ REPEATED_CV_N_REPEATS = 10
 
 MANUSCRIPTS = {
     "velocity": {
-        "name": "Velocity Manuscript",
+        "name": "Velocity Manuscript (Archived)",
         "title": "When Velocity Doesn't Matter: Reassessing Spending Rate and CDBG-DR Program Completion",
         "dir": PROJECT_ROOT / "manuscript_velocity",
         "reviews_dir": PROJECT_ROOT / "doc" / "reviews" / "velocity",
         "archive_dir": PROJECT_ROOT / "doc" / "reviews" / "velocity" / "archive",
-        "description": "Active Capacity-SEM manuscript rewrite centered on corrected null-results framing",
+        "description": "Archived null-results draft — superseded by manuscript_quarto/ rewrite",
     },
     "kaifa": {
         "name": "Kaifa SEM Manuscript Archive",
@@ -149,14 +149,22 @@ MANUSCRIPTS = {
     },
     "main": {
         "name": "Main Manuscript",
-        "title": "CENTAUR Manuscript Scaffold",
+        "title": "Administrative Throughput in Disaster Recovery: Evidence from Cross-Sectional SEM of CDBG-DR Fund Management",
         "dir": MANUSCRIPT_DIR,
         "reviews_dir": REVIEWS_DIR / "main",
         "archive_dir": REVIEWS_DIR / "main" / "archive",
-        "description": "Vendored CENTAUR Quarto manuscript scaffold",
+        "description": "Primary PAR-targeted SEM manuscript with survival comparison",
+    },
+    "quarto": {
+        "name": "Quarto Manuscript",
+        "title": "Administrative Throughput in Disaster Recovery: Evidence from Cross-Sectional SEM of CDBG-DR Fund Management",
+        "dir": MANUSCRIPT_DIR,
+        "reviews_dir": REVIEWS_DIR / "main",
+        "archive_dir": REVIEWS_DIR / "main" / "archive",
+        "description": "Alias for 'main' — primary PAR-targeted SEM manuscript with survival comparison",
     },
 }
-DEFAULT_MANUSCRIPT = "main"
+DEFAULT_MANUSCRIPT = "quarto"
 DRAFTS_DIR = MANUSCRIPT_DIR / "drafts"
 
 REVIEW_DEFAULT_SOURCE_TYPE = "synthetic"

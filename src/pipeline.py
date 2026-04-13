@@ -619,8 +619,8 @@ def main():
     )
     p_review_status.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript to check (default: velocity)"
+        default="quarto",
+        help="Manuscript to check (default: quarto)"
     )
     p_review_status.set_defaults(func=cmd_review_status)
 
@@ -631,8 +631,8 @@ def main():
     )
     p_review_new.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript for review (default: velocity)"
+        default="quarto",
+        help="Manuscript for review (default: quarto)"
     )
     p_review_new.add_argument(
         "--focus", "-f",
@@ -673,8 +673,8 @@ def main():
     )
     p_review_archive.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript to archive (default: velocity)"
+        default="quarto",
+        help="Manuscript to archive (default: quarto)"
     )
     p_review_archive.add_argument(
         "--no-tag",
@@ -694,8 +694,8 @@ def main():
     )
     p_review_verify.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript to verify (default: velocity)"
+        default="quarto",
+        help="Manuscript to verify (default: quarto)"
     )
     p_review_verify.set_defaults(func=cmd_review_verify)
 
@@ -713,8 +713,8 @@ def main():
     )
     p_review_diff.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript to diff (default: velocity)"
+        default="quarto",
+        help="Manuscript to diff (default: quarto)"
     )
     p_review_diff.add_argument(
         "--from-cycle",
@@ -746,8 +746,8 @@ def main():
     )
     p_review_response.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript to use (default: velocity)"
+        default="quarto",
+        help="Manuscript to use (default: quarto)"
     )
     p_review_response.add_argument(
         "--format",
@@ -769,8 +769,8 @@ def main():
     )
     p_review_ingest_docx.add_argument(
         "--manuscript", "-m",
-        default="velocity",
-        help="Manuscript key (default: velocity)"
+        default="quarto",
+        help="Manuscript key (default: quarto)"
     )
     p_review_ingest_docx.add_argument(
         "--input",
