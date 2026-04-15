@@ -4,13 +4,14 @@ Analysis of administrative capacity and completion timing in HUD CDBG-DR disaste
 
 ## Current Status
 
-- Canonical workflow: standardized, quarter-corrected survival analysis
-- Legacy workflow: SEM pipeline retained for replication and comparison only
-- Main finding status: the earlier positive velocity results were invalidated by the December 27, 2025 duration bug
-- Active manuscript: `manuscript_velocity/` in major revision
-- Vendored framework: CENTAUR is available under `src/centaur/` as a separate toolchain
+- **Primary manuscript**: `manuscript_quarto/index.qmd` — "A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"
+- **Contribution**: A six-item measurement-sensitivity audit protocol whose deliverable is a specification-curve dashboard, demonstrated on a national CDBG-DR dataset (543 local administering jurisdictions primary; N=573 with state agencies supplementary; 151 grantee-disaster pairs for cross-framework comparison)
+- **Headline finding**: The capacity-timeliness coefficient is *not stably identified* under principled measurement perturbations; the dashboard spans positive (β = +0.266 reference; +0.297 residualized; +0.257 local-only), near-zero (β ≈ 0 reconstructed-panel fixed-horizon; HR ≈ 1.0 time-varying Cox; β = 0.132 n.s. non-suppressed-QCEW), and negative (β = −0.244 mature-only; −0.443 raw counts; −0.600 financial-ratio bridge) estimates. Current capacity findings in CDBG-DR are not robust enough for benchmarking or policy anchoring.
+- **Target journal**: Public Administration Review (PAR)
+- **Review cycles completed**: Ten synthetic peer reviews (R1–R10), all closed; structural pivot at R6 from "instability narrative" to "audit-protocol contribution"; central claim recast at R10 from "near zero" to "not stably identified". Response letters and revision tracker in `doc/reviews/quarto/`
+- **Archived manuscripts**: `manuscript_velocity/` (survival-only draft, superseded) and `manuscript_kaifa_archive/` (original SEM draft)
 
-Start with [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md). That file is the source of truth for what is currently trusted, what is historical, and what should be run next.
+See [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for the current analytical state and [manuscript_quarto/REVISION_TRACKER.md](manuscript_quarto/REVISION_TRACKER.md) for the current review cycle disposition.
 
 ## Setup
 
@@ -20,9 +21,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Notes:
-- `requirements.txt` includes the core Capacity-SEM stack plus the optional CENTAUR GUI, spatial, and LLM dependencies.
-- Quarto is still an external CLI. Use a system install or the vendored wrapper in `tools/bin/quarto`.
+Quarto is an external CLI. Use a system install or the vendored wrapper in `tools/bin/quarto`.
 
 ## Recommended Workflow
 
@@ -52,55 +51,55 @@ python src/pipeline.py make_figures
 python src/pipeline.py capacity_summary
 ```
 
-Legacy SEM workflow:
+Kaifa-style SEM analysis (generates the primary-manuscript sensitivity results):
+
+```bash
+python src/pipeline.py run_kaifa_recovered_analysis
+```
+
+Legacy SEM replication pipeline:
 
 ```bash
 python src/pipeline.py run_all_legacy
 python src/pipeline.py list_models
 ```
 
-## Manuscripts And Review
+## Manuscript and Review
 
-- Active research manuscript: `manuscript_velocity/`
-- Vendored CENTAUR scaffold: `manuscript_quarto/`
-
-Review management now uses the unified CENTAUR review engine through the host CLI.
-The active rewrite lives in `manuscript_velocity/`, and the archived Kaifa SEM
-lineage can be attached to the same workflow through DOCX import.
+Primary manuscript in `manuscript_quarto/`:
 
 ```bash
-python src/pipeline.py review_status --manuscript velocity
-python src/pipeline.py review_diff --manuscript velocity
-python src/pipeline.py review_response --manuscript velocity
-python src/pipeline.py review_verify --manuscript velocity
+cd manuscript_quarto
+./render_all.sh                                  # all formats
+CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh     # skip pipeline re-run
+quarto render index.qmd --to docx                # DOCX only
+```
+
+Review management:
+
+```bash
+python src/pipeline.py review_status --manuscript quarto
+python src/pipeline.py review_verify --manuscript quarto
+python src/pipeline.py review_new --manuscript quarto --focus par_general
+python src/pipeline.py review_archive --manuscript quarto
 python src/pipeline.py review_report
-python src/pipeline.py review_ingest_docx --manuscript kaifa
 ```
 
-Render the active manuscript:
+Review artifacts live in `doc/reviews/quarto/`:
 
-```bash
-cd manuscript_velocity
-./render_all.sh
-```
+- `INDEX.md` — review log (R1–R10)
+- `archive/review_0N_*.md` — reviewer text per cycle
+- `response_0N_*.md` / `.docx` — point-by-point response letters
 
 ## CENTAUR Integration
 
-The imported CENTAUR framework is namespaced and does not replace the Capacity-SEM workflow.
-
-Examples:
+The vendored CENTAUR framework is namespaced under `src/centaur/` and does not replace the Capacity-SEM workflow. See [doc/centaur/README.md](doc/centaur/README.md).
 
 ```bash
 python src/pipeline.py centaur --help
 python src/pipeline.py centaur list_stages
-python src/pipeline.py centaur validate_submission --journal jeem
 python src/pipeline.py centaur review_status
-python src/pipeline.py centaur review_diff
-python src/pipeline.py centaur review_ingest_docx --manuscript kaifa --dry-run
-python src/pipeline.py centaur analyze_project --path /path/to/project
 ```
-
-See [doc/centaur/README.md](doc/centaur/README.md).
 
 ## Repository Layout
 
@@ -108,28 +107,39 @@ See [doc/centaur/README.md](doc/centaur/README.md).
 src/
   pipeline.py                 Host CLI
   stages/                     Capacity-SEM pipeline stages
-  capacity_sem/               Core analysis modules
+  capacity_sem/               Core analysis modules (including kaifa_recovered_analysis.py)
   centaur/                    Vendored CENTAUR framework
 doc/
   PROJECT_STATUS.md           Current state and next steps
   PIPELINE.md                 Current workflow guide
   METHODOLOGY.md              Analysis methods
-  centaur/                    Vendored CENTAUR docs
-manuscript_velocity/          Active manuscript draft
-manuscript_quarto/            Vendored CENTAUR scaffold
+  DATA_DICTIONARY.md          Variable definitions
+  SYNTHETIC_REVIEW_PROCESS.md Review workflow
+  reviews/quarto/             R1–R10 review archive, responses, tracker
+manuscript_quarto/            Primary manuscript (PAR target)
+manuscript_velocity/          Archived (superseded by manuscript_quarto/)
+manuscript_kaifa_archive/     Archived original SEM draft
+data_raw/                     Source datasets (read-only)
+  svi_historical/             CDC/ATSDR SVI vintages 2000–2022 (downloaded 2026-04-14)
 data_work/                    Derived data and diagnostics
+  jurisdiction_disaster_year_svi.parquet   Per-jurisdiction disaster-year SVI assignments
+  state_earliest_disaster_year.parquet     State → earliest disaster year (for vintage selection)
+  sem_input_disaster_year_svi.parquet      SEM-ready data with disaster-year SVI
+  fixed_horizon_outcomes.parquet           Quarter-8/12/16 expenditure shares per grantee
 figures/                      Analysis figures
 tests/                        Regression tests
 ```
 
 ## Documentation Map
 
-- [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md): current analytical state
-- [doc/PIPELINE.md](doc/PIPELINE.md): current commands and outputs
-- [doc/METHODOLOGY.md](doc/METHODOLOGY.md): survival and SEM methods
-- [doc/ETL_STANDARDIZATION.md](doc/ETL_STANDARDIZATION.md): fixed-denominator standardization
-- [doc/ANALYSIS_JOURNEY.md](doc/ANALYSIS_JOURNEY.md): methodological history and bug discovery
-- [doc/MANUSCRIPT_GUIDE.md](doc/MANUSCRIPT_GUIDE.md): manuscript locations and writing rules
-- [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md): review workflow
+- [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) — current analytical state
+- [doc/PIPELINE.md](doc/PIPELINE.md) — current commands and outputs
+- [doc/METHODOLOGY.md](doc/METHODOLOGY.md) — SEM and survival methods
+- [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) — variable definitions
+- [doc/ETL_STANDARDIZATION.md](doc/ETL_STANDARDIZATION.md) — fixed-denominator standardization
+- [doc/ANALYSIS_JOURNEY.md](doc/ANALYSIS_JOURNEY.md) — methodological history
+- [doc/MANUSCRIPT_GUIDE.md](doc/MANUSCRIPT_GUIDE.md) — manuscript locations and writing rules
+- [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) — review workflow
+- [doc/CHANGELOG.md](doc/CHANGELOG.md) — cycle-by-cycle revision log
 
-Historical reports and archived analyses remain in the repo, but many predate the duration bug fix. Treat them as historical unless [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) says otherwise.
+Historical reports and archived analyses remain in the repo for provenance; consult [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) before citing any file predating the current revision.

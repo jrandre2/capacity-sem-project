@@ -633,3 +633,78 @@ $$f^2 = \frac{R^2}{1 - R^2}$$
 | 0.02 ≤ f² < 0.15 | Small |
 | 0.15 ≤ f² < 0.35 | Medium |
 | f² ≥ 0.35 | Large |
+
+---
+
+## Measurement-Sensitivity Audit Protocol (R1–R10 Additions)
+
+Following ten synthetic peer review cycles, the manuscript is structured around a **six-item measurement-sensitivity audit protocol** whose deliverable is a **specification-curve dashboard**, not a single point estimate. The R6 cycle pivoted the manuscript from "instability narrative" to "audit-protocol contribution"; the R10 cycle recast the central substantive claim from "near zero" to "not stably identified." The methodological additions documented below support that framing and exercise each audit item on the CDBG-DR data.
+
+### Six-Item Audit Protocol
+
+1. **Proxy transparency** — disaggregated suppression rates + non-suppressed-subsample sensitivity
+2. **Sample-selection sensitivity** — maturity-stratified or fixed-horizon outcome
+3. **Within-framework operationalization bridge** — alternative capacity operationalization in same framework
+4. **Cross-framework triangulation** — alternative analytical framework on same data
+5. **Vintage and granularity documentation** — vintage sensitivity for time-varying contextual covariates
+6. **Cluster-appropriate inference** — state- or disaster-clustered bootstrap
+
+### Class Taxonomy (post-R10)
+
+Specification-curve rows are classified by the kind of perturbation they represent:
+
+| Class | Description | Examples |
+|-------|-------------|----------|
+| Ia | Measurement-preserving (same estimand, same population) | State-clustered bootstrap, weak-indicator drop, residualization, maturity controls, QCEW imputation bounds |
+| Ib | Sample-scope (same construct, different population) | Local-only (PRIMARY), nonzero-QCEW, mature-only, NDR/MIT-excluded |
+| II-C | Capacity-operationalization change (same outcome, reoperationalized capacity) | Raw counts; financial-ratio bridge (II-C\* construct reassignment) |
+| II-O | Outcome change (same capacity, reoperationalized outcome) | Reconstructed-panel fixed-horizon q=8/12/16 |
+| III | Simultaneous design-dimension changes | SEM vs. Cox |
+
+### State-Clustered Bootstrap Inference (Audit Item 6)
+
+To address the inadequacy of conventional ML standard errors under within-state dependence, a state-clustered bootstrap is applied to the reference two-factor SEM. Procedure:
+
+1. Identify unique state-level clusters from the Grantee labels (2-letter state codes for state agencies; state-of-residence parsed from "City/County, ST" labels for local jurisdictions). 35 unique state clusters in the 573-jurisdiction sample.
+2. Resample clusters with replacement to produce a bootstrap draw of the sample.
+3. Re-estimate the full two-factor SEM on each bootstrap draw; record standardized structural paths.
+4. Repeat **1,000 times** (R7 update from R4's 200); compute bootstrap standard error and 95% percentile confidence interval per path.
+
+Relative to conventional ML SEs, the state-clustered bootstrap SEs are 2–3.5× larger for the four main structural paths. The reference capacity-timeliness β = 0.266 has a 95% bootstrap CI of **[−0.129, +0.531]** that crosses zero. This CI is reported in the main @tbl-structural (R10 addition) alongside the conventional ML p-values, surfacing the inference-cluster sensitivity directly in the main text.
+
+### Within-Framework Capacity Bridges
+
+To isolate the effect of capacity operationalization from the choice of analytical framework, two one-dimension-at-a-time bridge analyses are reported:
+
+- **Cross-sectional SEM with financial-ratio capacity indicators** (same SEM framework, different capacity operationalization): replaces staffing-scaled `programs/staff` and `disasters/staff` with disbursed-to-obligated and expended-to-disbursed financial ratios as reflective indicators of a capacity latent factor. β(FinancialCapacity → Timeliness) = −0.600 (p = 0.10), a sign reversal relative to the primary staffing-based β = +0.266.
+- **Cox survival model with staffing/workload covariates** (same survival framework, different capacity operationalization): replaces financial-flow covariates with z-scored `programs_per_staff` and `disasters_per_staff` as static covariates. HR = 1.52 (programs/staff) and 0.61 (disasters/staff), both non-significant; concordance 0.39. The survival framework produces null capacity-outcome associations regardless of capacity operationalization.
+
+### Fixed-Horizon Outcomes Sensitivity (Audit Item 2; Class II-O)
+
+To address maturity confounding in duration-based timeliness outcomes, fixed-horizon expenditure-share outcomes are computed: the cumulative expended-to-obligated ratio observed at quarters 8, 12, and 16 since first obligation. These outcomes do not require a portfolio to reach 95% completion and are therefore cohort-invariant. Note: because the outcome differs from the SEM's duration-based latent Recovery Timeliness, fixed-horizon rows are classified as Class II-O (outcome change), not as measurement-preserving Class Ia perturbations of the SEM estimate.
+
+Two scales are reported:
+
+- **Grantee-level (original, N = 32–36)**: fixed-horizon shares averaged across each grantee's disaster portfolios; merged with the cross-sectional SEM data on the 45 grantees for which QPR time-varying data and SEM data both exist (Appendix C.8 @tbl-fixed-horizon).
+- **Reconstructed-panel jurisdiction-level (R10 addition, N = 102–128)**: F31-record-reconstructed jurisdiction-quarter cumulatives using the 573-jurisdiction crosswalk (`scripts/build_full_fixed_horizon_panel.py`); reported in Appendix C.8 @tbl-fixed-horizon-full.
+
+Pattern (both scales): coefficient ≈ 0 across q = 8, 12, 16, attenuating to null at the longer horizons.
+
+### Observed-Composite Regression (SEM Alternative)
+
+As a latent-construct-free alternative to the two-factor SEM, OLS regressions of each of the six outcome indicators on the four capacity indicators are reported. This avoids the construct-validity concerns of the latent SEM (two-indicator factors, boundary estimates, negative loadings, reflective/formative tension).
+
+Key finding: the observed-variable coefficient b(rev programs/staff, rev Duration) = +0.276 is nearly identical to the latent SEM β = +0.266, confirming that the SEM is functioning primarily as dimension reduction rather than latent-construct validation.
+
+### SVI Vintage and Disaster-Year Sensitivity
+
+CDC/ATSDR historical SVI vintages 2010, 2014, 2016, 2018, 2020, and 2022 are downloaded from the ATSDR Feature Services (stored in `data_raw/svi_historical/`). Two sensitivity analyses:
+
+- **State-level vintage sensitivity**: the primary SEM is re-estimated six times on the 573-jurisdiction sample, substituting state-level SVI theme means from each vintage. Capacity-timeliness coefficient is stable (range 0.148 to 0.239). SVI Theme 1 (socioeconomic vulnerability) → Timeliness flips sign between the 2010 vintage (β = −0.215) and the 2014+ vintages (β = +0.167 to +0.460), reflecting the documented methodological revision CDC applied to Theme 1 construction between 2010 and 2014.
+- **Per-jurisdiction disaster-year SVI re-estimation**: each of the 573 SEM jurisdictions is assigned the nearest-preceding SVI vintage to its state's earliest CDBG-DR disaster year (computed from the QPR panel), then matched at the county level (for 543 local jurisdictions) or state level (for 30 state agencies). Match rate: 572/573 (Norfolk County, VA did not match due to Virginia's independent-city nomenclature). Capacity-timeliness robust to this substitution (β = +0.286, p < 0.001). SVI theme-to-outcome channels reconfigure: Theme 1 (socioeconomic) strongly negative on Timeliness; Theme 2 (household) strongly negative on Performance; Theme 3 (minority/language) on Performance attenuates.
+
+### Implementation Notes
+
+- Staffing indicators used in the Kaifa SEM are built in `src/capacity_sem/models/kaifa_recovered_analysis.py` via `prepare_sem_data_with_workload_mode(workload_mode="employment_x_population")`. The denominator is `avg_employment × E_TOTPOP + ε` where ε = 10⁻⁶.
+- Historical SVI data in `data_raw/svi_historical/SVI{YYYY}_US_COUNTY.csv` uses vintage-specific schemas: SVI 2010 uses `S_PL_THEME*` and `FIRST_STATE_ABBR`; SVI 2014–2022 use `SPL_THEME*` and `ST_ABBR`. Harmonization is handled in the inline analysis scripts documented in `doc/reviews/quarto/response_04_2026-04-14.md`.
+- Per-jurisdiction vintage assignments are stored in `data_work/jurisdiction_disaster_year_svi.parquet`; state-level earliest disaster years in `data_work/state_earliest_disaster_year.parquet`.

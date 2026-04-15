@@ -540,3 +540,95 @@ Local governments include cities, counties, and special districts.
 | `concordance` | Float | Concordance index (C-statistic) |
 | `n_obs` | Integer | Number of observations (intervals) |
 | `n_events` | Integer | Number of events (completions) |
+
+---
+
+## Historical SVI Vintages (`data_raw/svi_historical/`)
+
+Six CDC/ATSDR Social Vulnerability Index vintages downloaded from ATSDR Feature Services (2026-04-14) for vintage-sensitivity and disaster-year re-estimation analyses.
+
+| File | Rows | Theme Schema | State Column |
+|------|-----:|---|---|
+| `SVI2010_US_COUNTY.csv` | 3,143 | `S_PL_THEME1`–`S_PL_THEME4` | `FIRST_STATE_ABBR` |
+| `SVI2014_US_COUNTY.csv` | 3,142 | `SPL_THEME1`–`SPL_THEME4` | `ST_ABBR` |
+| `SVI2016_US_COUNTY.csv` | 3,142 | `SPL_THEME1`–`SPL_THEME4` | `ST_ABBR` |
+| `SVI2018_US_COUNTY.csv` | 3,142 | `SPL_THEME1`–`SPL_THEME4` | `ST_ABBR` |
+| `SVI2020_US_COUNTY.csv` | 3,143 | `SPL_THEME1`–`SPL_THEME4` | `ST_ABBR` |
+| `SVI2022_US_COUNTY.csv` | 3,144 | `SPL_THEME1`–`SPL_THEME4` | `ST_ABBR` |
+
+**Schema harmonization**: SVI 2010 uses a `S_PL_THEME*` naming convention and a `FIRST_*` state column from its ArcGIS feature service; SVI 2014–2022 use `SPL_THEME*` and `ST_ABBR`. Harmonization to a common schema (rename to `SPL_THEME1`–`SPL_THEME4`, harmonize state column to `ST_ABBR`) is handled inline in analysis scripts. Missing values are coded as −999 in source CSVs and recoded to `NaN` during harmonization.
+
+**Per-vintage theme interpretation**:
+
+- `SPL_THEME1` — Socioeconomic vulnerability (revised between 2010 and 2014; not cross-comparable across that break)
+- `SPL_THEME2` — Household composition and disability
+- `SPL_THEME3` — Minority status and language
+- `SPL_THEME4` — Housing type and transportation
+
+---
+
+## Disaster-Year and Vintage Mapping Files
+
+### `data_work/state_earliest_disaster_year.parquet`
+
+State-level earliest CDBG-DR disaster year, computed by taking the minimum disaster year across all QPR rows for grantees in each state. Used to assign each jurisdiction an appropriate pre-disaster SVI vintage.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `ST_ABBR` | str | Two-letter state abbreviation |
+| `earliest_year` | float | Earliest CDBG-DR disaster year from QPR panel |
+
+39 states covered. Year range 2005–2024.
+
+### `data_work/jurisdiction_disaster_year_svi.parquet`
+
+Per-jurisdiction disaster-year SVI assignments for all 573 SEM jurisdictions. Each jurisdiction is parsed to extract state and county/parish/borough components; the state's earliest disaster year determines the nearest-preceding SVI vintage; county-level SVI theme values are looked up in that vintage.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `Grantee` | str | Kaifa SEM grantee label |
+| `state_level` | int | 1 if state agency, 0 if local jurisdiction |
+| `ST_ABBR` | str | Two-letter state abbreviation (parsed) |
+| `county` | str | County/parish/borough name (parsed; NaN for state agencies) |
+| `is_state` | bool | Whether jurisdiction is a state agency |
+| `earliest_year` | float | State's earliest disaster year |
+| `svi_vintage` | int | Assigned SVI vintage (2010, 2014, 2016, 2018, 2020, or 2022) |
+| `SPL1_dy` | float | Disaster-year-matched SPL_THEME1 |
+| `SPL2_dy` | float | Disaster-year-matched SPL_THEME2 |
+| `SPL3_dy` | float | Disaster-year-matched SPL_THEME3 |
+| `SPL4_dy` | float | Disaster-year-matched SPL_THEME4 |
+| `matched` | bool | Whether county-level SVI match succeeded (True for 572/573 jurisdictions) |
+
+Vintage distribution: 2010 SVI for 476 jurisdictions (83%), 2014 for 11, 2016 for 57, 2018 for 25, 2022 for 3.
+
+### `data_work/sem_input_disaster_year_svi.parquet`
+
+SEM-ready input data with disaster-year SVI values substituted for the original Kaifa SVI. Identical schema to the primary SEM input (z-scored continuous variables + state_level + Grantee), just with different SVI values. Used to reproduce the Appendix C.9 `tbl-disaster-year-svi-full` results.
+
+### `data_work/fixed_horizon_outcomes.parquet`
+
+Fixed-horizon expenditure-share outcomes at quarters 8, 12, and 16 since first obligation, computed per grantee-disaster pair.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `Grantee` | str | QPR grantee label |
+| `Disaster Type` | str | QPR disaster type |
+| `n_quarters` | int | Total observed quarters for this grantee-disaster pair |
+| `final_obligated` | float | Final-quarter cumulative obligated funds ($) |
+| `exp_share_q8` | float | Cumulative expended / final obligated at quarter 8 (NaN if n_quarters ≤ 8) |
+| `disb_share_q8` | float | Cumulative disbursed / final obligated at quarter 8 |
+| `exp_share_q12`, `disb_share_q12` | float | Same at quarter 12 |
+| `exp_share_q16`, `disb_share_q16` | float | Same at quarter 16 |
+
+Coverage: 156 grantee-disaster pairs total; N = 118 (q=8), 106 (q=12), 88 (q=16) with observed values.
+
+### `data_work/grantee_earliest_disaster_year.parquet`
+
+Grantee-level earliest disaster year (from QPR). Used by the disaster-year SVI re-estimation and also by the temporal-mismatch audit in Appendix C.9.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `Grantee` | str | QPR grantee label |
+| `earliest_year` | float | Earliest disaster year observed in QPR for this grantee |
+
+78 grantees covered.

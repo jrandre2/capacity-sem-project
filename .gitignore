@@ -49,3 +49,9 @@ outputs_backup*/
 # macOS metadata
 ._*
 
+# Claude Code local state (worktrees, plans, settings)
+.claude/
+
+# Local scratch
+tmp/
+

@@ -1,7 +1,7 @@
 # Synthetic Review Process
 
-**Status**: Active
-**Last Updated**: 2026-04-09
+**Status**: Active (10 cycles closed for primary manuscript)
+**Last Updated**: 2026-04-15
 
 This workflow is currently used for the primary manuscript in
 `manuscript_quarto/`. The same review engine also supports actual-review and
@@ -11,14 +11,15 @@ DOCX-import workflows for archived manuscripts such as `kaifa` and `velocity`.
 
 | Manuscript | Directory | Tracker | Status |
 |------------|-----------|---------|--------|
-| Quarto (primary) | `manuscript_quarto/` | `manuscript_quarto/REVISION_TRACKER.md` | Pre-submission |
+| Quarto (primary) | `manuscript_quarto/` | `manuscript_quarto/REVISION_TRACKER.md` | R1–R10 closed; pre-submission |
 | Velocity (archived) | `manuscript_velocity/` | `manuscript_velocity/REVISION_TRACKER.md` | Archived |
 
 The purpose of synthetic review is to:
-- pressure-test the SEM framing and burden->timeliness findings
-- verify that the complementary survival null is presented clearly
-- catch stale pre-fix claims that remain in the manuscript
-- improve clarity, caveats, and evidentiary discipline
+- pressure-test the audit-protocol contribution and the specification-curve dashboard
+- verify the headline coefficient is presented as not-stably-identified, not as a single substantive estimate
+- catch stale pre-pivot claims that remain in the manuscript
+- catch internal inconsistencies (table↔prose, class taxonomy propagation, cross-references)
+- enforce PAR compliance (≤ 8,000 prose words, ≤ 150 abstract, Chicago Author-Date, no self-references)
 
 ## Core Commands
 
@@ -69,11 +70,13 @@ For actual-review intake from Word files:
 
 ## What Reviewers Should Be Checking Now
 
-- Does the manuscript clearly present the SEM findings (beta=0.266) alongside the complementary survival null?
-- Are the cross-sectional SEM results and their limitations presented honestly?
-- Are subgroup findings treated as exploratory rather than definitive?
-- Do tables, figures, and appendices align with the current SEM-primary framing?
-- Does the discussion avoid overclaiming what capacity measures can explain?
+- Is the audit-protocol contribution (six items + dashboard) clearly the unit of contribution, with the SEM and Cox as demonstrations rather than the headline?
+- Does the abstract / EfP / §6.1 / Conclusion consistently state the central claim as "not stably identified," not as "near zero" or as a single coefficient?
+- Is the class taxonomy (Ia / Ib / II-C / II-O / III) used consistently across §4.1 prose, @tbl-robustness-summary, @tbl-sensitivity, and @fig-spec-curve?
+- Are stability flags presented as text labels (Stable / Attenuated / Reversed), not emojis?
+- Is QCEW treated as a first-order measurement problem (suppression terminology, ε-sensitivity, transportability comparison) rather than as one robustness item among many?
+- Does the discussion avoid privileging any single slice of the dashboard (positive ε-offset, near-zero non-suppressed, negative bridge) as the "true" effect?
+- Are tables and prose internally consistent? Do cross-references (@tbl-*, @fig-*, §) all resolve?
 
 ## Related Files
 

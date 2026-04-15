@@ -45,7 +45,7 @@ The four excluded profiles are grantees with missing values on one or more SEM i
 
 : Variable definitions {#tbl-variables}
 
-All continuous variables are z-scored before SEM estimation. The burden indicators (programs_per_staff, disasters_per_staff) and duration indicators are reverse-coded so that higher values on all SEM indicators point in the conceptually positive direction (more capacity, better performance, faster timeliness).
+All continuous variables are z-scored before SEM estimation. The workload indicators (programs_per_staff, disasters_per_staff) and duration indicators are reverse-coded so that higher values on all SEM indicators point in the conceptually positive direction (more capacity, better performance, faster timeliness).
 
 ## A.4 QCEW Proxy Documentation
 
@@ -64,6 +64,8 @@ QCEW data are extracted for NAICS 925110 ("Administration of Housing Programs, U
 
 : QCEW proxy distributions before standardization {#tbl-proxy-distributions}
 
+**Zero-employment handling in burden indicators.** The workload-manageability ratios (programs_per_staff and disasters_per_staff) require dividing program and disaster counts by QCEW employment. Because 85.1% of local jurisdictions report zero QCEW employment, a small epsilon offset ($\epsilon$ = 10$^{-6}$) is added to the denominator before division to avoid computational infinity. For jurisdictions with zero QCEW employment, this offset means the workload indicators are effectively proportional to raw program and disaster counts rather than staffing-scaled ratios, because the epsilon denominator neutralizes the staffing component. After z-score standardization, these jurisdictions form a large cluster with similar extreme pre-standardized values, and the distribution of the burden indicators is dominated by the zero-employment majority. This computational treatment is a limitation: it means the workload indicators carry meaningfully different information for the approximately 20% of observations with non-zero QCEW employment (where the indicators reflect genuine staffing-workload ratios) versus the 80% with zero employment (where they reduce to scaled program counts). The sign reversal when raw portfolio counts replace staffing ratios (Appendix C.6) is partly a consequence of this distributional feature.
+
 The temporal alignment of QCEW data relative to recovery outcomes is approximate: QCEW annual averages span the years in which each jurisdiction administered CDBG-DR grants, but they are not quarter-matched to the QPR reporting periods.
 
 ## A.5 SVI Vintage Specification
@@ -74,8 +76,10 @@ SVI data are drawn from the CDC/ATSDR Social Vulnerability Index. Because SVI pe
 
 Jurisdictions in the DRGR/QPR system are identified by grantee labels that do not always correspond to standard Census geographic units. The matching procedure uses a three-step hierarchy:
 
-1. **State agencies**: Two-letter state abbreviations matched directly to the 2023 Census state file (STUSPS field). Result: 30/30 matched (100%).
-2. **Local jurisdictions**: Organization names parsed to extract city/county identifiers, then matched to the 2023 Census county file by normalized county/parish/borough label and state. Result: 543/543 matched (100%).
+1. **State agencies**: Two-letter state abbreviations matched directly to the 2023 Census state file (STUSPS field). Result: 30/30 matched (100%) via official state abbreviation lookup.
+2. **Local jurisdictions**: Organization names containing county, parish, or borough identifiers matched directly to the 2023 Census county file by normalized label and state. Result: 543/543 matched (100%) via official county name crosswalk.
 3. **Unresolved cases**: 0 jurisdiction labels could not be resolved to an official Census GEOID.
 
-County-linked local units inherit county-level GEOIDs; state-administered units inherit statewide GEOIDs. The 100% match rate reflects the relatively clean naming conventions in the DRGR system for jurisdictions with sufficient QPR data to appear in the SEM sample.
+County-linked local units inherit county-level GEOIDs; state-administered units inherit statewide GEOIDs. All 573 matches (30 state + 543 local) achieved 100% confidence through official Census name matching; no city-to-county inference or manual disambiguation was required for the final SEM sample. This reflects the relatively clean naming conventions in the DRGR system for jurisdictions with sufficient QPR data to appear in the analytic sample.
+
+**Ecological slippage.** The county-linking strategy introduces an ecological assumption: county-level SVI and population covariates are assigned to the administering jurisdiction even when the administrative actor's service area does not precisely align with county boundaries. For state agencies, statewide covariates aggregate over highly heterogeneous sub-state conditions. For city-level entities linked to counties, the county-level covariates may not reflect the specific neighborhoods or populations served by the CDBG-DR program. This ecological slippage is a recognized limitation of the geography layer and may attenuate or distort associations between contextual covariates and recovery outcomes.

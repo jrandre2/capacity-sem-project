@@ -174,3 +174,19 @@ For current analysis and documentation:
 - canonical findings status: see [PROJECT_STATUS.md](PROJECT_STATUS.md)
 
 Anything that still depends on pre-fix positive velocity claims should be treated as historical until updated.
+
+## Kaifa Recovered SEM Pipeline
+
+The primary SEM in `manuscript_quarto/` operates on the Kaifa recovered-analysis bundle (`manuscript_kaifa_archive/data/recovered_code_bundle/`), processed through `src/capacity_sem/models/kaifa_recovered_analysis.py`. Stage:
+
+```bash
+python src/pipeline.py run_kaifa_recovered_analysis
+```
+
+Outputs: sensitivity summary, parameter estimates, fit statistics, geography-matching audit — stored in `data_work/diagnostics/kaifa_recovered_analysis/`. The Kaifa-derived SEM input is the 573-jurisdiction reference dataset `manuscript_kaifa_archive/data/external_sem_exports/baseline_sem/sem_2factor_ready_dataset.csv`.
+
+## Historical SVI Data
+
+Six CDC/ATSDR Social Vulnerability Index vintages (2010, 2014, 2016, 2018, 2020, 2022) are stored in `data_raw/svi_historical/SVI{YYYY}_US_COUNTY.csv` for the vintage-sensitivity and per-jurisdiction disaster-year re-estimation analyses reported in Appendix C.9. See `doc/DATA_DICTIONARY.md` for schema details (note: SVI 2010 uses `S_PL_THEME*` and `FIRST_STATE_ABBR`; SVI 2014–2022 use `SPL_THEME*` and `ST_ABBR`).
+
+The SVI historical analyses are currently run inline (not as first-class pipeline stages); see `doc/reviews/quarto/response_04_2026-04-14.md` for the reproducible procedure.

@@ -2,25 +2,28 @@
 
 ## Which Manuscript Is Active
 
-- Primary research manuscript: `manuscript_quarto/` (cross-sectional SEM, N=573)
+- Primary research manuscript: `manuscript_quarto/` — *"A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"*
 - Archived survival draft: `manuscript_velocity/` (superseded)
 
-The active Capacity-SEM paper is `manuscript_quarto/index.qmd`. The velocity manuscript in `manuscript_velocity/` documents the complementary survival analysis but is no longer the primary manuscript.
+The active Capacity-SEM paper is `manuscript_quarto/index.qmd`. After ten synthetic peer review cycles (R1–R10), it is structured around a six-item measurement-sensitivity audit protocol with a specification-curve dashboard as the deliverable.
 
 ## Current Writing Rule
 
-The manuscript is in rewrite after the December 27, 2025 duration bug invalidated the earlier positive velocity narrative.
+The contribution is the **audit protocol**, not a substantive capacity-timeliness coefficient. The cross-sectional SEM and Cox survival serve as demonstrations of audit items, not as authoritative inferential claims.
 
-Do not treat the following as current findings unless you are explicitly discussing superseded historical results:
-- contingent-capacity headline claims
-- strong late-phase velocity effects
-- wildfire or administration subgroup claims as settled results
-- meta-analytic summaries built from pre-fix heterogeneity estimates
+Do not treat the following as current findings unless you are explicitly discussing superseded framings:
+- The reference β = +0.266 as a substantive estimate (it is one row of the dashboard)
+- "Capacity matters for timeliness" / "high capacity speeds recovery" headlines
+- Pre-pivot framings that present the SEM as the primary inferential engine
+- "Near zero" verdicts that privilege the measurement-appropriate slice (R10 walked this back)
 
 Current framing should align with [PROJECT_STATUS.md](PROJECT_STATUS.md):
-- primary SEM finding: burden->timeliness beta=0.266 (N=573)
-- complementary survival finding: velocity effects are null or near-null
-- subgroup signals are exploratory
+- Headline: capacity-timeliness coefficient is *not stably identified* under principled measurement perturbations
+- Primary specification: local-only (N=543), β = +0.257
+- Pooled supplementary (N=573): β = +0.266 with cluster-bootstrap CI [−0.129, +0.531] crosses zero
+- Dashboard spans positive, near-zero, and negative estimates across Class Ia / Ib / II-C / II-O perturbations
+- Cross-framework Cox is itself measurement-sensitive (null time-varying; positive baseline)
+- Vulnerability *direction* is more dashboard-stable than capacity-timeliness, but specific theme-to-outcome assignments are vintage-sensitive
 
 ## File Map
 
@@ -62,8 +65,10 @@ Current tracker status should be read from:
 
 ## Writing Guardrails
 
-- Present corrected findings directly.
-- Keep legacy positive results explicitly labeled as invalidated when mentioned.
-- Avoid internal “SEM vs survival” victory framing; present each method on its own merits.
-- Separate confirmed results from exploratory subgroup patterns.
-- `manuscript_quarto/` is the primary manuscript; `manuscript_velocity/` is archived.
+- Present the audit protocol as the contribution; the SEM and Cox results are demonstrations.
+- Present the dashboard as the deliverable; do not privilege any single slice (positive ε-offset, near-zero non-suppressed, negative bridge) as the "true" effect.
+- Use stability text labels (Stable / Attenuated / Reversed); never emoji flags.
+- Use the class taxonomy (Ia / Ib / II-C / II-O / III) consistently across §4.1 prose, tables, and figure.
+- Avoid metacommentary ("this study," "advances the literature," "novel contribution").
+- Avoid internal "SEM vs survival" victory framing; cross-framework divergence is itself an audit-item finding (Item 4), not an invalidation of one method.
+- `manuscript_quarto/` is the primary manuscript; `manuscript_velocity/` and `manuscript_kaifa_archive/` are archived.

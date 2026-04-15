@@ -1997,6 +1997,79 @@ def build_distribution_summary(
     return pd.DataFrame(rows)
 
 
+def build_nonzero_qcew_sensitivity(
+    raw_df: pd.DataFrame | None,
+    reference_ready: pd.DataFrame | None,
+) -> pd.DataFrame | None:
+    """Run the 3-indicator SEM on jurisdictions with non-zero QCEW employment.
+
+    Addresses the QCEW proxy concern: 85.1% of local jurisdictions have
+    zero avg_employment, making the staffing-denominator burden indicators
+    degenerate (programs / epsilon ~ huge).  Restricting to avg_employment > 0
+    tests whether the Burden -> Timeliness path holds among jurisdictions
+    where the staffing proxy is actually informative.
+    """
+    if raw_df is None or reference_ready is None:
+        return None
+
+    emp_lookup = raw_df[["Grantee", "avg_employment"]].copy()
+    emp_lookup["avg_employment"] = pd.to_numeric(
+        emp_lookup["avg_employment"], errors="coerce"
+    )
+    merged = reference_ready.merge(emp_lookup, on="Grantee", how="left")
+    filtered = merged[merged["avg_employment"] > 0].copy()
+
+    n = len(filtered)
+    if n < 30:
+        return pd.DataFrame(
+            [
+                {
+                    "specification": "Non-zero QCEW employment (3-indicator)",
+                    "CFI": None,
+                    "RMSEA": None,
+                    "burden_to_performance_beta": None,
+                    "burden_to_timeliness_beta": None,
+                    "resources_to_performance_beta": None,
+                    "resources_to_timeliness_beta": None,
+                    "n": n,
+                    "note": f"Insufficient sample size (n={n})",
+                }
+            ]
+        )
+
+    sem_cols = [c for c in reference_ready.columns if c != "Grantee"]
+    sem_data = filtered[sem_cols].copy()
+
+    try:
+        _, params, fit = _fit_sem_model(
+            TWO_FACTOR_DROP_WEAK_INDICATOR_SPEC, sem_data
+        )
+        row = _sensitivity_row(
+            "Non-zero QCEW employment (3-indicator)",
+            fit,
+            params,
+            note=f"Restricted to avg_employment > 0 (n={n} of {len(reference_ready)})",
+        )
+        row["n"] = n
+        return pd.DataFrame([row])
+    except Exception as exc:
+        return pd.DataFrame(
+            [
+                {
+                    "specification": "Non-zero QCEW employment (3-indicator)",
+                    "CFI": None,
+                    "RMSEA": None,
+                    "burden_to_performance_beta": None,
+                    "burden_to_timeliness_beta": None,
+                    "resources_to_performance_beta": None,
+                    "resources_to_timeliness_beta": None,
+                    "n": n,
+                    "note": f"Estimation failed: {exc}",
+                }
+            ]
+        )
+
+
 def run_recovered_analysis(
     output_dir: str | Path | None = None,
     write_outputs: bool = True,
@@ -2107,6 +2180,23 @@ def run_recovered_analysis(
     subset_forensics_summary, subset_retention_by_state, subset_tree_rules = (
         build_subset_forensics_summary(reference_ready, admin4_ready)
     )
+    nonzero_qcew_sensitivity = build_nonzero_qcew_sensitivity(
+        candidate_raw_subset, reference_ready
+    )
+
+    # --- Full 3-indicator model fit (TWO_FACTOR_DROP_WEAK_INDICATOR_SPEC) ---
+    # Provides complete parameter estimates and fit statistics for the reduced
+    # model that drops the weak expended-to-disbursed indicator.
+    drop_weak_parameters: pd.DataFrame | None = None
+    drop_weak_fit: pd.DataFrame | None = None
+    if reference_ready is not None:
+        try:
+            _, drop_weak_parameters, drop_weak_fit = _fit_sem_model(
+                TWO_FACTOR_DROP_WEAK_INDICATOR_SPEC,
+                reference_ready.drop(columns=["Grantee"]),
+            )
+        except Exception:
+            pass  # leave as None; CSV blocks below will skip
 
     output_path = Path(output_dir) if output_dir else default_output_dir()
 
@@ -2307,6 +2397,21 @@ def run_recovered_analysis(
             (output_path / "recovered_notebook_subset_169_tree_rules.txt").write_text(
                 subset_tree_rules + "\n"
             )
+        if nonzero_qcew_sensitivity is not None:
+            nonzero_qcew_sensitivity.to_csv(
+                output_path / "recovered_notebook_nonzero_qcew_sensitivity.csv",
+                index=False,
+            )
+        if drop_weak_parameters is not None:
+            drop_weak_parameters.to_csv(
+                output_path / "recovered_notebook_drop_weak_indicator_parameter_estimates.csv",
+                index=False,
+            )
+        if drop_weak_fit is not None:
+            drop_weak_fit.to_csv(
+                output_path / "recovered_notebook_drop_weak_indicator_fit_statistics.csv",
+                index=False,
+            )
         _write_manifest(
             output_path,
             raw_df=raw_df,
@@ -2371,5 +2476,8 @@ def run_recovered_analysis(
         "subset_forensics_summary": subset_forensics_summary,
         "subset_retention_by_state": subset_retention_by_state,
         "subset_tree_rules": subset_tree_rules,
+        "nonzero_qcew_sensitivity": nonzero_qcew_sensitivity,
+        "drop_weak_parameters": drop_weak_parameters,
+        "drop_weak_fit": drop_weak_fit,
         "output_dir": output_path,
     }

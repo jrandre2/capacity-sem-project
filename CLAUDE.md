@@ -94,29 +94,52 @@ This project uses **git branches** to manage alternative analytical approaches w
 
 ---
 
-## Current Methodology: Dual-Framework (SEM + Survival Comparison)
+## Current Methodology: Measurement-Sensitivity Audit Protocol
 
-The primary manuscript (`manuscript_quarto/`) uses **cross-sectional SEM** (N=573 administering jurisdictions) as the core methodology, with a **complementary Cox survival analysis** (N=142-151 grantee-disaster pairs) for cross-framework comparison.
+**Manuscript title** (current): *"A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"*
 
-### SEM Results (Primary)
+The primary manuscript (`manuscript_quarto/`) is structured around a **six-item measurement-sensitivity audit protocol** whose deliverable is a **specification-curve dashboard**, not a single point estimate. The protocol items are: (1) proxy transparency, (2) sample-selection sensitivity, (3) within-framework operationalization bridge, (4) cross-framework triangulation, (5) vintage and granularity documentation, (6) cluster-appropriate inference. The cross-sectional SEM on N=573 administering jurisdictions and the complementary Cox survival analysis on N=151 grantee-disaster pairs serve as **demonstrations** of the protocol, not as the primary inferential engine.
 
-- **Sample**: N=573 administering-jurisdiction profiles (30 state, 543 local)
-- **Main finding**: Administrative Burden Capacity → Recovery Timeliness (β=0.266, p<0.001)
-- **Key caveat**: Finding reverses with mature portfolios (β=-0.244) and raw counts (β=-0.443); see Appendix C
-- **Secondary finding**: Social vulnerability dimensions relate to different recovery outcomes through distinct channels
-- **Model fit**: Two-factor preferred (CFI=0.915, RMSEA=0.081)
+Post-R6 structural pivot: the contribution is the protocol; the substantive headline is that the capacity-timeliness coefficient is *not stably identified* under principled perturbations. Class taxonomy refined at R8 (Ia measurement-preserving / Ib sample-scope) and R10 (II-C capacity-operationalization change / II-O outcome change). Central claim recast at R10 from "near zero" to "not stably identified" after the dashboard was shown to span positive, near-zero, and negative estimates.
 
-### Survival Analysis Results (Complementary)
+### SEM Demonstration Results (Audit Item 1, 2, 3, 6)
 
-- **Sample**: N=142-151 grantee-disaster pairs
-- **Main finding**: Disbursement ratio HR=1.001 [0.821, 1.221], p=0.991 (null)
-- **Concordance**: 0.723 (covariates discriminate via other channels, not capacity ratios)
-- **Interpretation**: Divergence from SEM demonstrates sensitivity of capacity-outcome associations to analytical framework
+- **Primary analytical specification**: Local-only (N=543), β=+0.257, Stable
+- **Pooled supplementary**: N=573 administering-jurisdiction profiles (30 state, 543 local), β=+0.266 (conventional ML p<0.001), but **95% CI [−0.129, 0.531] under state-clustered bootstrap (n=1000, 35 clusters)** crosses zero
+- **Specification-curve dashboard** (capacity-timeliness path):
+  - Class Ia (measurement-preserving): residualized burden +0.297 (Stable); maturity-band controls +0.105 (Attenuated); portfolio-scale controls +0.127 (Attenuated); QCEW imputation bounds [+0.024, +0.267] (Attenuated)
+  - Class Ib (sample-scope): local-only (PRIMARY) +0.257; nonzero-QCEW N=111 +0.132 n.s. (Attenuated); local-AND-nonzero-QCEW N=81 +0.145 n.s.; mature-only N=275 **−0.244 Reversed**; NDR/MIT-excluded N=512 +0.255 (Stable)
+  - Class II-C (capacity-operationalization change): raw portfolio counts **−0.443 Reversed**; within-SEM financial-ratio bridge **−0.600 Reversed (II-C\*)**
+  - Class II-O (outcome change): reconstructed-panel fixed-horizon q=8/12/16 (N=102–128) ≈ 0 (Attenuated)
+  - Class III (multiple dimensions): time-varying Cox HR ≈ 1.0, null
+- **ε-sensitivity**: SEM coefficient invariant to ε∈{10⁻³, 10⁻⁶, 10⁻⁹, 10⁻¹²} (Appendix C.10) — what matters is the *treatment* of suppressed zeros, not the ε value
+- **Transportability**: non-suppressed-QCEW subsample is *not* representative of broader population (40× population, 27% state vs. 0%, 5× more programs, lower completion ratios; Appendix A.3, @tbl-zero-nonzero-comparison)
+- **Model fit**: Two-factor reference specification (CFI=0.915, RMSEA=0.081); AIC/BIC prefer one-factor, so the two-factor choice is theoretically motivated rather than statistically compelled
+
+### Survival Analysis Results (Audit Item 4)
+
+- **Sample**: N=151 grantee-disaster pairs (70 events, 81 right-censored)
+- **Time-varying specification**: Null capacity-outcome association (Disbursement ratio HR=1.001, p=0.991); concordance 0.723 (covariates discriminate via channels other than capacity ratios)
+- **Within-Cox divergence**: Single-spell Cox at baseline (q=3) is positive and significant (HR=1.46 at 20% threshold rising to HR=2.58 at 100%, p<0.01) — same data, different specification, different answer
+- **Interpretation**: Cross-framework divergence from SEM cannot be attributed to a single design dimension; the within-Cox instability shows some of what looks like framework-level divergence is within-framework measurement sensitivity
+
+### Bridge Analyses (One-Dimension-at-a-Time)
+
+- **Within-SEM capacity bridge**: β = −0.600 (financial-flow capacity indicators in same framework) — sign reversal isolates operationalization from framework
+- **Within-survival staffing bridge**: HR = 1.52 and 0.61 (staffing-scaled workload indicators in same survival framework, N=100, null) — survival null holds across capacity operationalizations
 
 ### Capacity Indicators
 
-- SEM: staffing-scaled workload ratios (programs/staff, disasters/staff) + QCEW employment/payroll proxies
-- Survival: financial flow ratios (`Ratio_disbursed_to_obligated`, `Ratio_expended_to_disbursed`; clipped [0, 2], $1K min denominator)
+- SEM primary: staffing-scaled workload ratios `programs/staff`, `disasters/staff` with population-interaction denominator (`avg_employment × E_TOTPOP + ε`) + QCEW employment/payroll proxies
+- SEM bridge: financial flow ratios (disbursed/obligated, expended/disbursed) as reflective capacity indicators
+- Survival primary: financial flow ratios as time-varying covariates with 1-quarter lag, clipped [0, 2], $1K min denominator
+- Survival bridge: staffing-scaled workload ratios as static covariates
+
+### SVI Vintage and Disaster-Year Sensitivity (Appendix C.9)
+
+- CDC/ATSDR historical SVI vintages 2010–2022 downloaded to `data_raw/svi_historical/`
+- State-level vintage sensitivity: capacity-timeliness coefficient stable (0.148–0.239); Theme 1 (socioeconomic) flips sign between 2010 and 2014+ vintages
+- Per-jurisdiction disaster-year SVI re-estimation: 572/573 match rate, β(Burden → Timeliness) = +0.286 (robust to SVI substitution)
 
 ---
 
@@ -239,8 +262,11 @@ python scripts/run_meta_analysis.py           # Aggregate all velocity estimates
 ### Location and Rendering
 
 - **Primary manuscript**: `manuscript_quarto/index.qmd`
-- **Archived Kaifa SEM manuscript**: `manuscript_kaifa_archive/`
+- **Title**: *"A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"*
+- **Archived Kaifa SEM manuscript**: `manuscript_kaifa_archive/` (source for ~70% of current content; archived after reframing)
+- **Archived velocity manuscript**: `manuscript_velocity/` (survival-only draft, superseded)
 - **Output**: `manuscript_quarto/_output/`
+- **Current state**: Ten synthetic review cycles (R1–R10) closed; structural pivot to audit-protocol framing at R6; central claim recast to indeterminacy at R10. Response letters and INDEX in `doc/reviews/quarto/`; CSL Chicago Author-Date (PAR); 7,996 prose words; 141-word abstract
 
 ```bash
 cd manuscript_quarto

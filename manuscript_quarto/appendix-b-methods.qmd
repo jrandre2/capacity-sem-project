@@ -26,17 +26,17 @@ $$
 \text{RecoveryTimeliness} \sim \text{GovCapacity} + \text{covariates}
 $$
 
-**Two-factor model (preferred).** The four capacity indicators are split into two latent factors:
+**Two-factor model (primary).** The four capacity indicators are split into two summary factors:
 
 $$
 \text{AdminResources} =\!\sim \text{z\_avg\_employment} + \text{z\_avg\_payroll}
 $$
 
 $$
-\text{AdminBurdenCapacity} =\!\sim \text{z\_rev\_programs\_per\_staff} + \text{z\_rev\_disasters\_per\_staff}
+\text{WorkloadManageability} =\!\sim \text{z\_rev\_programs\_per\_staff} + \text{z\_rev\_disasters\_per\_staff}
 $$
 
-The outcome measurement model and structural regressions are the same as the one-factor model, except that both AdminResources and AdminBurdenCapacity enter as predictors. The two capacity factors are allowed to covary freely. The two outcome factors (RecoveryPerformance and RecoveryTimeliness) are also allowed to covary.
+The outcome measurement model and structural regressions are the same as the one-factor model, except that both AdminResources and WorkloadManageability enter as predictors. The two capacity factors are allowed to covary freely. The two outcome factors (RecoveryPerformance and RecoveryTimeliness) are also allowed to covary.
 
 Covariates in both models: state_level (binary), z_E_TOTPOP, z_SPL_THEME1 through z_SPL_THEME4.
 
@@ -56,8 +56,8 @@ Standard errors are conventional ML standard errors. Cluster-robust standard err
 |---|---|---:|---:|---|
 | Admin. Resources | Employment proxy | 0.953 | 0.093 | |
 | Admin. Resources | Payroll proxy | 0.992 | 0.016 | |
-| Admin. Burden Capacity | Rev. programs per staff | 0.577 | 0.667 | |
-| Admin. Burden Capacity | Rev. disasters per staff | 1.000 | 0.000 | |
+| Workload Manageability | Rev. programs per staff | 0.577 | 0.667 | |
+| Workload Manageability | Rev. disasters per staff | 1.000 | 0.000 | |
 | Recovery Performance | Disbursed/obligated ratio | 0.785 | 0.383 | |
 | Recovery Performance | Expended/disbursed ratio | $-$0.131 | 0.983 | Weak negative loading |
 | Recovery Performance | Fully expended share | 0.988 | 0.024 | |
@@ -76,7 +76,7 @@ The expended-to-disbursed ratio loads negatively ($-$0.131) on Recovery Performa
 | Outcome | Predictor | Unstd. Est. | Std. Beta | SE | p-value |
 |---|---|---:|---:|---:|---:|
 | Rec. Performance | Admin. Resources | $-$0.139 | $-$0.170 | 0.037 | < 0.001 |
-| Rec. Performance | Admin. Burden Cap. | 0.104 | 0.077 | 0.060 | 0.086 |
+| Rec. Performance | Workload Mgmt. | 0.104 | 0.077 | 0.060 | 0.086 |
 | Rec. Performance | state_level | $-$0.133 | $-$0.038 | 0.200 | 0.505 |
 | Rec. Performance | Population | $-$0.015 | $-$0.020 | 0.045 | 0.731 |
 | Rec. Performance | SVI Theme 1 | 0.008 | 0.010 | 0.053 | 0.879 |
@@ -84,7 +84,7 @@ The expended-to-disbursed ratio loads negatively ($-$0.131) on Recovery Performa
 | Rec. Performance | SVI Theme 3 | $-$0.177 | $-$0.226 | 0.041 | < 0.001 |
 | Rec. Performance | SVI Theme 4 | $-$0.022 | $-$0.028 | 0.049 | 0.658 |
 | Rec. Timeliness | Admin. Resources | 0.046 | 0.080 | 0.025 | 0.072 |
-| Rec. Timeliness | Admin. Burden Cap. | 0.251 | 0.266 | 0.051 | < 0.001 |
+| Rec. Timeliness | Workload Mgmt. | 0.251 | 0.266 | 0.051 | < 0.001 |
 | Rec. Timeliness | state_level | $-$0.260 | $-$0.106 | 0.133 | 0.050 |
 | Rec. Timeliness | Population | 0.009 | 0.016 | 0.029 | 0.760 |
 | Rec. Timeliness | SVI Theme 1 | $-$0.106 | $-$0.194 | 0.036 | 0.004 |
@@ -99,7 +99,7 @@ The expended-to-disbursed ratio loads negatively ($-$0.131) on Recovery Performa
 | Term | Estimate | Std. Est. | p-value |
 |---|---:|---:|---:|
 | Admin. Resources variance | 0.907 | 1.000 | --- |
-| Admin. Burden Cap. variance | 0.333 | 1.000 | < 0.001 |
+| Workload Mgmt. variance | 0.333 | 1.000 | < 0.001 |
 | Rec. Performance residual var. | 0.557 | 0.912 | --- |
 | Rec. Timeliness residual var. | 0.238 | 0.801 | < 0.001 |
 | Rec. Performance $\leftrightarrow$ Rec. Timeliness | $-$0.130 | $-$0.306 | < 0.001 |
@@ -114,7 +114,7 @@ Several measurement features warrant explicit discussion.
 
 **Two-indicator factors.** AdminResources (employment, payroll) and RecoveryTimeliness (duration, average program duration) each have only two indicators. With two indicators per factor, reflective and formative specifications are empirically indistinguishable: the model is locally just-identified for the measurement component of each factor. The SEM is therefore best understood as a structured data-reduction and association-testing tool, not as a confirmatory latent-variable test.
 
-**Weak performance indicator.** The expended-to-disbursed ratio loads at $-$0.131 on Recovery Performance, indicating it does not share the common variance captured by the other three indicators. This may reflect accounting artifacts (expenditure timing relative to disbursement cycles) rather than substantive performance variation. A sensitivity check dropping this indicator is reported in @tbl-sensitivity.
+**Weak performance indicator.** The expended-to-disbursed ratio loads at $-$0.131 on Recovery Performance, indicating it does not share the common variance captured by the other three indicators. This may reflect accounting artifacts (expenditure timing relative to disbursement cycles) rather than substantive performance variation. A sensitivity check dropping this indicator is reported in @tbl-sensitivity and leaves all structural paths unchanged (workload-timeliness beta = 0.266 in both specifications). The indicator is retained in the primary model for transparency---to show the full measurement structure rather than optimizing post hoc---but readers should note that Recovery Performance would function equally well (and more coherently) as a three-indicator factor. More broadly, the heterogeneity among performance indicators suggests that "financial flow-through," "completion," and "utilization" may be better treated as distinct observed outcomes in future work rather than forced into a single summary factor.
 
 **Reflective versus formative tension.** The indicators may function as formative components (determinants of throughput capacity) rather than reflective manifestations (effects of a latent capacity trait). The reflective specification is adopted here because it enables conventional SEM estimation, but it is not independently validated. A rigorous validation would require confirmatory factor analysis on a hold-out sample with adequate power (conventionally N > 200 per group), comparison of reflective versus formative specifications using MIMIC or PLS-SEM, and convergent and discriminant validity testing. None of these steps were feasible given the current sample structure.
 
@@ -153,4 +153,25 @@ As a complementary analytical framework, a Cox proportional hazards model with t
 
 **Threshold sensitivity.** The model is estimated across completion thresholds from 20% to 100% in 5% increments to assess whether results are threshold-dependent.
 
-This specification differs from the SEM in three fundamental ways: it preserves within-grantee temporal variation rather than aggregating to a cross-sectional profile; it properly handles right-censoring through the survival framework rather than using observed duration as a latent indicator; and it uses financial flow ratios rather than staffing-scaled workload ratios as capacity measures.
+**Proportional hazards diagnostics.** Schoenfeld residual tests are computed after model fitting to assess whether the proportional hazards assumption holds for each covariate. Martingale and Cox-Snell residual diagnostics are also produced to assess model adequacy and linearity of covariate effects.
+
+**Power considerations.** With only 40 completion events among 152 grantee-disaster observations and multiple covariates, the survival analysis has limited statistical power to detect moderate effects. The null hazard ratios (HR approximately 1.0) should therefore be interpreted as consistent with no detectable association at the available sample size, not as definitive evidence of no relationship. The wide bootstrap confidence intervals (e.g., [0.821, 1.221] for the disbursement ratio) reflect this limited precision.
+
+**Full model coefficients.** @tbl-survival-full reports the complete coefficient table for the full-covariates Cox model to show that the model concordance (0.723) is not driven by the capacity ratios, which are both null, but rather by the static covariate set.
+
+| Variable | HR | 95% CI | p-value |
+|---|---:|---|---:|
+| Disbursement ratio (lagged) | 1.001 | [0.821, 1.221] | 0.991 |
+| Expenditure ratio (lagged) | 0.998 | [0.728, 1.367] | 0.988 |
+| Government type (state) | 0.996 | [0.734, 1.351] | 0.978 |
+| Grant size (log obligated) | 0.998 | [0.934, 1.067] | 0.964 |
+| Prior grant count | 1.007 | [0.908, 1.117] | 0.896 |
+| Prior grant dollars (log) | 1.002 | [0.988, 1.017] | 0.742 |
+| Population (log) | 1.005 | [0.971, 1.041] | 0.758 |
+| Disaster year | 0.975 | [0.906, 1.049] | 0.495 |
+
+: Full-covariates Cox model coefficient table (N = 142--151 grantee-disaster pairs). Bootstrap clustered SEs (1,000 iterations, grantee-level clustering). {#tbl-survival-full}
+
+No individual covariate reaches conventional significance levels, consistent with the limited statistical power noted above. The model's discriminative ability (concordance = 0.723) arises from the combined linear prediction of the static covariates rather than from any single strong predictor.
+
+This specification differs from the SEM in four fundamental ways: it preserves within-grantee temporal variation rather than aggregating to a cross-sectional profile; it properly handles right-censoring through the survival framework rather than using observed duration as a summary indicator; it uses financial flow ratios rather than staffing-scaled workload ratios as capacity measures; and it changes the unit of analysis from jurisdiction profile to grantee-disaster pair. Because four design elements change simultaneously, the null survival results do not directly test whether the SEM relationship would survive a better temporal specification; they test a different question. The survival analysis is therefore best understood as a complementary companion framework rather than as a robustness check of the SEM.
