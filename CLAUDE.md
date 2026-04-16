@@ -83,6 +83,7 @@ This project uses **git branches** to manage alternative analytical approaches w
 |-----------|--------|---------|---------------|
 | `manuscript_kaifa_archive/` | Cross-sectional SEM (N=573 jurisdictions) | Burden→Timeliness β=0.266, p<0.001 | Apr 2026 |
 | `manuscript_velocity/` | Time-varying survival (null-results draft) | HR≈1.0, p≈0.99 (null) | Apr 2026 |
+| `manuscript_predictors_archive/` | Predictor-discovery draft | Superseded | Apr 2026 |
 
 **Note**: `manuscript_kaifa_archive/` preserves Kaifa's polished SEM draft that served as the basis for the current `manuscript_quarto/` rewrite. The rewrite retains Kaifa's core SEM framing, adds robustness caveats and a survival analysis comparison.
 
@@ -98,35 +99,11 @@ This project uses **git branches** to manage alternative analytical approaches w
 
 **Manuscript title** (current): *"A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"*
 
-The primary manuscript (`manuscript_quarto/`) is structured around a **six-item measurement-sensitivity audit protocol** whose deliverable is a **specification-curve dashboard**, not a single point estimate. The protocol items are: (1) proxy transparency, (2) sample-selection sensitivity, (3) within-framework operationalization bridge, (4) cross-framework triangulation, (5) vintage and granularity documentation, (6) cluster-appropriate inference. The cross-sectional SEM on N=573 administering jurisdictions and the complementary Cox survival analysis on N=151 grantee-disaster pairs serve as **demonstrations** of the protocol, not as the primary inferential engine.
+The primary manuscript (`manuscript_quarto/`) is structured around a **six-item measurement-sensitivity audit protocol** whose deliverable is a **specification-curve dashboard**, not a single point estimate. The protocol items are: (1) proxy transparency, (2) sample-selection sensitivity, (3) within-framework operationalization bridge, (4) cross-framework triangulation, (5) vintage and granularity documentation, (6) cluster-appropriate inference. A cross-sectional SEM on N=573 administering jurisdictions (local-only N=543 primary) and a complementary Cox survival analysis on N=151 grantee-disaster pairs serve as **demonstrations** of the protocol, not as the primary inferential engine.
 
-Post-R6 structural pivot: the contribution is the protocol; the substantive headline is that the capacity-timeliness coefficient is *not stably identified* under principled perturbations. Class taxonomy refined at R8 (Ia measurement-preserving / Ib sample-scope) and R10 (II-C capacity-operationalization change / II-O outcome change). Central claim recast at R10 from "near zero" to "not stably identified" after the dashboard was shown to span positive, near-zero, and negative estimates.
+Post-R6 structural pivot: the contribution is the protocol; the substantive headline is that the capacity-timeliness coefficient is *not stably identified* under principled perturbations. Class taxonomy: Ia (measurement-preserving) / Ib (sample-scope) / II-C (capacity-operationalization change) / II-O (outcome change) / III (multiple dimensions). Central claim recast at R10 from "near zero" to "not stably identified" after the dashboard was shown to span positive, near-zero, and negative estimates.
 
-### SEM Demonstration Results (Audit Item 1, 2, 3, 6)
-
-- **Primary analytical specification**: Local-only (N=543), β=+0.257, Stable
-- **Pooled supplementary**: N=573 administering-jurisdiction profiles (30 state, 543 local), β=+0.266 (conventional ML p<0.001), but **95% CI [−0.129, 0.531] under state-clustered bootstrap (n=1000, 35 clusters)** crosses zero
-- **Specification-curve dashboard** (capacity-timeliness path):
-  - Class Ia (measurement-preserving): residualized burden +0.297 (Stable); maturity-band controls +0.105 (Attenuated); portfolio-scale controls +0.127 (Attenuated); QCEW imputation bounds [+0.024, +0.267] (Attenuated)
-  - Class Ib (sample-scope): local-only (PRIMARY) +0.257; nonzero-QCEW N=111 +0.132 n.s. (Attenuated); local-AND-nonzero-QCEW N=81 +0.145 n.s.; mature-only N=275 **−0.244 Reversed**; NDR/MIT-excluded N=512 +0.255 (Stable)
-  - Class II-C (capacity-operationalization change): raw portfolio counts **−0.443 Reversed**; within-SEM financial-ratio bridge **−0.600 Reversed (II-C\*)**
-  - Class II-O (outcome change): reconstructed-panel fixed-horizon q=8/12/16 (N=102–128) ≈ 0 (Attenuated)
-  - Class III (multiple dimensions): time-varying Cox HR ≈ 1.0, null
-- **ε-sensitivity**: SEM coefficient invariant to ε∈{10⁻³, 10⁻⁶, 10⁻⁹, 10⁻¹²} (Appendix C.10) — what matters is the *treatment* of suppressed zeros, not the ε value
-- **Transportability**: non-suppressed-QCEW subsample is *not* representative of broader population (40× population, 27% state vs. 0%, 5× more programs, lower completion ratios; Appendix A.3, @tbl-zero-nonzero-comparison)
-- **Model fit**: Two-factor reference specification (CFI=0.915, RMSEA=0.081); AIC/BIC prefer one-factor, so the two-factor choice is theoretically motivated rather than statistically compelled
-
-### Survival Analysis Results (Audit Item 4)
-
-- **Sample**: N=151 grantee-disaster pairs (70 events, 81 right-censored)
-- **Time-varying specification**: Null capacity-outcome association (Disbursement ratio HR=1.001, p=0.991); concordance 0.723 (covariates discriminate via channels other than capacity ratios)
-- **Within-Cox divergence**: Single-spell Cox at baseline (q=3) is positive and significant (HR=1.46 at 20% threshold rising to HR=2.58 at 100%, p<0.01) — same data, different specification, different answer
-- **Interpretation**: Cross-framework divergence from SEM cannot be attributed to a single design dimension; the within-Cox instability shows some of what looks like framework-level divergence is within-framework measurement sensitivity
-
-### Bridge Analyses (One-Dimension-at-a-Time)
-
-- **Within-SEM capacity bridge**: β = −0.600 (financial-flow capacity indicators in same framework) — sign reversal isolates operationalization from framework
-- **Within-survival staffing bridge**: HR = 1.52 and 0.61 (staffing-scaled workload indicators in same survival framework, N=100, null) — survival null holds across capacity operationalizations
+**Canonical findings source**: [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) (specification-curve numbers, bootstrap CIs, vintage sensitivity, transportability). Do not duplicate coefficient-level numbers here — they drift.
 
 ### Capacity Indicators
 
@@ -134,12 +111,6 @@ Post-R6 structural pivot: the contribution is the protocol; the substantive head
 - SEM bridge: financial flow ratios (disbursed/obligated, expended/disbursed) as reflective capacity indicators
 - Survival primary: financial flow ratios as time-varying covariates with 1-quarter lag, clipped [0, 2], $1K min denominator
 - Survival bridge: staffing-scaled workload ratios as static covariates
-
-### SVI Vintage and Disaster-Year Sensitivity (Appendix C.9)
-
-- CDC/ATSDR historical SVI vintages 2010–2022 downloaded to `data_raw/svi_historical/`
-- State-level vintage sensitivity: capacity-timeliness coefficient stable (0.148–0.239); Theme 1 (socioeconomic) flips sign between 2010 and 2014+ vintages
-- Per-jurisdiction disaster-year SVI re-estimation: 572/573 match rate, β(Burden → Timeliness) = +0.286 (robust to SVI substitution)
 
 ---
 
@@ -171,10 +142,12 @@ Velocity_t^std = (Disbursed_t / Obligated_final) - (Disbursed_{t-1} / Obligated_
 |-------|---------|---------|
 | **0b** | `standardize_data` | Standardize with fixed denominators + winsorization |
 | **1b** | `build_features_std` | Aggregate standardized velocity to grantee-disaster level |
+| **1c** | `aggregate_program_types` | Aggregate activity types into program portfolio features (Primary_Program_Type, Program_Diversity_Index, category pct) |
 
 **Output files**:
 - `data_work/qpr_standardized.parquet` - Standardized quarterly data (130,605 rows)
-- `data_work/panel_features_std.parquet` - Standardized features (156 rows, 177 columns)
+- `data_work/panel_features_std.parquet` - Standardized features (156 rows, includes phase-specific velocity: `Velocity_Early/Mid/Late/Acceleration`)
+- `data_work/panel_program_types.parquet` - Program portfolio features (156 records, 18 columns)
 
 ### Usage
 
@@ -201,59 +174,9 @@ python src/pipeline.py run_survival          # 3b: Analysis (auto-uses standardi
 ### Documentation
 
 - **Methodology**: `doc/ETL_STANDARDIZATION.md`
-- **Test results**: `doc/STANDARDIZED_PIPELINE_TEST_RESULTS.md`
 - **Column definitions**: `doc/DATA_DICTIONARY.md` (Standardized QPR Variables section)
-- **Pipeline stages**: `doc/PIPELINE.md` (Stages 0b and 1b)
-
----
-
-## Research Extension: Velocity Mechanisms & Heterogeneity
-
-**Purpose**: Investigate whether spending velocity predicts CDBG-DR program completion through mechanistic analysis and heterogeneity testing.
-
-**Documentation**: See `doc/RESEARCH_SYNTHESIS_REPORT.md` for complete findings.
-
-### Analysis Scripts
-
-Extended analysis scripts are in `scripts/`:
-
-```bash
-python scripts/run_multistage_analysis.py     # Multi-stage bottleneck identification
-python scripts/run_trajectory_clustering.py   # Velocity trajectory clustering
-python scripts/run_meta_analysis.py           # Aggregate all velocity estimates
-```
-
-### New Pipeline Stage: Stage 1c
-
-**Command**: `python src/pipeline.py aggregate_program_types`
-
-**Purpose**: Aggregate activity-level data to grantee-disaster level to create program portfolio features.
-
-**Inputs**:
-- `data_work/qpr_standardized.parquet` (quarterly data with Activity Type)
-- `data_work/panel_features_std.parquet` (base panel)
-
-**Outputs**:
-- `data_work/panel_program_types.parquet` (156 records, 18 columns)
-  - Primary_Program_Type (Housing, Infrastructure, Administration, etc.)
-  - Program_Diversity_Index (Herfindahl index)
-  - Category percentages (Housing_Pct, Infrastructure_Pct, etc.)
-
-### New Features in Panel
-
-**Phase-Specific Velocity** (added to panel_features_std.parquet, 202 columns total):
-- `Velocity_Early` - Mean velocity in first third of program duration
-- `Velocity_Mid` - Mean velocity in middle third
-- `Velocity_Late` - Mean velocity in final third
-- `Velocity_Acceleration` - Change from early to late phase (Late - Early)
-- Median versions: `Velocity_Early_median`, etc.
-
-### Outputs
-
-- **Synthesis**: `doc/RESEARCH_SYNTHESIS_REPORT.md`
-- **Diagnostics**: `data_work/diagnostics/*.csv`
-- **Figures**: `figures/*.png`
-- **Analysis logs**: `doc/archive/analysis_logs/`
+- **Pipeline stages**: `doc/PIPELINE.md` (Stages 0b, 1b, 1c)
+- **Archived test results / velocity-era synthesis**: `doc/archive/STANDARDIZED_PIPELINE_TEST_RESULTS.md`, `doc/archive/RESEARCH_SYNTHESIS_REPORT.md`
 
 ---
 
@@ -571,9 +494,7 @@ When creating a new analytical approach:
 | `doc/METHODOLOGY.md` | Survival analysis and SEM methodology |
 | `doc/DATA_DICTIONARY.md` | Variable definitions |
 | `doc/ETL_STANDARDIZATION.md` | Fixed-denominator methodology |
-| `doc/RESEARCH_SYNTHESIS_REPORT.md` | Research findings synthesis |
-| `doc/reports/` | Analysis reports |
-| `doc/archive/` | Historical documentation |
+| `doc/archive/` | Historical documentation (superseded reports, research synthesis, analysis journey, pipeline test results) |
 
 ---
 

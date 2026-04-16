@@ -19,7 +19,6 @@ That file is the current source of truth for:
 | [TIME_VARYING_SURVIVAL.md](TIME_VARYING_SURVIVAL.md) | Technical details for the time-varying survival implementation |
 | [ETL_STANDARDIZATION.md](ETL_STANDARDIZATION.md) | Fixed-denominator standardization and quarter-level cleanup |
 | [DATA_DICTIONARY.md](DATA_DICTIONARY.md) | Variable and output definitions |
-| [ANALYSIS_JOURNEY.md](ANALYSIS_JOURNEY.md) | Methodological evolution and bug-discovery narrative |
 
 ## Manuscript And Review Docs
 
@@ -29,9 +28,21 @@ That file is the current source of truth for:
 | [MANUSCRIPT_REVISION_CHECKLIST.md](MANUSCRIPT_REVISION_CHECKLIST.md) | Current manuscript rewrite checklist |
 | [SYNTHETIC_REVIEW_PROCESS.md](SYNTHETIC_REVIEW_PROCESS.md) | Review workflow for `manuscript_quarto/` |
 | [reviews/README.md](reviews/README.md) | Review index and current manuscript coverage |
-| [PROJECT_SKILLS.md](PROJECT_SKILLS.md) | Project-local Codex skills for review triage, SEM audits, provenance appendices, and DOCX/Quarto manuscript conversion |
 | [reviews/kaifa/README.md](reviews/kaifa/README.md) | Kaifa DOCX import and archived-manuscript review workspace |
 | [reviews/kaifa/CODE_BUNDLE_AUDIT.md](reviews/kaifa/CODE_BUNDLE_AUDIT.md) | Audit of the recovered Kaifa SEM notebook ZIP and its reproducibility gaps |
+
+## Project-Local Codex Skills
+
+Committed under `.codex/skills/` (mirrored as slash commands in `~/.claude/commands/`):
+
+| Skill | Purpose |
+|-------|---------|
+| [`manuscript-review-triage`](../.codex/skills/manuscript-review-triage/SKILL.md) | Turn reviews into tracker-ready comment sets, statuses, and revision plans |
+| [`sem-manuscript-audit`](../.codex/skills/sem-manuscript-audit/SKILL.md) | Audit SEM manuscripts for reporting, design, timing, and interpretation problems |
+| [`data-provenance-appendix`](../.codex/skills/data-provenance-appendix/SKILL.md) | Draft and audit appendix text for sources, linkage, harmonization, and data availability |
+| [`docx-quarto-manuscript-bridge`](../.codex/skills/docx-quarto-manuscript-bridge/SKILL.md) | Convert manuscript structure between DOCX and Quarto, or reapply supplied Word-manuscript formatting to rendered DOCX outputs |
+
+Manuscript-facing skills require standalone article prose and forbid revision-memo metacommentary inside manuscript text. For user-scope discovery outside this repo, copy or symlink into `~/.codex/skills/`.
 
 ## Vendored CENTAUR Docs
 
@@ -48,10 +59,10 @@ Repo-specific rule: all vendored CENTAUR CLI examples run through `python src/pi
 
 These files are useful for provenance, but they are not authoritative for current analysis unless explicitly referenced by [PROJECT_STATUS.md](PROJECT_STATUS.md):
 
-- [RESEARCH_SYNTHESIS_REPORT.md](RESEARCH_SYNTHESIS_REPORT.md)
-- `doc/reports/*.md`
-- `doc/archive/*`
+- `doc/archive/*` — including `RESEARCH_SYNTHESIS_REPORT.md`, `ANALYSIS_JOURNEY.md`, `STANDARDIZED_PIPELINE_TEST_RESULTS.md`, and prior-phase reports under `doc/archive/reports/`
 - `manuscript_kaifa_archive/`
+- `manuscript_velocity/` — archived survival-only draft
+- `manuscript_predictors_archive/` — archived predictors draft
   The archive includes the received Word source manuscript at
   `manuscript_kaifa_archive/source_docs/SEM_Manuscript_2026-04-07.docx`
   and the current standalone review target at
