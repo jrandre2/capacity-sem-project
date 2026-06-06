@@ -1,146 +1,143 @@
-# Capacity-SEM Project
+# A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery
 
-Analysis of administrative capacity and completion timing in HUD CDBG-DR disaster recovery programs.
+Does government administrative capacity determine how quickly jurisdictions spend disaster-recovery
+dollars? That question drives a large body of CDBG-DR research — but the answer turns out to depend
+heavily on *how capacity is measured*. This project demonstrates that the capacity–timeliness
+coefficient is **not stably identified**: depending on which operationalization, sample scope, or
+analytical framework is applied to the same underlying data, the estimated coefficient spans
+strongly positive, near-zero, and negative values. Rather than delivering a verdict, this work
+offers a **six-item measurement-sensitivity audit protocol** whose output is a specification-curve
+dashboard — a tool practitioners and reviewers can use to evaluate whether any capacity finding is
+robust enough to support benchmarking or policy anchoring.
+
+**Target journal**: Public Administration Review (PAR)
+**Manuscript status**: Ten synthetic review cycles completed (R1–R10); ready for editorial submission.
+
+---
+
+## Manuscript
+
+| File | Description |
+|------|-------------|
+| [`manuscript.pdf`](manuscript.pdf) | Latest rendered manuscript (PDF) |
+| [`manuscript.docx`](manuscript.docx) | Latest rendered manuscript (Word) |
+| [`manuscript_quarto/index.qmd`](manuscript_quarto/index.qmd) | Source of truth (Quarto) |
+| [`manuscript_quarto/`](manuscript_quarto/) | Full source: appendices, bibliography, render scripts |
+
+Rendered outputs at repo root are copied from `manuscript_quarto/_output/` on each render pass.
+The Quarto source is the authoritative version.
+
+
+## Key Findings
+
+The specification-curve dashboard spans three qualitatively distinct zones:
+
+- **Positive and significant** (β ≈ +0.26 to +0.30): primary local-only SEM (N=543), pooled SEM
+  (N=573), residualized burden, and several measurement-preserving variants
+- **Near zero or attenuated**: fixed-horizon reconstructed-panel outcomes (q=8/12/16), time-varying
+  Cox model (HR ≈ 1.0), non-suppressed-QCEW subsample (β=+0.132, n.s.)
+- **Negative and reversed** (β ≈ −0.24 to −0.60): mature-jurisdiction-only sample, raw portfolio
+  counts, within-SEM financial-ratio operationalization
+
+The within-Cox divergence is particularly telling: a single-spell baseline Cox on the *same data*
+yields HR=1.46–2.58 (p<0.01), the opposite sign from the time-varying Cox. Same data, different
+specification, opposite answer.
+
+The pooled-SEM 95% CI under state-clustered bootstrap (1,000 iterations, 35 clusters) is
+[−0.129, +0.531] — it crosses zero. Current CDBG-DR capacity estimates are not robust enough for
+policy anchoring or benchmarking.
+
+---
 
 ## Current Status
 
-- **Primary manuscript**: `manuscript_quarto/index.qmd` — "A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in CDBG-DR Disaster Recovery"
-- **Contribution**: A six-item measurement-sensitivity audit protocol whose deliverable is a specification-curve dashboard, demonstrated on a national CDBG-DR dataset (543 local administering jurisdictions primary; N=573 with state agencies supplementary; 151 grantee-disaster pairs for cross-framework comparison)
-- **Headline finding**: The capacity-timeliness coefficient is *not stably identified* under principled measurement perturbations; the dashboard spans positive (β = +0.266 reference; +0.297 residualized; +0.257 local-only), near-zero (β ≈ 0 reconstructed-panel fixed-horizon; HR ≈ 1.0 time-varying Cox; β = 0.132 n.s. non-suppressed-QCEW), and negative (β = −0.244 mature-only; −0.443 raw counts; −0.600 financial-ratio bridge) estimates. Current capacity findings in CDBG-DR are not robust enough for benchmarking or policy anchoring.
-- **Target journal**: Public Administration Review (PAR)
-- **Review cycles completed**: Ten synthetic peer reviews (R1–R10), all closed; structural pivot at R6 from "instability narrative" to "audit-protocol contribution"; central claim recast at R10 from "near zero" to "not stably identified". Response letters and revision tracker in `doc/reviews/quarto/`
-- **Archived manuscripts**: `manuscript_velocity/` (survival-only draft, superseded) and `manuscript_kaifa_archive/` (original SEM draft)
-- **Latest rendered output**: `manuscript.docx` and `manuscript.pdf` at repo root (rendered 2026-06-06 from `manuscript_quarto/_output/`; source of truth remains `manuscript_quarto/index.qmd`)
+- **Primary manuscript**: `manuscript_quarto/index.qmd`
+- **Title**: "A Measurement-Sensitivity Audit Protocol for Administrative-Capacity Studies in
+  CDBG-DR Disaster Recovery"
+- **Contribution**: Six-item measurement-sensitivity audit protocol; deliverable is a
+  specification-curve dashboard
+- **Data**: 543 local administering jurisdictions (primary); N=573 with state agencies
+  (supplementary); 151 grantee-disaster pairs for cross-framework survival analysis
+- **Archived drafts**: `manuscript_velocity/` (survival-only draft, superseded) and
+  `manuscript_kaifa_archive/` (original SEM draft)
 
-See [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for the current analytical state and [manuscript_quarto/REVISION_TRACKER.md](manuscript_quarto/REVISION_TRACKER.md) for the current review cycle disposition.
+For the full analytical state, next steps, and trusted-findings table see
+[doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md). For the review cycle history see
+[manuscript_quarto/REVISION_TRACKER.md](manuscript_quarto/REVISION_TRACKER.md).
 
-## Setup
+---
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+## Repository Map
+
+```
+manuscript_quarto/          Primary manuscript source (Quarto / PAR target)
+  index.qmd                 Main text
+  appendix-a-data.qmd       Data appendix
+  appendix-b-methods.qmd    Methods appendix
+  appendix-c-robustness.qmd Robustness / sensitivity appendix
+  REVISION_TRACKER.md       Review cycle log (R1–R10)
+manuscript.pdf / .docx      Latest rendered outputs (root copies)
+manuscript_velocity/        Archived survival-only draft (superseded)
+manuscript_kaifa_archive/   Archived original SEM draft (source material)
+
+scripts/                    Analysis scripts (sensitivity runs, figures)
+src/                        Pipeline library and analysis modules
+  pipeline.py               Main CLI entry point
+  stages/                   Pipeline stages
+  capacity_sem/             Core analysis modules
+
+figures/                    Analysis figures (numbered: fig_01 … fig_13 + extras)
+outputs/                    Model outputs, tables, reports
+data_raw/                   Source datasets (read-only; large files not committed)
+  svi_historical/           CDC/ATSDR SVI vintages 2000–2022
+data_work/                  Derived data (.parquet files)
+
+doc/                        All deeper documentation (see below)
+tests/                      Regression tests
 ```
 
-Quarto is an external CLI. Use a system install or the vendored wrapper in `tools/bin/quarto`.
+**Data note**: Raw CDBG-DR DRGR/QPR data are large restricted files not committed to this
+repository. The committed files in `data_raw/` are the HUD QPR extract used for this study
+(`qpr_data.csv`). SVI historicals in `data_raw/svi_historical/` were downloaded 2026-04-14.
+Derived `.parquet` files in `data_work/` are generated by the pipeline and are committed for
+reproducibility but are not primary data.
 
-## Recommended Workflow
+---
 
-Run the active pipeline:
+## Reproducibility
+
+The analysis pipeline requires Python 3.10+ and Quarto. See [doc/PIPELINE.md](doc/PIPELINE.md)
+for the full workflow, stage-by-stage commands, and expected outputs.
+
+Quick start (Python environment):
 
 ```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
 python src/pipeline.py run_all
 ```
 
-Or run the current stages explicitly:
+To render the manuscript: `cd manuscript_quarto && ./render_all.sh`
 
-```bash
-python src/pipeline.py ingest_data
-python src/pipeline.py standardize_data
-python src/pipeline.py build_panel
-python src/pipeline.py build_features_std
-python src/pipeline.py aggregate_program_types
-python src/pipeline.py run_survival
-```
+Quarto is an external CLI; use a system install or the vendored wrapper in `tools/bin/quarto`.
+The environment variable `CAPACITY_SEM_SKIP_PIPELINE=1` skips the pipeline re-run during render.
 
-Useful supporting commands:
+---
 
-```bash
-python src/pipeline.py run_survival_threshold_sensitivity
-python src/pipeline.py run_alternatives
-python src/pipeline.py make_figures
-python src/pipeline.py capacity_summary
-```
+## Documentation
 
-Kaifa-style SEM analysis (generates the primary-manuscript sensitivity results):
+| File | Contents |
+|------|----------|
+| [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) | Current analytical state, trusted findings table, next steps |
+| [doc/PIPELINE.md](doc/PIPELINE.md) | Full pipeline commands, stage reference, review management |
+| [doc/METHODOLOGY.md](doc/METHODOLOGY.md) | SEM and survival analysis methods |
+| [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) | Variable definitions |
+| [doc/ETL_STANDARDIZATION.md](doc/ETL_STANDARDIZATION.md) | Fixed-denominator standardization |
+| [doc/ANALYSIS_JOURNEY.md](doc/ANALYSIS_JOURNEY.md) | Methodological history and pivots |
+| [doc/MANUSCRIPT_GUIDE.md](doc/MANUSCRIPT_GUIDE.md) | Manuscript locations and writing conventions |
+| [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) | Synthetic review workflow |
+| [doc/CHANGELOG.md](doc/CHANGELOG.md) | Cycle-by-cycle revision log |
+| [manuscript_quarto/REVISION_TRACKER.md](manuscript_quarto/REVISION_TRACKER.md) | R1–R10 review history and final manuscript metrics |
 
-```bash
-python src/pipeline.py run_kaifa_recovered_analysis
-```
-
-Legacy SEM replication pipeline:
-
-```bash
-python src/pipeline.py run_all_legacy
-python src/pipeline.py list_models
-```
-
-## Manuscript and Review
-
-Primary manuscript in `manuscript_quarto/`:
-
-```bash
-cd manuscript_quarto
-./render_all.sh                                  # all formats
-CAPACITY_SEM_SKIP_PIPELINE=1 ./render_all.sh     # skip pipeline re-run
-quarto render index.qmd --to docx                # DOCX only
-```
-
-Review management:
-
-```bash
-python src/pipeline.py review_status --manuscript quarto
-python src/pipeline.py review_verify --manuscript quarto
-python src/pipeline.py review_new --manuscript quarto --focus par_general
-python src/pipeline.py review_archive --manuscript quarto
-python src/pipeline.py review_report
-```
-
-Review artifacts live in `doc/reviews/quarto/`:
-
-- `INDEX.md` — review log (R1–R10)
-- `archive/review_0N_*.md` — reviewer text per cycle
-- `response_0N_*.md` / `.docx` — point-by-point response letters
-
-## CENTAUR Integration
-
-The vendored CENTAUR framework is namespaced under `src/centaur/` and does not replace the Capacity-SEM workflow. See [doc/centaur/README.md](doc/centaur/README.md).
-
-```bash
-python src/pipeline.py centaur --help
-python src/pipeline.py centaur list_stages
-python src/pipeline.py centaur review_status
-```
-
-## Repository Layout
-
-```text
-src/
-  pipeline.py                 Host CLI
-  stages/                     Capacity-SEM pipeline stages
-  capacity_sem/               Core analysis modules (including kaifa_recovered_analysis.py)
-  centaur/                    Vendored CENTAUR framework
-doc/
-  PROJECT_STATUS.md           Current state and next steps
-  PIPELINE.md                 Current workflow guide
-  METHODOLOGY.md              Analysis methods
-  DATA_DICTIONARY.md          Variable definitions
-  SYNTHETIC_REVIEW_PROCESS.md Review workflow
-  reviews/quarto/             R1–R10 review archive, responses, tracker
-manuscript_quarto/            Primary manuscript (PAR target)
-manuscript_velocity/          Archived (superseded by manuscript_quarto/)
-manuscript_kaifa_archive/     Archived original SEM draft
-data_raw/                     Source datasets (read-only)
-  svi_historical/             CDC/ATSDR SVI vintages 2000–2022 (downloaded 2026-04-14)
-data_work/                    Derived data and diagnostics
-  jurisdiction_disaster_year_svi.parquet   Per-jurisdiction disaster-year SVI assignments
-  state_earliest_disaster_year.parquet     State → earliest disaster year (for vintage selection)
-  sem_input_disaster_year_svi.parquet      SEM-ready data with disaster-year SVI
-  fixed_horizon_outcomes.parquet           Quarter-8/12/16 expenditure shares per grantee
-figures/                      Analysis figures
-tests/                        Regression tests
-```
-
-## Documentation Map
-
-- [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) — current analytical state
-- [doc/PIPELINE.md](doc/PIPELINE.md) — current commands and outputs
-- [doc/METHODOLOGY.md](doc/METHODOLOGY.md) — SEM and survival methods
-- [doc/DATA_DICTIONARY.md](doc/DATA_DICTIONARY.md) — variable definitions
-- [doc/ETL_STANDARDIZATION.md](doc/ETL_STANDARDIZATION.md) — fixed-denominator standardization
-- [doc/ANALYSIS_JOURNEY.md](doc/ANALYSIS_JOURNEY.md) — methodological history
-- [doc/MANUSCRIPT_GUIDE.md](doc/MANUSCRIPT_GUIDE.md) — manuscript locations and writing rules
-- [doc/SYNTHETIC_REVIEW_PROCESS.md](doc/SYNTHETIC_REVIEW_PROCESS.md) — review workflow
-- [doc/CHANGELOG.md](doc/CHANGELOG.md) — cycle-by-cycle revision log
-
-Historical reports and archived analyses remain in the repo for provenance; consult [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) before citing any file predating the current revision.
+Historical reports and archived analyses remain in the repo for provenance. Consult
+[doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) before citing any file predating the current revision.
