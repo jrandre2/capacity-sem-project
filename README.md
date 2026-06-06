@@ -10,6 +10,7 @@ Analysis of administrative capacity and completion timing in HUD CDBG-DR disaste
 - **Target journal**: Public Administration Review (PAR)
 - **Review cycles completed**: Ten synthetic peer reviews (R1–R10), all closed; structural pivot at R6 from "instability narrative" to "audit-protocol contribution"; central claim recast at R10 from "near zero" to "not stably identified". Response letters and revision tracker in `doc/reviews/quarto/`
 - **Archived manuscripts**: `manuscript_velocity/` (survival-only draft, superseded) and `manuscript_kaifa_archive/` (original SEM draft)
+- **Latest rendered output**: `manuscript.docx` and `manuscript.pdf` at repo root (rendered 2026-06-06 from `manuscript_quarto/_output/`; source of truth remains `manuscript_quarto/index.qmd`)
 
 See [doc/PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for the current analytical state and [manuscript_quarto/REVISION_TRACKER.md](manuscript_quarto/REVISION_TRACKER.md) for the current review cycle disposition.
 

@@ -1,50 +1,41 @@
 ---
 name: data-provenance-appendix
-description: Draft and audit data-provenance appendices, source descriptions, linkage notes, harmonization text, and data-availability statements for this repository. Use when Codex needs to document QPR, QCEW, SVI, geography matching, filtering, aggregation, public-versus-restricted materials, or the reproducibility chain from raw sources to manuscript-ready analysis files.
+description: Project adapter for capacity SEM provenance, source descriptions, linkage notes, harmonization text, and data-availability statements.
 ---
 
 # Data Provenance Appendix
 
-Use this skill when writing or auditing data and methods appendix text for this repository, especially for `manuscript_quarto/` (primary) and `manuscript_kaifa_archive/` (archived source).
+Base: `/Users/jesseandrews/.codex/skills/academic-data-provenance-reproducibility/SKILL.md`
 
-## Workflow
+Snapshot: `/Volumes/T9/Skill Builder/references/donor-snapshots/Volumes__T9__Projects__capacity-sem-project__.codex__skills__data-provenance-appendix__SKILL.md.md`
 
-1. Build a source inventory.
-- List each raw source, its version or vintage, time coverage, geography, unit of observation, and acquisition method.
-- Distinguish public raw sources, public derived files, restricted derived files, and manual validation artifacts.
+Use when: Use for provenance or data-availability work in `manuscript_quarto/` and `manuscript_kaifa_archive/`.
 
-2. Document the transformation chain.
-- Describe extraction, cleaning, matching, filtering, aggregation, and derived-variable construction in order.
-- State thresholds and exclusions explicitly, including minimum-quarter filters, censoring thresholds, and winsorization rules.
+Keep reusable rules in the global skill; this wrapper keeps only local facts.
 
-3. Document source-specific caveats.
-- For QPR or DRGR data, explain quarter definitions, activity or program granularity, and maturity limitations.
-- For QCEW, explain NAICS selection, suppression or missingness handling, and why the series is treated as a proxy.
-- For SVI, explain how vintages were aligned or why comparisons across releases remain valid.
-- For geography matching, prefer official Census relationship or gazetteer files over generic spreadsheets unless there is a documented reason otherwise.
+## Local Context
 
-4. Validate the geography layer.
-- Report match shares by method, unresolved cases, and any manual audit or confidence coding.
-- State clearly when city-level entities are collapsed to counties or states.
-
-5. Write the data-availability statement.
-- Separate public source files from derived linkages, manual validation tables, and any restricted artifacts.
-- Promise code, formulas, and nonrestricted derivatives when the raw sources are public but some derived files are controlled.
-
-6. Keep the prose audit-ready.
-- Prefer exact filenames, source agencies, release years, and transformation steps over vague summary language.
-- Treat proxy validity and harmonization limits as first-class methodological issues, not footnotes.
-
-## Repo-Specific Focus
-
-Pay special attention to:
-
+- `manuscript_quarto/` primary manuscript package
+- `manuscript_kaifa_archive/` archived source manuscript
 - HUD DRGR / QPR administrative data
 - BLS QCEW `NAICS 925110`
 - CDC/ATSDR SVI vintages
 - Census relationship or gazetteer files
 - manual organization-name matching
+- minimum-quarter filters, censoring thresholds, and winsorization rules
 
-## References
+## Workflow
 
-- Read `references/appendix-checklist.md` before drafting or revising appendix text.
+1. Load the base skill and read the local files named here.
+2. Apply the global procedure with these constraints; use the snapshot only for missing historical details.
+3. Report checked files, unresolved limits, and project-specific caveats.
+
+## Verification
+
+- Check `references/appendix-checklist.md` before drafting appendix text.
+- Distinguish public raw sources, public derived files, restricted derived files, and manual validation artifacts.
+- Report match shares, unresolved geography cases, and confidence coding when geography matching matters.
+
+## Portability Notes
+
+Reusable instructions belong in the base skill; project facts belong here.
